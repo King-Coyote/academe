@@ -4,6 +4,7 @@ use crate::scripting::ScriptingPlugin;
 
 mod ui;
 mod scripting;
+mod space;
 
 fn main() {
     App::build()

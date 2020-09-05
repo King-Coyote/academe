@@ -1,2 +1,6 @@
 ideas for terrain MVP:
 
+- the entity has a space component, which represents a collection (vec?) of Chunks
+- Chunks are an area of space that can contain Tiles
+- Tiles fill in chunks and have a Sprite that can be rendered
+- a space should have a texture atlas for its terrain.
