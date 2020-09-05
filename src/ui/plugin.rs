@@ -54,48 +54,48 @@ pub fn setup(
     mut widget_colors: ResMut<Assets<WidgetColors>>,
     mut colors: ResMut<Assets<ColorMaterial>>,
 ) {
-    let color_normal = colors.add(Color::rgb(0.5, 0.5, 0.5).into());
-    let colors_handle = widget_colors.add(WidgetColors{
-        normal: color_normal,
-        hovered: colors.add(Color::rgb(0.5, 0.5, 0.7).into()),
-        pressed: colors.add(Color::rgb(0.5, 1.0, 0.5).into()),
-    });
-    commands
-        .spawn(UiCameraComponents::default())
-        .spawn(NodeComponents {
-            style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                justify_content: JustifyContent::SpaceBetween,
-                ..Default::default()
-            },
-            material: colors.add(Color::NONE.into()),
-            ..Default::default()
-        })
-        .with_children(|parent| {
-            parent.spawn(ButtonComponents {
-                style: Style {
-                    size: Size::new(Val::Px(150.0), Val::Px(75.0)),
-                    margin: Rect::all(Val::Auto),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    ..Default::default()
-                },
-                material: color_normal,
-                ..Default::default()
-            })
-            .with(colors_handle)
-            .with_children(|parent| {
-                parent.spawn(TextComponents {
-                    text: Text {
-                        value: "Button".to_string(),
-                        font: asset_server.load("assets/fonts/OpenSans-Regular.ttf").unwrap(),
-                        style: TextStyle {
-                            font_size: 40.0,
-                            color: Color::rgb(0.8, 0.8, 0.8),
-                        },
-                    },
-                    ..Default::default()
-                });
-            });
-        });
+    // let color_normal = colors.add(Color::rgb(0.5, 0.5, 0.5).into());
+    // let colors_handle = widget_colors.add(WidgetColors{
+    //     normal: color_normal,
+    //     hovered: colors.add(Color::rgb(0.5, 0.5, 0.7).into()),
+    //     pressed: colors.add(Color::rgb(0.5, 1.0, 0.5).into()),
+    // });
+    // commands
+    //     .spawn(UiCameraComponents::default())
+    //     .spawn(NodeComponents {
+    //         style: Style {
+    //             size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+    //             justify_content: JustifyContent::SpaceBetween,
+    //             ..Default::default()
+    //         },
+    //         material: colors.add(Color::NONE.into()),
+    //         ..Default::default()
+    //     })
+    //     .with_children(|parent| {
+    //         parent.spawn(ButtonComponents {
+    //             style: Style {
+    //                 size: Size::new(Val::Px(150.0), Val::Px(75.0)),
+    //                 margin: Rect::all(Val::Auto),
+    //                 justify_content: JustifyContent::Center,
+    //                 align_items: AlignItems::Center,
+    //                 ..Default::default()
+    //             },
+    //             material: color_normal,
+    //             ..Default::default()
+    //         })
+    //         .with(colors_handle)
+    //         .with_children(|parent| {
+    //             parent.spawn(TextComponents {
+    //                 text: Text {
+    //                     value: "Button".to_string(),
+    //                     font: asset_server.load("assets/fonts/OpenSans-Regular.ttf").unwrap(),
+    //                     style: TextStyle {
+    //                         font_size: 40.0,
+    //                         color: Color::rgb(0.8, 0.8, 0.8),
+    //                     },
+    //                 },
+    //                 ..Default::default()
+    //             });
+    //         });
+    //     });
 }
