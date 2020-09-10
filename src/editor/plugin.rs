@@ -50,7 +50,7 @@ fn setup(
                 ..Default::default()
             },
         )
-        .with((PlacingTile, ));
+        .with(PlacingTile);
 }
 
 fn tile_placement_system(
@@ -60,9 +60,8 @@ fn tile_placement_system(
     mouse_motion_events: Res<Events<MouseMotion>>,
     cursor_moved_events: Res<Events<CursorMoved>>,
     mouse_wheel_events: Res<Events<MouseWheel>>,
-    query: Query<Without<PlacingTile, (&Translation, &Sprite)>>,
-    // _tile: &PlacingTile,
-    // translation: &Translation,
+    _tile: &PlacingTile,
+    mut translation: Mut<Translation>,
     // sprite: &TextureAtlasSprite,
     // mut tile_query: Query<(&PlacingTile, &mut Translation)>,
 ) {
@@ -76,11 +75,8 @@ fn tile_placement_system(
     // }
 
     for event in state.cursor_moved_event_reader.iter(&cursor_moved_events) {
-        println!("{:?}", event);
-        // translation.set_x(event.position.x());
-        // translation.set_x(event.position.y());
-        // translation.set_x(0.0);
-        // translation.set_x(0.0);
+        translation.set_x(event.position.x());
+        translation.set_y(event.position.y());
     }
 
     // for event in state.mouse_wheel_event_reader.iter(&mouse_wheel_events) {
