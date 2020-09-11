@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 use bevy::{
     input::mouse::{MouseButtonInput, MouseMotion, MouseWheel},
-    window::CursorMoved,
+    window::{CursorMoved, WindowPlugin,},
+    render::{
+        camera::{ActiveCameras, Camera},
+    }
 };
 
 pub struct EditorPlugin;
@@ -11,7 +14,8 @@ impl Plugin for EditorPlugin {
         app
         .init_resource::<MouseState>()
         .add_startup_system(setup.system())
-        .add_system(tile_placement_system.system());
+        .add_system(tile_placement_system.system())
+        .add_system(camera_system.system());
     }
 }
 
@@ -24,6 +28,8 @@ struct MouseState {
 }
 
 struct PlacingTile;
+
+struct EditorCamera;
 
 fn setup(
     mut commands: Commands,
@@ -42,6 +48,7 @@ fn setup(
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
     commands
         .spawn(Camera2dComponents::default())
+        .with(EditorCamera)
         .spawn(
             SpriteSheetComponents {
                 texture_atlas: texture_atlas_handle.clone(),
@@ -56,6 +63,8 @@ fn setup(
 fn tile_placement_system(
     mut commands: Commands,
     mut state: ResMut<MouseState>,
+    cameras: Res<ActiveCameras>,
+    windows: Res<Windows>,
     mouse_button_input_events: Res<Events<MouseButtonInput>>,
     mouse_motion_events: Res<Events<MouseMotion>>,
     cursor_moved_events: Res<Events<CursorMoved>>,
@@ -65,6 +74,10 @@ fn tile_placement_system(
     // sprite: &TextureAtlasSprite,
     // mut tile_query: Query<(&PlacingTile, &mut Translation)>,
 ) {
+
+    let window = windows.get_primary().unwrap();
+    let offset_x = window.width / 2;
+    let offset_y = window.height / 2 - 48;
     // for event in state.mouse_button_event_reader.iter(&mouse_button_input_events)
     // {
     //     println!("{:?}", event);
@@ -75,11 +88,20 @@ fn tile_placement_system(
     // }
 
     for event in state.cursor_moved_event_reader.iter(&cursor_moved_events) {
-        translation.set_x(event.position.x());
-        translation.set_y(event.position.y());
+        // println!("{:?}", event);
+        translation.set_x(event.position.x() - offset_x as f32);
+        translation.set_y(event.position.y() - offset_y as f32);
     }
 
     // for event in state.mouse_wheel_event_reader.iter(&mouse_wheel_events) {
     //     println!("{:?}", event);
     // }
+}
+
+fn camera_system(
+    time: Res<Time>,
+    windows: Res<Windows>,
+    mut cam_query: Query<(&EditorCamera, &mut Translation)>
+) {
+
 }
