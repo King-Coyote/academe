@@ -10,16 +10,13 @@ struct Planner {
 impl Planner {
     pub fn tick(&mut self, behaviour: &Behaviour, ctx: &mut WorldContext) {
 
-        // first bool is whether this plan is replacing another.
-        let mut plan_status: (bool, Plan, DecompositionStatus) = 
-            (false, Plan::default(), DecompositionStatus::default());
-        let mut replacing_plan = false;
+        let mut status = DecompositionStatus::Failed;
+        let mut replacing = false;
 
         // get plan if we need it
         if !self.has_plan() && self.current_task.is_none() || ctx.dirty {
-            // NOTE you need to actually do a find plan for the planner here
-            // that USES the domain find_plan but also handles replacing_plan
-            plan_status = self.find_plan(ctx, behaviour);
+            replacing = self.plan.len() > 0;
+            status = self.find_plan(ctx, behaviour);
         }
 
         // get current task from plan if needed
@@ -38,10 +35,10 @@ impl Planner {
         // handle failure
         if !self.has_plan()
         && self.current_task.is_none()
-        && !replacing_plan
+        && !replacing
         && (
-            plan_status.2 == DecompositionStatus::Failed 
-            || plan_status.2 == DecompositionStatus::Rejected
+            status == DecompositionStatus::Failed 
+            || status == DecompositionStatus::Rejected
         )
         {
             self.last_status = TaskStatus::Failure;
@@ -49,10 +46,10 @@ impl Planner {
     }
 
     fn find_plan(&mut self, ctx: &mut WorldContext, behaviour: &Behaviour) 
-        -> (bool, Plan, DecompositionStatus)
+        -> DecompositionStatus
     {
-        let mut plan_status = (Plan::default(), DecompositionStatus::default());
-        let mut replacing = false;
+
+        let mut status = DecompositionStatus::default();
         let dirty = ctx.dirty;
         ctx.dirty = false;
         let mut last_partial_plan: VecDeque<usize> = VecDeque::new();
@@ -66,8 +63,6 @@ impl Planner {
         }
 
         let plan_status = behaviour.find_plan(ctx);
-        // are we trying to replace an existing plan?
-        replacing = self.plan.len() > 0;
         match plan_status.1 {
             DecompositionStatus::Succeeded
             | DecompositionStatus::Partial => {
@@ -100,9 +95,9 @@ impl Planner {
                     }
                 }
             }
-        }
+        };
         
-        (replacing, plan_status.0, plan_status.1)
+        status
     }
 
     fn get_task_from_plan(&mut self, ctx: &mut WorldContext, behaviour: &Behaviour) {
@@ -114,19 +109,6 @@ impl Planner {
                 self.clear_all(ctx);
             }
         }
-    }
-
-    fn handle_decomp_success(&mut self, ctx: &WorldContext, new_plan: &Plan) {
-        self.plan.clear();
-        self.plan = new_plan;
-        if let Some(task) = self.current_task {
-            if task.is_primitive() {
-                task.stop(ctx);
-                self.current_task = None;
-            }
-        }
-
-        // clear decomp record and etc
     }
 
     fn handle_task(&mut self, ctx: &mut WorldContext, task: &Task) {
@@ -141,6 +123,7 @@ impl Planner {
                 self.last_status = op.update(ctx);
                 match self.last_status {
                     TaskStatus::Success => {
+                        // I don't actually reckon I need this tnbh, only for planning
                         for effect in task.effects.iter() {
                             effect.apply(ctx);
                         }

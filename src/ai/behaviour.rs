@@ -24,27 +24,25 @@ impl Behaviour {
         // let mut plan_status: (Plan, DecompositionStatus);
         let mut plan = Plan::default();
         let mut status = DecompositionStatus::default();
-        // let mut plan: Plan;
-        // let mut status: DecompositionStatus;
 
         if ctx.paused && ctx.record.is_empty() {
             ctx.paused = false;
-            plan_status = self.resume_partial(ctx);
+            status = self.resume_partial(ctx, &mut plan);
         } else {
-            plan_status = self.full_replan(ctx);
+            status = self.full_replan(ctx, &mut plan);
         }
 
         // check if mtrs are same for optimisation
         // plan_status.1 = self.check_mtrs(ctx);
-        match plan_status.1 {
-            DecompositionStatus::Succeeded
-            | DecompositionStatus::Partial => {
+        // match status {
+        //     DecompositionStatus::Succeeded
+        //     | DecompositionStatus::Partial => {
 
-            },
-            _ => {
+        //     },
+        //     _ => {
 
-            }
-        }
+        //     }
+        // }
 
         ctx.state = ContextState::Executing;
         (plan, status)
@@ -63,7 +61,7 @@ impl Behaviour {
                 match new_status {
                     DecompositionStatus::Succeeded
                     | DecompositionStatus::Partial => {
-                        plan.take_all(&new_plan);
+                        plan.extend(&new_plan);
                     },
                     _ => {}
                 }
@@ -73,16 +71,18 @@ impl Behaviour {
     }
 
     fn full_replan(&self, ctx: &mut WorldContext, plan: &mut Plan) -> DecompositionStatus {
-        let mut last_partial_plan: VecDeque<usize> = VecDeque::new();
+        let mut last_partial_plan = Plan::default();
+        let mut was_paused = false;
         if ctx.paused {
             ctx.paused = false;
+            was_paused = true;
             last_partial_plan.extend(ctx.partial_queue);
         }
 
         ctx.record.clear();
         let mut status = self.tasks[0].decompose(ctx, plan);
 
-        if last_partial_plan.len() > 0 {
+        if was_paused {
             if status == DecompositionStatus::Rejected
             || status == DecompositionStatus::Failed {
                 ctx.paused = true;

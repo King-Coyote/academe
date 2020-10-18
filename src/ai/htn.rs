@@ -57,6 +57,10 @@ pub struct WorldContext {
     pub dirty: bool,
 }
 
+impl WorldContext {
+    pub fn swap_records(&mut self) {}
+}
+
 // impl WorldContext {
 //     pub fn new() -> Self {
 //         WorldContext {
