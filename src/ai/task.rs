@@ -1,6 +1,13 @@
 use crate::ai::*;
 use std::mem;
 
+#[derive(PartialEq, Eq,)]
+pub enum TaskType {
+    Compound,
+    Primitive,
+    Pause,
+}
+
 pub struct Task {
     pub(super) name: String,
     pub(super) index: usize,
@@ -10,7 +17,7 @@ pub struct Task {
     pub(super) effects: Vec<Box<dyn Effect>>,
     pub(super) parent: Option<usize>,
     pub(super) sub_tasks: Vec<usize>,
-    pub(super) pausable: bool,
+    pub(super) pause: bool,
 }
 
 impl Task {
@@ -24,7 +31,7 @@ impl Task {
             effects: vec![],
             parent: parent,
             sub_tasks: vec![],
-            pausable: false,
+            pause: false, // is this plan a special pausing plan? TODO replace with trait?
         }
     }
 
@@ -33,10 +40,20 @@ impl Task {
         && self.operator.is_none();
     }
 
-    pub fn stop(&mut self, ctx: &WorldContext) {
+    pub fn stop(&self, ctx: &WorldContext) {
         if self.operator.is_some() {
             self.operator.as_ref().unwrap().stop(ctx);
         }
+    }
+
+    pub fn get_type(&self) -> TaskType {
+        if self.pause {
+            return TaskType::Pause;
+        }
+        if self.sub_tasks.len() > 0 {
+            return TaskType::Compound;
+        }
+        return TaskType::Primitive;
     }
 
     pub(crate) fn add_child(&mut self, child: usize) {
@@ -51,14 +68,16 @@ impl Task {
         valid
     }
 
-    pub(crate) fn is_pausable(&self) -> bool {
-        self.pausable
+    pub fn apply_effects(&self, ctx: &mut WorldContext) {
+        for effect in self.effects.iter() {
+            effect.apply(ctx);
+        }
     }
 
-    pub (crate) fn decompose(&mut self, ctx: &mut WorldContext, behaviour: &Behaviour, plan: &mut Plan) 
+    pub (crate) fn decompose(&self, ctx: &mut WorldContext, behaviour: &Behaviour, plan: &mut Plan) 
         -> DecompositionStatus
     {
-        let decompositor = TaskDecomposition::new(self.index, ctx, behaviour);
+        let mut decompositor = TaskDecomposition::new(self.index, ctx, behaviour);
 
         for subtask in self.sub_tasks.iter() {
             let mut task = behaviour.get_task(*subtask);
@@ -73,7 +92,6 @@ impl Task {
             };
         }
 
-        decompositor.apply(plan);
         match plan.len() {
             l if l == 0 => DecompositionStatus::Failed,
             _ => DecompositionStatus::Succeeded
@@ -96,7 +114,7 @@ impl<'s> TaskDecomposition<'s> {
         TaskDecomposition {
             ctx: ctx,
             behaviour: behaviour,
-            calling_task = calling,
+            calling_task: calling,
             plan: Plan::default(),
             status: DecompositionStatus::default(),
         }
@@ -109,39 +127,61 @@ impl<'s> TaskDecomposition<'s> {
             return DecompositionStatus::Failed;
         }
 
-        // TODO replace this with a match on a task get_type function
-        if task.is_pause() {
-            self.ctx.paused = true;
-            self.ctx.partial_queue.push_back(self.calling_task);
-            self.apply(over_plan);
-            return DecompositionStatus::Partial;
-        } else {
-            if !task.is_primitive() {
-                return self.handle_compound(&mut self, task: &Task, over_plan: &mut Plan);
-            } else {
-                task.apply(ctx);
+        match task.get_type() {
+            TaskType::Compound => {
+                return self.decompose_compound(task, over_plan);
+            },
+            TaskType::Pause => {
+                return self.decompose_pausable(over_plan);
+            },
+            TaskType::Primitive => {
+                // decompose primitive
+                task.apply_effects(self.ctx);
                 self.plan.push_back(task.index);
-            }
+            },
         }
         
-        self.apply(over_plan);
+        self.apply_to(over_plan);
         match over_plan.len() {
             l if l == 0 => DecompositionStatus::Failed,
             _ => DecompositionStatus::Succeeded
         }
     }
 
-    pub fn handle_task(&mut self) -> DecompositionStatus {
-        let mut status = DecompositionStatus::default();
+    fn decompose_compound(&mut self, task: &Task, over_plan: &mut Plan) -> DecompositionStatus {
+        let mut sub_plan = Plan::default();
+        match task.decompose(self.ctx, self.behaviour, &mut sub_plan) {
+            DecompositionStatus::Rejected
+            | DecompositionStatus::Failed => {
+                // this is a bit different in fluid htn - it nulls the over_plan
+                // this may cause issues 4 u
+                self.plan.clear();
+                // ctx.trim??
+                over_plan.clear();
+                return DecompositionStatus::Rejected;
+            },
+            _ => {}
+        }
 
-        status
+        over_plan.extend(sub_plan);
+
+        if self.ctx.paused {
+            self.ctx.partial_queue.push_back(task.index);
+            self.apply_to(over_plan);
+            return DecompositionStatus::Partial;
+        }
+
+        DecompositionStatus::Succeeded
     }
 
-    pub fn get_plan(self) -> Plan {
-        self.plan
+    fn decompose_pausable(&mut self, plan: &mut Plan) -> DecompositionStatus {
+        self.ctx.paused = true;
+        self.ctx.partial_queue.push_back(self.calling_task);
+        self.apply_to(plan);
+        return DecompositionStatus::Partial;
     }
 
-    pub fn apply(self, plan: &mut Plan) {
+    pub fn apply_to(&mut self, plan: &mut Plan) {
         mem::swap(&mut self.plan, plan);
         self.plan.clear();
     }

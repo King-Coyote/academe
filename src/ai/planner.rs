@@ -1,7 +1,8 @@
 use crate::ai::*;
 use std::collections::VecDeque;
 
-struct Planner {
+#[derive(Default,)]
+pub struct Planner {
     plan: Plan,
     current_task: Option<usize>,
     last_status: TaskStatus,
@@ -27,7 +28,7 @@ impl Planner {
         // handle the current task
         if let Some(task) = self.current_task {
             let task_ref = behaviour.get_task(task);
-            if task_ref.is_primitive() {
+            if task_ref.get_type() == TaskType::Primitive {
                 self.handle_task(ctx, task_ref);
             }
         }
@@ -49,7 +50,6 @@ impl Planner {
         -> DecompositionStatus
     {
 
-        let mut status = DecompositionStatus::default();
         let dirty = ctx.dirty;
         ctx.dirty = false;
         let mut last_partial_plan: VecDeque<usize> = VecDeque::new();
@@ -57,7 +57,7 @@ impl Planner {
         if dirty && ctx.paused {
             //replan
             ctx.paused = false;
-            last_partial_plan.extend(ctx.partial_queue);
+            last_partial_plan.extend(ctx.partial_queue.iter());
             ctx.last_record.clear();
             ctx.swap_records();
         }
@@ -97,14 +97,14 @@ impl Planner {
             }
         };
         
-        status
+        plan_status.1
     }
 
     fn get_task_from_plan(&mut self, ctx: &mut WorldContext, behaviour: &Behaviour) {
         let current = self.plan.pop_front().unwrap();
         self.current_task = Some(current);
         let task_ref = behaviour.get_task(current);
-        for condition in task_ref.conditions {
+        for condition in task_ref.conditions.iter() {
             if !condition.is_valid(ctx) {
                 self.clear_all(ctx);
             }
@@ -112,15 +112,15 @@ impl Planner {
     }
 
     fn handle_task(&mut self, ctx: &mut WorldContext, task: &Task) {
-        match task.operator {
-            Some(op) => {
-                for exec_cond in task.exec_conditions {
+        match &task.operator {
+            Some(ref op) => {
+                for exec_cond in task.exec_conditions.iter() {
                     if !exec_cond.is_valid(ctx) {
                         self.clear_all(ctx);
                         return;
                     }
                 }
-                self.last_status = op.update(ctx);
+                self.last_status = op.update();
                 match self.last_status {
                     TaskStatus::Success => {
                         // I don't actually reckon I need this tnbh, only for planning

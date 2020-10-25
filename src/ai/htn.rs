@@ -10,6 +10,10 @@ pub enum TaskStatus {
     Failure,
 }
 
+impl Default for TaskStatus {
+    fn default() -> Self {TaskStatus::Failure}
+}
+
 #[derive(Eq, PartialEq,)]
 pub enum DecompositionStatus {
     Succeeded,
@@ -38,11 +42,11 @@ pub struct Record {
 
 impl Record {
     pub fn is_empty(&self) -> bool {
-        panic!("Not implemented")
+        true
     }
 
     pub fn clear(&mut self) {
-        panic!("Not implemeneted")
+        
     }
 }
 
@@ -55,9 +59,18 @@ pub struct WorldContext {
     pub partial_queue: VecDeque<usize>,
     pub paused: bool,
     pub dirty: bool,
+    pub test: bool,
 }
 
 impl WorldContext {
+    pub fn new() -> Self {
+        WorldContext {
+            dirty: true,
+            test: false,
+            ..Default::default()
+        }
+    }
+    
     pub fn swap_records(&mut self) {}
 }
 
@@ -85,8 +98,20 @@ where F: Fn(&WorldContext) -> bool {
 }
 
 pub trait Operator {
-    fn update(&self, ctx: &WorldContext) -> TaskStatus;
+    fn update(&self) -> TaskStatus;
     fn stop(&self, ctx: &WorldContext);
+}
+
+impl<F> Operator for F
+where F: Fn() -> TaskStatus 
+{
+    fn update(&self) -> TaskStatus {
+        self()
+    }
+
+    fn stop(&self, ctx: &WorldContext) {
+
+    }
 }
 
 pub trait Effect {

@@ -19,6 +19,10 @@ impl Behaviour {
         self.tasks.get(index).expect("ERROR: wtf?? you tried to get a task from a behaviour at an index it doesn't have. This shouldn't happen!")
     }
 
+    pub fn get_task_mut(&mut self, index: usize) -> &mut Task {
+        self.tasks.get_mut(index).expect("ERROR: wtf?? you tried to get a task from a behaviour at an index it doesn't have. This shouldn't happen!")
+    }
+
     pub fn find_plan(&self, ctx: &mut WorldContext) -> (Plan, DecompositionStatus) {
         ctx.state = ContextState::Planning;
         // let mut plan_status: (Plan, DecompositionStatus);
@@ -52,12 +56,12 @@ impl Behaviour {
         let mut status = DecompositionStatus::default();
         if ctx.partial_queue.len() > 0 {
             let mut partial_task = &self.tasks[ctx.partial_queue.pop_front().unwrap()];
-            status = partial_task.decompose(ctx, plan);
+            status = partial_task.decompose(ctx, &self, plan);
 
             while ctx.partial_queue.len() > 0 && !ctx.paused {
                 let mut new_plan = Plan::default();
                 let mut new_status = DecompositionStatus::default();
-                new_status = partial_task.decompose(ctx, new_plan);
+                new_status = partial_task.decompose(ctx, &self, &mut new_plan);
                 match new_status {
                     DecompositionStatus::Succeeded
                     | DecompositionStatus::Partial => {
@@ -76,11 +80,11 @@ impl Behaviour {
         if ctx.paused {
             ctx.paused = false;
             was_paused = true;
-            last_partial_plan.extend(ctx.partial_queue);
+            last_partial_plan.extend(ctx.partial_queue.iter());
         }
 
         ctx.record.clear();
-        let mut status = self.tasks[0].decompose(ctx, plan);
+        let mut status = self.tasks[0].decompose(ctx, &self, plan);
 
         if was_paused {
             if status == DecompositionStatus::Rejected
@@ -152,14 +156,20 @@ impl<'s> BehaviourBuilder<'s> {
     }
 
     pub fn condition<C: Condition + 'static>(&mut self, name: &str, condition: C) -> &mut Self {
-        let task = &mut self.tasks[self.current_task.unwrap()]
+        self.tasks[self.current_task.unwrap()]
             .conditions.push(Box::new(condition));
         self
     }
 
     pub fn effect<E: Effect + 'static>(&mut self, name: &str, effect: E) -> &mut Self {
-        let task = &mut self.tasks[self.current_task.unwrap()]
+        self.tasks[self.current_task.unwrap()]
             .effects.push(Box::new(effect));
+        self
+    }
+
+    pub fn do_action<O: Operator + 'static>(&mut self, name: &str, operator: O) -> &mut Self {
+        self.tasks[self.current_task.unwrap()]
+            .operator = Some(Box::new(operator));
         self
     }
 
@@ -169,8 +179,8 @@ impl<'s> BehaviourBuilder<'s> {
         self
     }
 
-    pub fn pausable(&mut self) -> &mut Self {
-        self.tasks[self.current_task.unwrap()].pausable = true;
+    pub fn pause(&mut self) -> &mut Self {
+        self.tasks[self.current_task.unwrap()].pause = true;
         self
     }
 
