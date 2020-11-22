@@ -4,6 +4,7 @@ use std::cmp::max;
 use crate::ai::*;
 use bevy::prelude::*;
 
+#[derive(Eq, PartialEq, Debug)]
 pub enum TaskStatus {
     Continue,
     Success,

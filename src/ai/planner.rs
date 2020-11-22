@@ -160,3 +160,62 @@ impl Planner {
         ctx.dirty = false;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn planner_has_no_plan_at_start() {
+        let planner = Planner::default();
+        assert_eq!(planner.current_task, None);
+        assert!(planner.plan.len() == 0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn tick_empty_behaviour_expectedbehav() {
+        let mut ctx = WorldContext::default();
+        let mut builder = BehaviourBuilder::new("test");
+        let b = builder.build();
+        let mut p = Planner::default();
+        p.tick(&b, &mut ctx);
+    }
+
+    #[test]
+    fn tick_primitive_no_operator_expectedbehav() {
+        let mut ctx = WorldContext::default();
+        let mut builder = BehaviourBuilder::new("test");
+        builder
+            .task("super")
+                .task("primitive")
+                .end()
+            .end();
+        let b = builder.build();
+        let mut p = Planner::default();
+
+        p.tick(&b, &mut ctx);
+
+        assert_eq!(p.current_task, None);
+        assert_eq!(p.last_status, TaskStatus::Failure);
+    }
+
+    #[test]
+    fn tick_with_empty_func_operator_expectedbehav() {
+        let mut ctx = WorldContext::default();
+        let mut builder = BehaviourBuilder::new("test");
+        builder
+            .task("super")
+                .task("primitive")
+                    .do_action("test", || {TaskStatus::Success})
+                .end()
+            .end();
+        let b = builder.build();
+        let mut p = Planner::default();
+
+        p.tick(&b, &mut ctx);
+
+        assert_eq!(p.last_status, TaskStatus::Success);
+    }
+
+}

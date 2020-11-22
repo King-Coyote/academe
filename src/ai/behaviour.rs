@@ -9,6 +9,7 @@ pub struct Behaviour
 
 impl Behaviour {
     pub fn new(name: &str, tasks: Vec<Task>) -> Self {
+        assert!(tasks.len() > 0);
         Behaviour {
             tasks: tasks,
             name: name.to_owned(),
@@ -186,5 +187,33 @@ impl<'s> BehaviourBuilder<'s> {
 
     pub fn build(self) -> Behaviour {
         Behaviour::new(self.name, self.tasks)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn behaviour_basic_init() {
+        let mut builder: BehaviourBuilder = BehaviourBuilder::new("test");
+        builder.task("test").end();
+        let behaviour = builder.build();
+
+        assert!(behaviour.tasks.len() == 1);
+        assert_eq!(behaviour.name, "test");
+    }
+
+    #[test]
+    fn add_subtask_works() {
+        let mut builder: BehaviourBuilder = BehaviourBuilder::new("test");
+        builder
+            .task("test_parent")
+                .task("test_child")
+                .end()
+            .end();
+        let behav = builder.build();
+        assert_eq!(behav.tasks.len(), 2);
+        assert_eq!(behav.tasks[0].sub_tasks.len(), 1);
     }
 }
