@@ -1,6 +1,5 @@
 use bevy::prelude::*;
-use rlua::prelude::*;
-use crate::ai::*;
+use crate::prelude::*;
 
 pub struct AiPlugin;
 

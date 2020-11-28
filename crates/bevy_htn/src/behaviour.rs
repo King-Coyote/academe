@@ -1,4 +1,5 @@
-use crate::ai::*;
+use crate::prelude::*;
+use crate::task::*;
 
 pub struct Behaviour
     // where C: WorldContext
