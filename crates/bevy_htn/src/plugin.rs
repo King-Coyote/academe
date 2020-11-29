@@ -15,10 +15,10 @@ fn startup(
 ) {
     let mut builder: BehaviourBuilder = BehaviourBuilder::new("CreatureBehaviour");
     builder
-        .task("BeTestBehaviour")
-            .task("FindEnemy")
+        .sequence("BeTestBehaviour")
+            .sequence("FindEnemy")
                 .condition("No enemies in range", |ctx: &WorldContext| !ctx.test)
-                .task("MoveRandomly")
+                .selector("MoveRandomly")
                     .effect("Test!", |ctx: &mut WorldContext| ctx.test = true)
                     .do_action("TestOp", || {
                         println!("I have many regrets; but the ass was fat");
@@ -26,7 +26,7 @@ fn startup(
                     })
                 .end()
             .end()
-            .task("MoveToEnemy")
+            .sequence("MoveToEnemy")
                 .do_action("TestOp2", || {
                     println!("doing test op 2...");
                     TaskStatus::Continue

@@ -5,8 +5,8 @@ use bevy_htn::prelude::*;
 fn basic_planning_works() {
     let mut builder = BehaviourBuilder::new("test");
     builder
-        .task("task1")
-            .task("subtask1")
+        .sequence("sequence1")
+            .sequence("subsequence1")
             .end()
         .end();
     let mut b = builder.build();
@@ -22,8 +22,8 @@ fn basic_planning_works() {
 fn more_complex_planning_works() {
     let mut builder = BehaviourBuilder::new("test");
     builder
-        .task("task1")
-            .task("subtask1")
+        .sequence("sequence1")
+            .sequence("subsequence1")
             .end()
         .end();
     let mut b = builder.build();

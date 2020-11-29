@@ -1,9 +1,10 @@
 use crate::prelude::*;
 use std::mem;
 
-#[derive(PartialEq, Eq,)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum TaskType {
-    Compound,
+    Sequence,
+    Selector,
     Primitive,
     Pause,
 }
@@ -17,11 +18,11 @@ pub struct Task {
     pub(super) effects: Vec<Box<dyn Effect>>,
     pub(super) parent: Option<usize>,
     pub(super) sub_tasks: Vec<usize>,
-    pub(super) pause: bool,
+    pub(super) task_type: TaskType,
 }
 
 impl Task {
-    pub fn new(name: &str, index: usize, parent: Option<usize>) -> Self {
+    pub fn new(name: &str, index: usize, parent: Option<usize>, task_type: TaskType) -> Self {
         Task {
             name: name.to_owned(),
             index: index,
@@ -31,13 +32,8 @@ impl Task {
             effects: vec![],
             parent: parent,
             sub_tasks: vec![],
-            pause: false, // is this plan a special pausing plan? TODO replace with trait?
+            task_type: task_type,
         }
-    }
-
-    pub fn is_primitive(&self) -> bool {
-        return self.sub_tasks.len() == 0
-        && self.operator.is_none();
     }
 
     pub fn stop(&self, ctx: &WorldContext) {
@@ -47,16 +43,11 @@ impl Task {
     }
 
     pub fn get_type(&self) -> TaskType {
-        if self.pause {
-            return TaskType::Pause;
-        }
-        if self.sub_tasks.len() > 0 {
-            return TaskType::Compound;
-        }
-        return TaskType::Primitive;
+        self.task_type
     }
 
     pub(crate) fn add_child(&mut self, child: usize) {
+        assert!(self.task_type != TaskType::Primitive);
         self.sub_tasks.push(child);
     }
 
@@ -72,6 +63,11 @@ impl Task {
         for effect in self.effects.iter() {
             effect.apply(ctx);
         }
+    }
+
+    pub (crate) fn add_operator(&mut self, operator: Box<dyn Operator>) {
+        assert!(self.task_type == TaskType::Primitive);
+        self.operator = Some(operator);
     }
 
     pub (crate) fn decompose(&self, ctx: &mut WorldContext, behaviour: &Behaviour, plan: &mut Plan) 
@@ -128,7 +124,7 @@ impl<'s> TaskDecomposition<'s> {
         }
 
         match task.get_type() {
-            TaskType::Compound => {
+            TaskType::Selector | TaskType::Sequence => {
                 return self.decompose_compound(task, over_plan);
             },
             TaskType::Pause => {

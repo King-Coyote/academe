@@ -146,17 +146,20 @@ impl<'s> BehaviourBuilder<'s> {
         }
     }
 
-    pub fn task(&mut self, name: &str) -> &mut Self {
-        let new_index: usize = self.tasks.len();
-        self.tasks.push(Task::new(name, new_index, self.current_task));
-        if let Some(index) = self.current_task {
-            self.task_stack.push(index);
-            self.tasks[index].add_child(new_index);
-        }
-        self.current_task = Some(new_index);
+    pub fn selector(&mut self, name: &str) -> &mut Self {
+        self.create_task(name, TaskType::Selector);
         self
     }
 
+    pub fn sequence(&mut self, name: &str) -> &mut Self {
+        self.create_task(name, TaskType::Sequence);
+        self
+    }
+
+    pub fn primitive(&mut self, name: &str) -> &mut Self {
+        self.create_task(name, TaskType::Primitive);
+        self
+    }
     pub fn condition<C: Condition + 'static>(&mut self, name: &str, condition: C) -> &mut Self {
         self.tasks[self.current_task.unwrap()]
             .conditions.push(Box::new(condition));
@@ -171,7 +174,7 @@ impl<'s> BehaviourBuilder<'s> {
 
     pub fn do_action<O: Operator + 'static>(&mut self, name: &str, operator: O) -> &mut Self {
         self.tasks[self.current_task.unwrap()]
-            .operator = Some(Box::new(operator));
+            .add_operator(Box::new(operator));
         self
     }
 
@@ -182,12 +185,22 @@ impl<'s> BehaviourBuilder<'s> {
     }
 
     pub fn pause(&mut self) -> &mut Self {
-        self.tasks[self.current_task.unwrap()].pause = true;
+        self.create_task("", TaskType::Pause);
         self
     }
 
     pub fn build(self) -> Behaviour {
         Behaviour::new(self.name, self.tasks)
+    }
+
+    fn create_task(&mut self, name: &str, task_type: TaskType) {
+        let new_index: usize = self.tasks.len();
+        self.tasks.push(Task::new(name, new_index, self.current_task, task_type));
+        if let Some(index) = self.current_task {
+            self.task_stack.push(index);
+            self.tasks[index].add_child(new_index);
+        }
+        self.current_task = Some(new_index);
     }
 }
 
@@ -198,7 +211,7 @@ mod tests {
     #[test]
     fn behaviour_basic_init() {
         let mut builder: BehaviourBuilder = BehaviourBuilder::new("test");
-        builder.task("test").end();
+        builder.selector("test").end();
         let behaviour = builder.build();
 
         assert!(behaviour.tasks.len() == 1);
@@ -209,12 +222,35 @@ mod tests {
     fn add_subtask_works() {
         let mut builder: BehaviourBuilder = BehaviourBuilder::new("test");
         builder
-            .task("test_parent")
-                .task("test_child")
+            .sequence("test_parent")
+                .sequence("test_child")
                 .end()
             .end();
         let behav = builder.build();
         assert_eq!(behav.tasks.len(), 2);
         assert_eq!(behav.tasks[0].sub_tasks.len(), 1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn adding_operator_to_compound_fails() {
+        let mut builder: BehaviourBuilder = BehaviourBuilder::new("test");
+        builder
+            .selector("test_parent")
+                .do_action("durr", || {TaskStatus::Success})
+            .end();
+        let behav = builder.build();
+    }
+
+    #[test]
+    #[should_panic]
+    fn adding_task_to_primitive_fails() {
+        let mut builder: BehaviourBuilder = BehaviourBuilder::new("test");
+        builder
+            .primitive("test_parent")
+                .selector("durr")
+                .end()
+            .end();
+        let behav = builder.build();
     }
 }

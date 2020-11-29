@@ -30,7 +30,7 @@ impl Planner {
         if let Some(task) = self.current_task {
             let task_ref = behaviour.get_task(task);
             if task_ref.get_type() == TaskType::Primitive {
-                self.handle_task(ctx, task_ref);
+                self.handle_sequence(ctx, task_ref);
             }
         }
 
@@ -73,7 +73,7 @@ impl Planner {
                 // are we currently on a primitive task?
                 if let Some(task_index) = self.current_task {
                     let task = behaviour.get_task(task_index);
-                    if task.is_primitive() {
+                    if task.task_type != TaskType::Primitive {
                         task.stop(ctx);
                         self.current_task = None;
                     }
@@ -112,7 +112,7 @@ impl Planner {
         }
     }
 
-    fn handle_task(&mut self, ctx: &mut WorldContext, task: &Task) {
+    fn handle_sequence(&mut self, ctx: &mut WorldContext, task: &Task) {
         match &task.operator {
             Some(ref op) => {
                 for exec_cond in task.exec_conditions.iter() {
@@ -188,8 +188,8 @@ mod tests {
         let mut ctx = WorldContext::default();
         let mut builder = BehaviourBuilder::new("test");
         builder
-            .task("super")
-                .task("primitive")
+            .sequence("super")
+                .primitive("primitive")
                 .end()
             .end();
         let b = builder.build();
@@ -206,8 +206,8 @@ mod tests {
         let mut ctx = WorldContext::default();
         let mut builder = BehaviourBuilder::new("test");
         builder
-            .task("super")
-                .task("primitive")
+            .sequence("super")
+                .primitive("primitive")
                     .do_action("test", || {TaskStatus::Success})
                 .end()
             .end();
