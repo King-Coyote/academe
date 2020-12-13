@@ -125,7 +125,7 @@ impl<'s> TaskDecomposition<'s> {
 
         match task.get_type() {
             TaskType::Selector | TaskType::Sequence => {
-                return self.decompose_compound(task, over_plan);
+                return self.decompose_sequence(task, over_plan);
             },
             TaskType::Pause => {
                 return self.decompose_pausable(over_plan);
@@ -144,7 +144,7 @@ impl<'s> TaskDecomposition<'s> {
         }
     }
 
-    fn decompose_compound(&mut self, task: &Task, over_plan: &mut Plan) -> DecompositionStatus {
+    fn decompose_sequence(&mut self, task: &Task, over_plan: &mut Plan) -> DecompositionStatus {
         let mut sub_plan = Plan::default();
         match task.decompose(self.ctx, self.behaviour, &mut sub_plan) {
             DecompositionStatus::Rejected
@@ -168,6 +168,10 @@ impl<'s> TaskDecomposition<'s> {
         }
 
         DecompositionStatus::Succeeded
+    }
+
+    fn decompose_selector(&mut self, task: &Task, over_plan: &mut Plan) -> DecompositionStatus {
+        
     }
 
     fn decompose_pausable(&mut self, plan: &mut Plan) -> DecompositionStatus {

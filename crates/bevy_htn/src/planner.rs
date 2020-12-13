@@ -30,7 +30,7 @@ impl Planner {
         if let Some(task) = self.current_task {
             let task_ref = behaviour.get_task(task);
             if task_ref.get_type() == TaskType::Primitive {
-                self.handle_sequence(ctx, task_ref);
+                self.handle_task(ctx, task_ref);
             }
         }
 
@@ -60,7 +60,7 @@ impl Planner {
             ctx.paused = false;
             last_partial_plan.extend(ctx.partial_queue.iter());
             ctx.last_record.clear();
-            ctx.swap_records();
+            ctx.last_record.extend(&mut ctx.record);
         }
 
         let plan_status = behaviour.find_plan(ctx);
@@ -80,7 +80,7 @@ impl Planner {
                 }
 
                 ctx.last_record.clear();
-                ctx.swap_records();
+                ctx.last_record.extend(&mut ctx.record);
 
             },
             _ => {
@@ -91,7 +91,7 @@ impl Planner {
 
                     if !ctx.last_record.is_empty() {
                         ctx.record.clear();
-                        ctx.swap_records();
+                        ctx.record.extend(&mut ctx.last_record);
                         ctx.last_record.clear();
                     }
                 }
@@ -112,7 +112,7 @@ impl Planner {
         }
     }
 
-    fn handle_sequence(&mut self, ctx: &mut WorldContext, task: &Task) {
+    fn handle_task(&mut self, ctx: &mut WorldContext, task: &Task) {
         match &task.operator {
             Some(ref op) => {
                 for exec_cond in task.exec_conditions.iter() {
@@ -125,13 +125,14 @@ impl Planner {
                 match self.last_status {
                     TaskStatus::Success => {
                         // I don't actually reckon I need this tnbh, only for planning
-                        for effect in task.effects.iter() {
-                            effect.apply(ctx);
-                        }
+                        // for effect in task.effects.iter() {
+                        //     effect.apply(ctx);
+                        // }
                         self.current_task = None;
                         if self.plan.len() == 0 {
-                            // clear ctx decomps
+                            ctx.last_record.clear();
                             ctx.dirty = false;
+                            // call tick again if immediate replanning is required
                         }
                     },
                     TaskStatus::Failure => {
@@ -156,8 +157,9 @@ impl Planner {
     fn clear_all(&mut self, ctx: &mut WorldContext) {
         self.current_task = None;
         self.plan.clear();
-        // clear decomp history for context
-        // clear partial plan history for context
+        ctx.last_record.clear();
+        ctx.paused = false;
+        ctx.partial_queue.clear();
         ctx.dirty = false;
     }
 }

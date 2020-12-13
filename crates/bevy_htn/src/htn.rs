@@ -34,16 +34,24 @@ impl Default for ContextState {
 // snapshots the current planning done by the behaviour
 #[derive(Default,)]
 pub struct Record {
-
+    tasks: Vec<usize>,
 }
 
 impl Record {
+    pub fn extend(&mut self, other: &mut Record) {
+        self.tasks.extend(other.tasks.iter());
+    }
+
+    pub fn add(&mut self, task_index: usize) {
+        self.tasks.push(task_index);
+    }
+
     pub fn is_empty(&self) -> bool {
-        true
+        self.tasks.len() == 0
     }
 
     pub fn clear(&mut self) {
-        
+        self.tasks.clear();
     }
 }
 
