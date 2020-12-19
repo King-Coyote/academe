@@ -1,5 +1,6 @@
 
 pub mod behaviour;
+pub mod context;
 pub mod htn;
 pub mod planner;
 pub mod plugin;
@@ -9,7 +10,9 @@ pub mod prelude {
     pub use crate::{
         behaviour::{Behaviour, BehaviourBuilder},
         planner::Planner,
+        task::TaskStatus,
         htn::*,
+        context::{WorldContext, Variant, ContextState,},
         plugin::AiPlugin,
     };
 }

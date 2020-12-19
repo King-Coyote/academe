@@ -171,6 +171,7 @@ impl<'s> TaskDecomposition<'s> {
     }
 
     fn decompose_selector(&mut self, task: &Task, over_plan: &mut Plan) -> DecompositionStatus {
+        let mut sub_plan = Plan::default();
         
     }
 
@@ -185,4 +186,27 @@ impl<'s> TaskDecomposition<'s> {
         mem::swap(&mut self.plan, plan);
         self.plan.clear();
     }
+}
+
+#[derive(Eq, PartialEq, Debug)]
+pub enum TaskStatus {
+    Continue,
+    Success,
+    Failure,
+}
+
+impl Default for TaskStatus {
+    fn default() -> Self {TaskStatus::Failure}
+}
+
+#[derive(Eq, PartialEq,)]
+pub enum DecompositionStatus {
+    Succeeded,
+    Partial,
+    Failed,
+    Rejected,
+}
+
+impl Default for DecompositionStatus {
+    fn default() -> Self {DecompositionStatus::Rejected}
 }
