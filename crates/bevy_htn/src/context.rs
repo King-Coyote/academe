@@ -28,18 +28,18 @@ impl WorldContext {
         self.world_state.get(tag)
     }
 
-    pub fn test_value(&self, tag: &str, value: &Variant) -> bool {
+    pub fn test_value(&self, tag: &str, value: &Variant) -> Option<bool> {
         if let Some(this_value) = self.get(tag) {
-            return this_value == value
+            return Some(this_value == value)
         }   
-        false
+        None
     }
     
     pub fn swap_records(&mut self) {}
 }
 
 // wrappings of various things that can exist in the game world
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Debug)]
 pub enum Variant {
     Entity(Entity),
     Entities(Vec<Entity>),

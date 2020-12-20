@@ -241,7 +241,7 @@ mod tests {
         let mut builder: BehaviourBuilder = BehaviourBuilder::new("test");
         builder
             .selector("test_parent")
-                .do_action("durr", || {TaskStatus::Success})
+                .do_action("durr", |ctx: &mut WorldContext| {TaskStatus::Success})
             .end();
         let behav = builder.build();
     }

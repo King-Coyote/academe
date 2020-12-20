@@ -13,18 +13,18 @@ where F: Fn(&WorldContext) -> bool {
 }
 
 pub trait Operator {
-    fn update(&self) -> TaskStatus;
-    fn stop(&self, ctx: &WorldContext);
+    fn update(&self, ctx: &mut WorldContext) -> TaskStatus;
+    fn stop(&self, ctx: &mut WorldContext);
 }
 
 impl<F> Operator for F
-where F: Fn() -> TaskStatus 
+where F: Fn(&mut WorldContext) -> TaskStatus 
 {
-    fn update(&self) -> TaskStatus {
-        self()
+    fn update(&self, ctx: &mut WorldContext) -> TaskStatus {
+        self(ctx)
     }
 
-    fn stop(&self, ctx: &WorldContext) {
+    fn stop(&self, ctx: &mut WorldContext) {
 
     }
 }

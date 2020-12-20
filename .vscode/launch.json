@@ -23,6 +23,21 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug unit tests in ai crate",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=bevy_htn"
+                ],
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug unit tests in executable 'bevyacad'",
             "cargo": {
                 "args": [

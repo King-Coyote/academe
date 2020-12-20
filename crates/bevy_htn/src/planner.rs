@@ -121,7 +121,7 @@ impl Planner {
                         return;
                     }
                 }
-                self.last_status = op.update();
+                self.last_status = op.update(ctx);
                 match self.last_status {
                     TaskStatus::Success => {
                         // I don't actually reckon I need this tnbh, only for planning
@@ -208,9 +208,9 @@ mod tests {
         let mut ctx = WorldContext::default();
         let mut builder = BehaviourBuilder::new("test");
         builder
-            .sequence("super")
+            .selector("super")
                 .primitive("primitive")
-                    .do_action("test", || {TaskStatus::Success})
+                    .do_action("test", |ctx: &mut WorldContext| {TaskStatus::Success})
                 .end()
             .end();
         let b = builder.build();

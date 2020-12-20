@@ -36,7 +36,7 @@ impl Task {
         }
     }
 
-    pub fn stop(&self, ctx: &WorldContext) {
+    pub fn stop(&self, ctx: &mut WorldContext) {
         if self.operator.is_some() {
             self.operator.as_ref().unwrap().stop(ctx);
         }
@@ -73,36 +73,17 @@ impl Task {
     pub (crate) fn decompose(&self, ctx: &mut WorldContext, behaviour: &Behaviour, plan: &mut Plan) 
         -> DecompositionStatus
     {
-        let mut decompositor = TaskDecomposition::new(self.index, ctx, behaviour);
-
-        for subtask in self.sub_tasks.iter() {
-            let mut task = behaviour.get_task(*subtask);
-            let status = decompositor.decompose(&task, plan);
-            match status {
-                DecompositionStatus::Rejected
-                | DecompositionStatus::Partial
-                | DecompositionStatus::Failed => {
-                    return status;
-                },
-                _ => {}
-            };
-        }
-
-        match plan.len() {
-            l if l == 0 => DecompositionStatus::Failed,
-            _ => DecompositionStatus::Succeeded
-        }
+        let mut decomposition = TaskDecomposition::new(self.index, ctx, behaviour);
+        decomposition.decompose(&self, plan)
     }
 }
 
 
-// represents a task decomposition in progress
 struct TaskDecomposition<'s> {
     ctx: &'s mut WorldContext,
     behaviour: &'s Behaviour,
     calling_task: usize,
     plan: Plan,
-    status: DecompositionStatus,
 }
 
 impl<'s> TaskDecomposition<'s> {
@@ -112,80 +93,117 @@ impl<'s> TaskDecomposition<'s> {
             behaviour: behaviour,
             calling_task: calling,
             plan: Plan::default(),
-            status: DecompositionStatus::default(),
         }
     }
 
     pub fn decompose(&mut self, task: &Task, over_plan: &mut Plan) -> DecompositionStatus {
-        if !task.is_valid(self.ctx) {
-            self.plan.clear();
-            over_plan.clear();
-            return DecompositionStatus::Failed;
-        }
+        use TaskType::*;
 
         match task.get_type() {
-            TaskType::Selector | TaskType::Sequence => {
+            Sequence => {
                 return self.decompose_sequence(task, over_plan);
             },
-            TaskType::Pause => {
-                return self.decompose_pausable(over_plan);
+            Selector => {
+                return self.decompose_selector(task, over_plan);
+            }
+            Pause => {
+                return self.decompose_pause(over_plan);
             },
-            TaskType::Primitive => {
-                // decompose primitive
-                task.apply_effects(self.ctx);
-                self.plan.push_back(task.index);
+            Primitive => {
+                return self.decompose_primitive(task, over_plan);
             },
         }
-        
-        self.apply_to(over_plan);
-        match over_plan.len() {
-            l if l == 0 => DecompositionStatus::Failed,
-            _ => DecompositionStatus::Succeeded
-        }
+    
     }
 
     fn decompose_sequence(&mut self, task: &Task, over_plan: &mut Plan) -> DecompositionStatus {
+        use DecompositionStatus::*;
+
         let mut sub_plan = Plan::default();
-        match task.decompose(self.ctx, self.behaviour, &mut sub_plan) {
-            DecompositionStatus::Rejected
-            | DecompositionStatus::Failed => {
-                // this is a bit different in fluid htn - it nulls the over_plan
-                // this may cause issues 4 u
-                self.plan.clear();
-                // ctx.trim??
-                over_plan.clear();
-                return DecompositionStatus::Rejected;
-            },
-            _ => {}
+        for sub_task_inx in task.sub_tasks.iter() {
+            let sub_task = self.behaviour.get_task(*sub_task_inx);
+            if !task.is_valid(self.ctx) {
+                sub_plan.clear();
+                return Failed;
+            }
+            let status = sub_task.decompose(self.ctx, self.behaviour, &mut sub_plan);
+            match status {
+                Rejected | Failed | Partial => {
+                    // this is a bit different in fluid htn - it nulls the over_plan
+                    // this may cause issues 4 u
+                    sub_plan.clear();
+                    // ctx.trim??
+                    return status;
+                },
+                _ => {}
+            }
         }
 
-        over_plan.extend(sub_plan);
-
-        if self.ctx.paused {
-            self.ctx.partial_queue.push_back(task.index);
-            self.apply_to(over_plan);
-            return DecompositionStatus::Partial;
+        match sub_plan.len() {
+            l if l == 0 => Failed,
+            _ => Succeeded
         }
-
-        DecompositionStatus::Succeeded
     }
 
     fn decompose_selector(&mut self, task: &Task, over_plan: &mut Plan) -> DecompositionStatus {
+        use DecompositionStatus::*;
+
         let mut sub_plan = Plan::default();
-        
+        // TODO check if current task we're about to decompose
+        // can possibly beat the running plan
+        for sub_task_inx in task.sub_tasks.iter() {
+            let sub_task = self.behaviour.get_task(*sub_task_inx);
+            if !task.is_valid(self.ctx) {
+                over_plan.extend(sub_plan.iter());
+                return Failed
+            }
+            let status = sub_task.decompose(self.ctx, self.behaviour, &mut sub_plan);
+            match status {
+                Rejected | Succeeded | Partial => {
+                    over_plan.extend(sub_plan.iter());
+                    return status;
+                },
+                _ => continue
+            }
+        }
+
+        Failed
+
+        // probably don't need this...
+        // match sub_plan.len() {
+        //     l if l == 0 => Failed,
+        //     _ => {
+        //         over_plan.extend(sub_plan.iter());
+        //         Succeeded
+        //     }
+        // }
     }
 
-    fn decompose_pausable(&mut self, plan: &mut Plan) -> DecompositionStatus {
+    fn decompose_pause(&mut self, plan: &mut Plan) -> DecompositionStatus {
+        use DecompositionStatus::*;
+
         self.ctx.paused = true;
         self.ctx.partial_queue.push_back(self.calling_task);
-        self.apply_to(plan);
-        return DecompositionStatus::Partial;
+        
+        Partial
     }
 
-    pub fn apply_to(&mut self, plan: &mut Plan) {
-        mem::swap(&mut self.plan, plan);
-        self.plan.clear();
+    fn decompose_primitive(&mut self, task: &Task, over_plan: &mut Plan) -> DecompositionStatus {
+        use DecompositionStatus::*;
+
+        if !task.is_valid(self.ctx) {
+            return Failed
+        }
+
+        task.apply_effects(self.ctx);
+        over_plan.push_back(task.index);
+        Succeeded
     }
+
+    // pub fn apply_to(&mut self, over_plan: &mut Plan) {
+    //     mem::swap(&mut self.plan, over_plan);
+    //     self.plan.clear();
+    // }
 }
 
 #[derive(Eq, PartialEq, Debug)]
