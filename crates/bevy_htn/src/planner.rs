@@ -150,7 +150,7 @@ impl Planner {
         }
     }
 
-    fn has_plan(&self) -> bool {
+    pub fn has_plan(&self) -> bool {
         self.plan.len() > 0
     }
 

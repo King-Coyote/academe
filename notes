@@ -52,5 +52,6 @@ or you discard the task completely.
 
 -----------------------------------
 
-Next step is: u need to work out what things should go into the world context state-wise
-do u want to have some kind of hash map of variant enums where the variants are game things?
+
+
+-----------------------------------

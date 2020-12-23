@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use std::mem;
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum TaskType {
@@ -83,7 +82,6 @@ struct TaskDecomposition<'s> {
     ctx: &'s mut WorldContext,
     behaviour: &'s Behaviour,
     calling_task: usize,
-    plan: Plan,
 }
 
 impl<'s> TaskDecomposition<'s> {
@@ -92,7 +90,6 @@ impl<'s> TaskDecomposition<'s> {
             ctx: ctx,
             behaviour: behaviour,
             calling_task: calling,
-            plan: Plan::default(),
         }
     }
 
@@ -120,6 +117,7 @@ impl<'s> TaskDecomposition<'s> {
         use DecompositionStatus::*;
 
         let mut sub_plan = Plan::default();
+        self.ctx.begin_transaction();
         for sub_task_inx in task.sub_tasks.iter() {
             let sub_task = self.behaviour.get_task(*sub_task_inx);
             if !task.is_valid(self.ctx) {
@@ -129,10 +127,7 @@ impl<'s> TaskDecomposition<'s> {
             let status = sub_task.decompose(self.ctx, self.behaviour, &mut sub_plan);
             match status {
                 Rejected | Failed | Partial => {
-                    // this is a bit different in fluid htn - it nulls the over_plan
-                    // this may cause issues 4 u
-                    sub_plan.clear();
-                    // ctx.trim??
+                    self.ctx.rollback_transaction();                    
                     return status;
                 },
                 _ => {}
@@ -141,7 +136,11 @@ impl<'s> TaskDecomposition<'s> {
 
         match sub_plan.len() {
             l if l == 0 => Failed,
-            _ => Succeeded
+            _ => {
+                self.ctx.commit_transaction();
+                over_plan.extend(sub_plan.iter());
+                Succeeded
+            }
         }
     }
 
