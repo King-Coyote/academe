@@ -15,27 +15,28 @@ fn startup(
 ) {
     let mut builder: BehaviourBuilder = BehaviourBuilder::new("CreatureBehaviour");
     use Variant::*;
-    builder
-        .sequence("BeTestBehaviour")
-            .sequence("FindEnemy")
-                .condition("No enemies in range", |ctx: &WorldContext| {
-                    !ctx.test_value("test", &Bool(true)).unwrap_or(false)
-                })
-                .selector("MoveRandomly")
-                    .effect("Test!", |ctx: &mut WorldContext| ctx.set("test", Bool(true)))
-                    .do_action("TestOp", |ctx: &mut WorldContext| {
-                        println!("I have many regrets; but the ass was fat");
-                        TaskStatus::Success
-                    })
-                .end()
-            .end()
-            .sequence("MoveToEnemy")
-                .do_action("TestOp2", |ctx: &mut WorldContext| {
-                    println!("doing test op 2...");
-                    TaskStatus::Continue
-                })
-            .end()
-        .end();
+    test_task!("durr");
+    // builder
+    //     .sequence("BeTestBehaviour")
+    //         .sequence("FindEnemy")
+    //             .condition("No enemies in range", |ctx: &WorldContext| {
+    //                 !ctx.test_value("test", &Bool(true)).unwrap_or(false)
+    //             })
+    //             .selector("MoveRandomly")
+    //                 .effect("Test!", |ctx: &mut WorldContext| ctx.set("test", Bool(true)))
+    //                 .do_action("TestOp", |ctx: &mut WorldContext| {
+    //                     println!("I have many regrets; but the ass was fat");
+    //                     TaskStatus::Success
+    //                 })
+    //             .end()
+    //         .end()
+    //         .sequence("MoveToEnemy")
+    //             .do_action("TestOp2", |ctx: &mut WorldContext| {
+    //                 println!("doing test op 2...");
+    //                 TaskStatus::Continue
+    //             })
+    //         .end()
+    //     .end();
     let behaviour = builder.build();
     behaviour.print();
     let mut planner = Planner::default();
