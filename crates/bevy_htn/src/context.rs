@@ -2,7 +2,7 @@ use std::collections::{VecDeque, HashMap,};
 use bevy::ecs::Entity;
 
 #[derive(Default,)]
-pub struct WorldContext {
+pub struct BeingContext {
     pub(crate) state: ContextState,
     pub(crate) record: Record,
     pub(crate) last_record: Record,
@@ -13,9 +13,9 @@ pub struct WorldContext {
     transactions: Vec<Vec<String>>,
 }
 
-impl WorldContext {
+impl BeingContext {
     pub fn new() -> Self {
-        WorldContext {
+        BeingContext {
             dirty: true,
             ..Default::default()
         }
@@ -138,7 +138,7 @@ mod tests {
 
     #[test]
     fn rollback_works() {
-        let mut ctx = WorldContext::new();
+        let mut ctx = BeingContext::new();
         ctx.begin_transaction();
         ctx.set("test1", Variant::Int32(10));
         ctx.set("test2", Variant::Bool(true));
@@ -154,7 +154,7 @@ mod tests {
 
     #[test]
     fn commit_works() {
-        let mut ctx = WorldContext::new();
+        let mut ctx = BeingContext::new();
         ctx.begin_transaction();
         ctx.set("test1", Variant::Int32(10));
         ctx.set("test2", Variant::Bool(true));

@@ -11,7 +11,7 @@ fn basic_planning_works() {
         .end();
     let mut b = builder.build();
     let mut p = Planner::default();
-    let mut ctx = WorldContext::default();
+    let mut ctx = BeingContext::default();
 
     p.tick(&b, &mut ctx);
 
@@ -28,7 +28,7 @@ fn more_complex_planning_works() {
         .end();
     let mut b = builder.build();
     let mut p = Planner::default();
-    let mut ctx = WorldContext::default();
+    let mut ctx = BeingContext::default();
 
     p.tick(&b, &mut ctx);
 
@@ -44,8 +44,8 @@ fn selector_continues_after_failed_task() {
     .selector("sel1")
         .sequence("i will fail")
             .primitive("Base_False")
-                .condition("always_false", |ctx: &WorldContext| false)
-                .do_action("set_wrong_flag", |ctx: &mut WorldContext| {
+                .condition("always_false", |ctx: &BeingContext| false)
+                .do_action("set_wrong_flag", |ctx: &mut BeingContext| {
                     ctx.set("wrong", Bool(true));
                     return TaskStatus::Success;
                 })
@@ -53,7 +53,7 @@ fn selector_continues_after_failed_task() {
         .end()
         .selector("i should be chosen")
             .primitive("Base_Real")
-                .do_action("set_flag", |ctx: &mut WorldContext| {
+                .do_action("set_flag", |ctx: &mut BeingContext| {
                     ctx.set("test", Bool(true));
                     return TaskStatus::Success;
                 })
@@ -62,7 +62,7 @@ fn selector_continues_after_failed_task() {
     .end();
     let mut b = builder.build();
     let mut p = Planner::default();
-    let mut ctx = WorldContext::default();
+    let mut ctx = BeingContext::default();
 
     p.tick(&b, &mut ctx);
     assert!(ctx.test_value("wrong", &Bool(true)).is_none());
@@ -78,22 +78,22 @@ fn sequence_with_failed_task_gives_no_plan() {
     builder
     .sequence("i should give no plan")
         .primitive("I should run successfully")
-            .do_action("durr", |ctx: &mut WorldContext| {
+            .do_action("durr", |ctx: &mut BeingContext| {
                 ctx.set("yeh", Bool(true));
                 TaskStatus::Success
             })
         .end()
         .primitive("I should also run")
-            .do_action("hurr", |ctx: &mut WorldContext| {
+            .do_action("hurr", |ctx: &mut BeingContext| {
                 ctx.set("yeh m8 lmfao", Bool(true));
                 TaskStatus::Success
             })
         .end()
         .primitive("I should fail")
-            .condition("always invalid", |ctx: &WorldContext| {
+            .condition("always invalid", |ctx: &BeingContext| {
                 ctx.test_value("nothing", &Bool(true)).is_some()
             })
-            .do_action("nah", |ctx: &mut WorldContext| {
+            .do_action("nah", |ctx: &mut BeingContext| {
                 ctx.set("nahhh", Bool(true));
                 TaskStatus::Success
             })
@@ -101,7 +101,7 @@ fn sequence_with_failed_task_gives_no_plan() {
     .end();
     let mut b = builder.build();
     let mut p = Planner::default();
-    let mut ctx = WorldContext::default();
+    let mut ctx = BeingContext::default();
 
     p.tick(&b, &mut ctx);
     assert!(!p.has_plan());
@@ -119,23 +119,23 @@ fn failed_sequence_does_not_pollute_context() {
     .sequence("i should fail but not pollute")
         .selector("Some of mine run")
             .primitive("I should run successfully")
-                .effect("pollute", |ctx: &mut WorldContext| {
+                .effect("pollute", |ctx: &mut BeingContext| {
                     ctx.set("pollution", Bool(true))
                 })
             .end()
             .primitive("I should run successfully too")
-                .effect("pollute2", |ctx: &mut WorldContext| {
+                .effect("pollute2", |ctx: &mut BeingContext| {
                     ctx.set("pollution2", Bool(true))
                 })
             .end()
         .end()
         .primitive("I should fail")
-            .condition("always fails", |ctx: &WorldContext| false)
+            .condition("always fails", |ctx: &BeingContext| false)
         .end()
     .end();
     let mut b = builder.build();
     let mut p = Planner::default();
-    let mut ctx = WorldContext::default();
+    let mut ctx = BeingContext::default();
 
     p.tick(&b, &mut ctx);
     assert!(ctx.get("pollution").is_none());

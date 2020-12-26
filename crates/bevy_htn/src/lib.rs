@@ -1,6 +1,3 @@
-#[macro_use]
-pub mod macros;
-
 pub mod behaviour;
 pub mod context;
 pub mod htn;
@@ -14,7 +11,7 @@ pub mod prelude {
         planner::Planner,
         task::TaskStatus,
         htn::*,
-        context::{WorldContext, Variant, ContextState,},
+        context::{BeingContext, Variant, ContextState,},
         plugin::AiPlugin,
     };
 }

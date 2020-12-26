@@ -2,7 +2,7 @@ use crate::prelude::*;
 use crate::task::*;
 
 pub struct Behaviour
-    // where C: WorldContext
+    // where C: BeingContext
 {   
     tasks: Vec<Task>,
     pub name: String,
@@ -25,7 +25,7 @@ impl Behaviour {
         self.tasks.get_mut(index).expect("ERROR: wtf?? you tried to get a task from a behaviour at an index it doesn't have. This shouldn't happen!")
     }
 
-    pub fn find_plan(&self, ctx: &mut WorldContext) -> (Plan, DecompositionStatus) {
+    pub fn find_plan(&self, ctx: &mut BeingContext) -> (Plan, DecompositionStatus) {
         ctx.state = ContextState::Planning;
         // let mut plan_status: (Plan, DecompositionStatus);
         let mut plan = Plan::default();
@@ -54,7 +54,7 @@ impl Behaviour {
         (plan, status)
     }
 
-    fn resume_partial(&self, ctx: &mut WorldContext, plan: &mut Plan) -> DecompositionStatus {
+    fn resume_partial(&self, ctx: &mut BeingContext, plan: &mut Plan) -> DecompositionStatus {
         use DecompositionStatus::*;
 
         let mut status = DecompositionStatus::default();
@@ -82,7 +82,7 @@ impl Behaviour {
         status
     }
 
-    fn full_replan(&self, ctx: &mut WorldContext, plan: &mut Plan) -> DecompositionStatus {
+    fn full_replan(&self, ctx: &mut BeingContext, plan: &mut Plan) -> DecompositionStatus {
         let mut last_partial_plan = Plan::default();
         let mut was_paused = false;
         if ctx.paused {
@@ -104,7 +104,7 @@ impl Behaviour {
         status
     }
 
-    // fn check_mtrs(&self, ctx: &mut WorldContext) -> DecompositionStatus {
+    // fn check_mtrs(&self, ctx: &mut BeingContext) -> DecompositionStatus {
 
     // }
 
@@ -241,7 +241,7 @@ mod tests {
         let mut builder: BehaviourBuilder = BehaviourBuilder::new("test");
         builder
             .selector("test_parent")
-                .do_action("durr", |ctx: &mut WorldContext| {TaskStatus::Success})
+                .do_action("durr", |ctx: &mut BeingContext| {TaskStatus::Success})
             .end();
         let behav = builder.build();
     }

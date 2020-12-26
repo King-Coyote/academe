@@ -10,7 +10,7 @@ pub struct Planner {
 }
 
 impl Planner {
-    pub fn tick(&mut self, behaviour: &Behaviour, ctx: &mut WorldContext) {
+    pub fn tick(&mut self, behaviour: &Behaviour, ctx: &mut BeingContext) {
 
         let mut status = DecompositionStatus::Failed;
         let mut replacing = false;
@@ -47,7 +47,7 @@ impl Planner {
         }
     }
 
-    fn find_plan(&mut self, ctx: &mut WorldContext, behaviour: &Behaviour) 
+    fn find_plan(&mut self, ctx: &mut BeingContext, behaviour: &Behaviour) 
         -> DecompositionStatus
     {
 
@@ -101,7 +101,7 @@ impl Planner {
         plan_status.1
     }
 
-    fn get_task_from_plan(&mut self, ctx: &mut WorldContext, behaviour: &Behaviour) {
+    fn get_task_from_plan(&mut self, ctx: &mut BeingContext, behaviour: &Behaviour) {
         let current = self.plan.pop_front().unwrap();
         self.current_task = Some(current);
         let task_ref = behaviour.get_task(current);
@@ -112,7 +112,7 @@ impl Planner {
         }
     }
 
-    fn handle_task(&mut self, ctx: &mut WorldContext, task: &Task) {
+    fn handle_task(&mut self, ctx: &mut BeingContext, task: &Task) {
         match &task.operator {
             Some(ref op) => {
                 for exec_cond in task.exec_conditions.iter() {
@@ -154,7 +154,7 @@ impl Planner {
         self.plan.len() > 0
     }
 
-    fn clear_all(&mut self, ctx: &mut WorldContext) {
+    fn clear_all(&mut self, ctx: &mut BeingContext) {
         self.current_task = None;
         self.plan.clear();
         ctx.last_record.clear();
@@ -178,7 +178,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn tick_empty_behaviour_expectedbehav() {
-        let mut ctx = WorldContext::default();
+        let mut ctx = BeingContext::default();
         let mut builder = BehaviourBuilder::new("test");
         let b = builder.build();
         let mut p = Planner::default();
@@ -187,7 +187,7 @@ mod tests {
 
     #[test]
     fn tick_primitive_no_operator_expectedbehav() {
-        let mut ctx = WorldContext::default();
+        let mut ctx = BeingContext::default();
         let mut builder = BehaviourBuilder::new("test");
         builder
             .sequence("super")
@@ -205,12 +205,12 @@ mod tests {
 
     #[test]
     fn tick_with_empty_func_operator_expectedbehav() {
-        let mut ctx = WorldContext::default();
+        let mut ctx = BeingContext::default();
         let mut builder = BehaviourBuilder::new("test");
         builder
             .selector("super")
                 .primitive("primitive")
-                    .do_action("test", |ctx: &mut WorldContext| {TaskStatus::Success})
+                    .do_action("test", |ctx: &mut BeingContext| {TaskStatus::Success})
                 .end()
             .end();
         let b = builder.build();

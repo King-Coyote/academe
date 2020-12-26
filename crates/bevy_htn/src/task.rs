@@ -35,7 +35,7 @@ impl Task {
         }
     }
 
-    pub fn stop(&self, ctx: &mut WorldContext) {
+    pub fn stop(&self, ctx: &mut BeingContext) {
         if self.operator.is_some() {
             self.operator.as_ref().unwrap().stop(ctx);
         }
@@ -50,7 +50,7 @@ impl Task {
         self.sub_tasks.push(child);
     }
 
-    pub(crate) fn is_valid(&self, ctx: &WorldContext) -> bool {
+    pub(crate) fn is_valid(&self, ctx: &BeingContext) -> bool {
         let mut valid = true;
         for cond in self.conditions.iter() {
             valid = valid && cond.is_valid(ctx);
@@ -58,7 +58,7 @@ impl Task {
         valid
     }
 
-    pub fn apply_effects(&self, ctx: &mut WorldContext) {
+    pub fn apply_effects(&self, ctx: &mut BeingContext) {
         for effect in self.effects.iter() {
             effect.apply(ctx);
         }
@@ -69,7 +69,7 @@ impl Task {
         self.operator = Some(operator);
     }
 
-    pub (crate) fn decompose(&self, ctx: &mut WorldContext, behaviour: &Behaviour, plan: &mut Plan) 
+    pub (crate) fn decompose(&self, ctx: &mut BeingContext, behaviour: &Behaviour, plan: &mut Plan) 
         -> DecompositionStatus
     {
         let mut decomposition = TaskDecomposition::new(self.index, ctx, behaviour);
@@ -79,13 +79,13 @@ impl Task {
 
 
 struct TaskDecomposition<'s> {
-    ctx: &'s mut WorldContext,
+    ctx: &'s mut BeingContext,
     behaviour: &'s Behaviour,
     calling_task: usize,
 }
 
 impl<'s> TaskDecomposition<'s> {
-    pub fn new(calling: usize, ctx: &'s mut WorldContext, behaviour: &'s Behaviour) -> Self {
+    pub fn new(calling: usize, ctx: &'s mut BeingContext, behaviour: &'s Behaviour) -> Self {
         TaskDecomposition {
             ctx: ctx,
             behaviour: behaviour,
