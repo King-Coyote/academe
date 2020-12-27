@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use std::marker::PhantomData;
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum TaskType {
@@ -8,21 +9,24 @@ pub enum TaskType {
     Pause,
 }
 
-pub struct Task {
+pub struct Task<C> 
+    where C: Context
+{
     pub(super) name: String,
     pub(super) index: usize,
-    pub(super) conditions: Vec<Box<dyn Condition>>,
-    pub(super) exec_conditions: Vec<Box<dyn Condition>>, // conditions checked every execute
-    pub(super) operator: Option<Box<dyn Operator>>,
-    pub(super) effects: Vec<Box<dyn Effect>>,
+    pub(super) conditions: Vec<Box<dyn Condition<C>>>,
+    pub(super) exec_conditions: Vec<Box<dyn Condition<C>>>, // conditions checked every execute
+    pub(super) operator: Option<Box<dyn Operator<C>>>,
+    pub(super) effects: Vec<Box<dyn Effect<C>>>,
     pub(super) parent: Option<usize>,
     pub(super) sub_tasks: Vec<usize>,
     pub(super) task_type: TaskType,
+    pd: PhantomData<C>,
 }
 
-impl Task {
+impl<C: Context> Task<C> {
     pub fn new(name: &str, index: usize, parent: Option<usize>, task_type: TaskType) -> Self {
-        Task {
+        Task::<C> {
             name: name.to_owned(),
             index: index,
             conditions: vec![],
@@ -32,10 +36,11 @@ impl Task {
             parent: parent,
             sub_tasks: vec![],
             task_type: task_type,
+            pd: PhantomData::default(),
         }
     }
 
-    pub fn stop(&self, ctx: &mut BeingContext) {
+    pub fn stop(&self, ctx: &mut C) {
         if self.operator.is_some() {
             self.operator.as_ref().unwrap().stop(ctx);
         }
@@ -50,7 +55,7 @@ impl Task {
         self.sub_tasks.push(child);
     }
 
-    pub(crate) fn is_valid(&self, ctx: &BeingContext) -> bool {
+    pub(crate) fn is_valid(&self, ctx: &C) -> bool {
         let mut valid = true;
         for cond in self.conditions.iter() {
             valid = valid && cond.is_valid(ctx);
@@ -58,18 +63,18 @@ impl Task {
         valid
     }
 
-    pub fn apply_effects(&self, ctx: &mut BeingContext) {
+    pub fn apply_effects(&self, ctx: &mut C) {
         for effect in self.effects.iter() {
             effect.apply(ctx);
         }
     }
 
-    pub (crate) fn add_operator(&mut self, operator: Box<dyn Operator>) {
+    pub (crate) fn add_operator(&mut self, operator: Box<dyn Operator<C>>) {
         assert!(self.task_type == TaskType::Primitive);
         self.operator = Some(operator);
     }
 
-    pub (crate) fn decompose(&self, ctx: &mut BeingContext, behaviour: &Behaviour, plan: &mut Plan) 
+    pub (crate) fn decompose(&self, ctx: &mut C, behaviour: &Behaviour<C>, plan: &mut Plan) 
         -> DecompositionStatus
     {
         let mut decomposition = TaskDecomposition::new(self.index, ctx, behaviour);
@@ -78,22 +83,26 @@ impl Task {
 }
 
 
-struct TaskDecomposition<'s> {
-    ctx: &'s mut BeingContext,
-    behaviour: &'s Behaviour,
+struct TaskDecomposition<'s, C> 
+    where C: Context
+{
+    ctx: &'s mut C,
+    behaviour: &'s Behaviour<C>,
     calling_task: usize,
 }
 
-impl<'s> TaskDecomposition<'s> {
-    pub fn new(calling: usize, ctx: &'s mut BeingContext, behaviour: &'s Behaviour) -> Self {
-        TaskDecomposition {
+impl<'s, C> TaskDecomposition<'s, C> where
+C: Context
+{
+    pub fn new(calling: usize, ctx: &'s mut C, behaviour: &'s Behaviour<C>) -> Self {
+        TaskDecomposition::<C> {
             ctx: ctx,
             behaviour: behaviour,
             calling_task: calling,
         }
     }
 
-    pub fn decompose(&mut self, task: &Task, over_plan: &mut Plan) -> DecompositionStatus {
+    pub fn decompose(&mut self, task: &Task<C>, over_plan: &mut Plan) -> DecompositionStatus {
         use TaskType::*;
 
         match task.get_type() {
@@ -113,7 +122,7 @@ impl<'s> TaskDecomposition<'s> {
     
     }
 
-    fn decompose_sequence(&mut self, task: &Task, over_plan: &mut Plan) -> DecompositionStatus {
+    fn decompose_sequence(&mut self, task: &Task<C>, over_plan: &mut Plan) -> DecompositionStatus {
         use DecompositionStatus::*;
 
         let mut sub_plan = Plan::default();
@@ -144,7 +153,7 @@ impl<'s> TaskDecomposition<'s> {
         }
     }
 
-    fn decompose_selector(&mut self, task: &Task, over_plan: &mut Plan) -> DecompositionStatus {
+    fn decompose_selector(&mut self, task: &Task<C>, over_plan: &mut Plan) -> DecompositionStatus {
         use DecompositionStatus::*;
 
         let mut sub_plan = Plan::default();
@@ -181,13 +190,13 @@ impl<'s> TaskDecomposition<'s> {
     fn decompose_pause(&mut self, plan: &mut Plan) -> DecompositionStatus {
         use DecompositionStatus::*;
 
-        self.ctx.paused = true;
-        self.ctx.partial_queue.push_back(self.calling_task);
+        self.ctx.set_paused(true);
+        self.ctx.partial_queue().push_back(self.calling_task);
         
         Partial
     }
 
-    fn decompose_primitive(&mut self, task: &Task, over_plan: &mut Plan) -> DecompositionStatus {
+    fn decompose_primitive(&mut self, task: &Task<C>, over_plan: &mut Plan) -> DecompositionStatus {
         use DecompositionStatus::*;
 
         if !task.is_valid(self.ctx) {

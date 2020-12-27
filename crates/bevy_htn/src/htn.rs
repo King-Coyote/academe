@@ -1,42 +1,52 @@
 use crate::prelude::*;
 use std::collections::VecDeque;
 
-pub trait Condition {
-    fn is_valid(&self, ctx: &BeingContext) -> bool;
+pub trait Condition<C>
+where C: Context
+{
+    fn is_valid(&self, ctx: &C) -> bool;
 }
 
-impl<F> Condition for F 
-where F: Fn(&BeingContext) -> bool {
-    fn is_valid(&self, ctx: &BeingContext) -> bool {
+impl<C, F> Condition<C> for F where
+C: Context,
+F: Fn(&C) -> bool 
+{
+    fn is_valid(&self, ctx: &C) -> bool {
         self(ctx)
     }
 }
 
-pub trait Operator {
-    fn update(&self, ctx: &mut BeingContext) -> TaskStatus;
-    fn stop(&self, ctx: &mut BeingContext);
+pub trait Operator<C> where
+C: Context
+{
+    fn update(&self, ctx: &mut C) -> TaskStatus;
+    fn stop(&self, ctx: &mut C);
 }
 
-impl<F> Operator for F
-where F: Fn(&mut BeingContext) -> TaskStatus 
+impl<C, F> Operator<C> for F where
+C: Context,
+F: Fn(&mut C) -> TaskStatus 
 {
-    fn update(&self, ctx: &mut BeingContext) -> TaskStatus {
+    fn update(&self, ctx: &mut C) -> TaskStatus {
         self(ctx)
     }
 
-    fn stop(&self, ctx: &mut BeingContext) {
+    fn stop(&self, ctx: &mut C) {
 
     }
 }
 
-pub trait Effect {
-    fn apply(&self, ctx: &mut BeingContext);
+pub trait Effect<C> where
+C: Context
+{
+    fn apply(&self, ctx: &mut C);
 }
 
-impl<F> Effect for F
-where F: Fn(&mut BeingContext) -> ()
+impl<C, F> Effect<C> for F where
+C: Context,
+F: Fn(&mut C) -> ()
 {
-    fn apply(&self, ctx: &mut BeingContext) {
+    fn apply(&self, ctx: &mut C) {
         self(ctx)
     }
 }

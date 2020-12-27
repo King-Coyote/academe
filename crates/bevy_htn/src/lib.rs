@@ -11,7 +11,7 @@ pub mod prelude {
         planner::Planner,
         task::TaskStatus,
         htn::*,
-        context::{BeingContext, Variant, ContextState,},
+        context::{BeingContext, Variant, ContextState, Context,},
         plugin::AiPlugin,
     };
 }

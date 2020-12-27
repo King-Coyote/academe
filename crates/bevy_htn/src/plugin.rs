@@ -13,7 +13,7 @@ impl Plugin for AiPlugin {
 fn startup(
     mut commands: Commands,
 ) {
-    let mut builder: BehaviourBuilder = BehaviourBuilder::new("CreatureBehaviour");
+    let mut builder: BehaviourBuilder<BeingContext> = BehaviourBuilder::new("CreatureBehaviour");
     use Variant::*;
     builder
         .sequence("BeTestBehaviour")

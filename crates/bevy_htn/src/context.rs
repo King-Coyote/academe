@@ -1,6 +1,33 @@
 use std::collections::{VecDeque, HashMap,};
 use bevy::ecs::Entity;
 
+pub trait Context {
+    // accessors
+    fn is_dirty(&self) -> bool;
+    fn set_dirty(&mut self, dirty: bool);
+    fn is_paused(&self) -> bool;
+    fn set_paused(&mut self, is_paused: bool);
+    fn record(&mut self) -> &mut Record;
+    fn last_record(&mut self) -> &mut Record;
+    fn set_state(&mut self, new_state: ContextState);
+    fn get_state(&self) -> ContextState;
+    fn partial_queue(&mut self) -> &mut VecDeque<usize>;
+
+    fn dump_into_record(&mut self);
+    fn dump_into_last_record(&mut self);
+
+    // this key must NOT exist before you add it
+    fn add(&mut self, key: &str, variant: Variant);
+    // doesn't care if the key exists
+    fn set(&mut self, key: &str, variant: Variant);
+    fn get(&self, key: &str) -> Option<&Variant>;
+    fn remove(&mut self, key: &str);
+    fn test_value(&self, key: &str, value: &Variant) -> Option<bool>;
+    fn begin_transaction(&mut self);
+    fn rollback_transaction(&mut self);
+    fn commit_transaction(&mut self);
+}
+
 #[derive(Default,)]
 pub struct BeingContext {
     pub(crate) state: ContextState,
@@ -21,58 +48,6 @@ impl BeingContext {
         }
     }
 
-    // this key must NOT exist before you add it
-    pub fn add(&mut self, key: &str, variant: Variant) {
-        let last_value = self.world_state.insert(key.to_string(), variant);
-        assert!(last_value.is_none());
-        self.add_trans_key_if_needed(key);
-    }
-
-    // doesn't care if the key exists
-    pub fn set(&mut self, key: &str, variant: Variant) {
-        let last_value = self.world_state.insert(key.to_string(), variant);
-        if last_value.is_none() {
-            self.add_trans_key_if_needed(key);
-        }
-    }
-
-    pub fn get(&self, key: &str) -> Option<&Variant> {
-        self.world_state.get(key)
-    }
-
-    pub fn remove(&mut self, key: &str) {
-        let last_value = self.world_state.remove(key);
-        if last_value.is_some() {
-            self.remove_trans_key_if_needed(key);
-        }
-    }
-
-    pub fn test_value(&self, key: &str, value: &Variant) -> Option<bool> {
-        if let Some(this_value) = self.get(key) {
-            return Some(this_value == value)
-        }   
-        None
-    }
-    
-    pub fn swap_records(&mut self) {}
-
-    pub fn begin_transaction(&mut self) {
-        self.transactions.push(vec![]);
-    }
-
-    pub fn rollback_transaction(&mut self) {
-        assert!(self.transactions.len() > 0);
-        for key in self.transactions.last().unwrap() {
-            self.world_state.remove(key).expect("Rolled back a key that didn't exist - what on earth?! That should never happen.");
-        }
-        self.transactions.pop();
-    }
-
-    pub fn commit_transaction(&mut self) {
-        assert!(self.transactions.len() > 0);
-        self.transactions.pop();
-    }
-
     fn add_trans_key_if_needed(&mut self, key: &str) {
         if let Some(transaction) = self.transactions.last_mut() {
             transaction.push(key.to_string());
@@ -85,6 +60,107 @@ impl BeingContext {
                 self.transactions.swap_remove(pos);
             }
         }
+    }
+
+}
+
+impl Context for BeingContext {
+
+    fn is_dirty(&self) -> bool {
+        self.dirty
+    }
+
+    fn set_dirty(&mut self, dirty: bool) {
+        self.dirty = dirty;
+    }
+
+    fn is_paused(&self) -> bool {
+        self.paused
+    }
+
+    fn set_paused(&mut self, is_paused: bool) {
+        self.paused = is_paused;
+    }
+
+    fn record(&mut self) -> &mut Record {
+        &mut self.record
+    }
+
+    fn last_record(&mut self) -> &mut Record {
+        &mut self.last_record
+    }
+
+    fn dump_into_record(&mut self) {
+        self.record.clear();
+        self.record.extend(&mut self.last_record);
+    }
+
+    fn dump_into_last_record(&mut self) {
+        self.last_record.clear();
+        self.last_record.extend(&mut self.record);
+    }
+
+
+    fn set_state(&mut self, new_state: ContextState) {
+        self.state = new_state;
+    }
+
+    fn get_state(&self) -> ContextState {
+        self.state
+    }
+
+    fn partial_queue(&mut self) -> &mut VecDeque<usize> {
+        &mut self.partial_queue
+    }
+
+    // this key must NOT exist before you add it
+    fn add(&mut self, key: &str, variant: Variant) {
+        let last_value = self.world_state.insert(key.to_string(), variant);
+        assert!(last_value.is_none());
+        self.add_trans_key_if_needed(key);
+    }
+
+    // doesn't care if the key exists
+    fn set(&mut self, key: &str, variant: Variant) {
+        let last_value = self.world_state.insert(key.to_string(), variant);
+        if last_value.is_none() {
+            self.add_trans_key_if_needed(key);
+        }
+    }
+
+    fn get(&self, key: &str) -> Option<&Variant> {
+        self.world_state.get(key)
+    }
+
+    fn remove(&mut self, key: &str) {
+        let last_value = self.world_state.remove(key);
+        if last_value.is_some() {
+            self.remove_trans_key_if_needed(key);
+        }
+    }
+
+    fn test_value(&self, key: &str, value: &Variant) -> Option<bool> {
+        if let Some(this_value) = self.get(key) {
+            return Some(this_value == value)
+        }   
+        None
+    }
+    
+    fn begin_transaction(&mut self) {
+        self.transactions.push(vec![]);
+    }
+
+    fn rollback_transaction(&mut self) {
+        assert!(self.transactions.len() > 0);
+        for key in self.transactions.last().unwrap() {
+            self.world_state.remove(key).expect("Rolled back a key that didn't exist - what on earth?! That should never happen.");
+        }
+        self.transactions.pop();
+    }
+
+    fn commit_transaction(&mut self) {
+        assert!(self.transactions.len() > 0);
+        self.transactions.pop();
     }
 }
 
@@ -122,6 +198,7 @@ impl Record {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum ContextState {
     Planning,
     Executing,

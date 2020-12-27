@@ -1,22 +1,28 @@
 use crate::prelude::*;
 use crate::task::*;
 use std::collections::VecDeque;
+use std::marker::PhantomData;
 
 #[derive(Default,)]
-pub struct Planner {
+pub struct Planner<C> 
+    where C: Context
+{
     plan: Plan,
     current_task: Option<usize>,
     last_status: TaskStatus,
+    pd: PhantomData<C>,
 }
 
-impl Planner {
-    pub fn tick(&mut self, behaviour: &Behaviour, ctx: &mut BeingContext) {
+impl<C> Planner<C> 
+    where C: Context
+{
+    pub fn tick(&mut self, behaviour: &Behaviour<C>, ctx: &mut C) {
 
         let mut status = DecompositionStatus::Failed;
         let mut replacing = false;
 
         // get plan if we need it
-        if !self.has_plan() && self.current_task.is_none() || ctx.dirty {
+        if !self.has_plan() && self.current_task.is_none() || ctx.is_dirty() {
             replacing = self.plan.len() > 0;
             status = self.find_plan(ctx, behaviour);
         }
@@ -47,20 +53,19 @@ impl Planner {
         }
     }
 
-    fn find_plan(&mut self, ctx: &mut BeingContext, behaviour: &Behaviour) 
+    fn find_plan(&mut self, ctx: &mut C, behaviour: &Behaviour<C>) 
         -> DecompositionStatus
     {
 
-        let dirty = ctx.dirty;
-        ctx.dirty = false;
+        let dirty = ctx.is_dirty();
+        ctx.set_dirty(false);
         let mut last_partial_plan: VecDeque<usize> = VecDeque::new();
 
-        if dirty && ctx.paused {
+        if dirty && ctx.is_paused() {
             //replan
-            ctx.paused = false;
-            last_partial_plan.extend(ctx.partial_queue.iter());
-            ctx.last_record.clear();
-            ctx.last_record.extend(&mut ctx.record);
+            ctx.set_paused(false);
+            last_partial_plan.extend(ctx.partial_queue().iter());
+            ctx.dump_into_last_record();
         }
 
         let plan_status = behaviour.find_plan(ctx);
@@ -79,20 +84,18 @@ impl Planner {
                     }
                 }
 
-                ctx.last_record.clear();
-                ctx.last_record.extend(&mut ctx.record);
+                ctx.dump_into_last_record();
 
             },
             _ => {
                 if last_partial_plan.len() > 0 {
-                    ctx.paused = true;
-                    ctx.partial_queue.clear();
-                    ctx.partial_queue.extend(last_partial_plan);
+                    ctx.set_paused(true);
+                    ctx.partial_queue().clear();
+                    ctx.partial_queue().extend(last_partial_plan);
 
-                    if !ctx.last_record.is_empty() {
-                        ctx.record.clear();
-                        ctx.record.extend(&mut ctx.last_record);
-                        ctx.last_record.clear();
+                    if !ctx.last_record().is_empty() {
+                        ctx.dump_into_record();
+                        ctx.last_record().clear();
                     }
                 }
             }
@@ -101,7 +104,7 @@ impl Planner {
         plan_status.1
     }
 
-    fn get_task_from_plan(&mut self, ctx: &mut BeingContext, behaviour: &Behaviour) {
+    fn get_task_from_plan(&mut self, ctx: &mut C, behaviour: &Behaviour<C>) {
         let current = self.plan.pop_front().unwrap();
         self.current_task = Some(current);
         let task_ref = behaviour.get_task(current);
@@ -112,7 +115,7 @@ impl Planner {
         }
     }
 
-    fn handle_task(&mut self, ctx: &mut BeingContext, task: &Task) {
+    fn handle_task(&mut self, ctx: &mut C, task: &Task<C>) {
         match &task.operator {
             Some(ref op) => {
                 for exec_cond in task.exec_conditions.iter() {
@@ -130,8 +133,8 @@ impl Planner {
                         // }
                         self.current_task = None;
                         if self.plan.len() == 0 {
-                            ctx.last_record.clear();
-                            ctx.dirty = false;
+                            ctx.last_record().clear();
+                            ctx.set_dirty(false);
                             // call tick again if immediate replanning is required
                         }
                     },
@@ -154,13 +157,13 @@ impl Planner {
         self.plan.len() > 0
     }
 
-    fn clear_all(&mut self, ctx: &mut BeingContext) {
+    fn clear_all(&mut self, ctx: &mut C) {
         self.current_task = None;
         self.plan.clear();
-        ctx.last_record.clear();
-        ctx.paused = false;
-        ctx.partial_queue.clear();
-        ctx.dirty = false;
+        ctx.last_record().clear();
+        ctx.set_paused(false);
+        ctx.partial_queue().clear();
+        ctx.set_dirty(false);
     }
 }
 
@@ -170,7 +173,7 @@ mod tests {
 
     #[test]
     fn planner_has_no_plan_at_start() {
-        let planner = Planner::default();
+        let planner = Planner::<BeingContext>::default();
         assert_eq!(planner.current_task, None);
         assert!(planner.plan.len() == 0);
     }
