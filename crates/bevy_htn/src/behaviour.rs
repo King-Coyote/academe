@@ -64,7 +64,7 @@ impl<C: Context> Behaviour<C> {
 
         let mut status = DecompositionStatus::default();
         let mut decomposed = false;
-        while ctx.state_mut().partial_queue.len() > 0 && !ctx.state_mut().paused {
+        while ctx.state().partial_queue.len() > 0 && !ctx.state().paused {
             let partial_task = &self.tasks[ctx.state_mut().partial_queue.pop_front().unwrap()];
             if !decomposed {
                 status = partial_task.decompose(ctx, &self, plan);
@@ -90,10 +90,10 @@ impl<C: Context> Behaviour<C> {
     fn full_replan(&self, ctx: &mut C, plan: &mut Plan) -> DecompositionStatus {
         let mut last_partial_plan = Plan::default();
         let mut was_paused = false;
-        if ctx.state_mut().paused {
+        if ctx.state().paused {
             ctx.state_mut().paused = false;
             was_paused = true;
-            last_partial_plan.extend(ctx.state_mut().partial_queue.iter());
+            last_partial_plan.extend(ctx.state().partial_queue.iter());
         }
 
         ctx.state_mut().record.clear();

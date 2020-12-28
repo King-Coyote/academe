@@ -4,6 +4,17 @@ use bevy::ecs::Entity;
 pub trait Context {
     fn state(&self) -> &ContextState;
     fn state_mut(&mut self) -> &mut ContextState;
+
+    // The below functions are convenience for working in behaviour building
+    // lets you add vars and such without haivng to say state-mut everywhere
+
+    // cares if the key exists
+    fn add(&mut self, key: &str, variant: Variant);
+    // doesn't care if the key exists
+    fn set(&mut self, key: &str, variant: Variant);
+    fn get(&self, key: &str) -> Option<&Variant>;
+    fn remove(&mut self, key: &str);
+    fn test_value(&self, key: &str, value: &Variant) -> Option<bool>;
 }
 
 #[derive(Default,)]
@@ -123,6 +134,12 @@ impl Context for BeingContext {
         &mut self.state
     }
 
+    fn add(&mut self, key: &str, variant: Variant) { self.state.add(key, variant) }
+    fn set(&mut self, key: &str, variant: Variant) { self.state.set(key, variant) }
+    fn get(&self, key: &str) -> Option<&Variant> { self.state.get(key) }
+    fn remove(&mut self, key: &str) { self.state.remove(key) }
+    fn test_value(&self, key: &str, value: &Variant) -> Option<bool> { self.state.test_value(key, value) }
+
 }
 
 // wrappings of various things that can exist in the game world
@@ -182,12 +199,12 @@ mod tests {
         ctx.set("test2", Variant::Bool(true));
         ctx.state_mut().rollback_transaction();
 
-        assert!(ctx.world_state.get("test1").is_none());
-        assert!(ctx.world_state.get("test2").is_none());
-        assert!(ctx.transactions.len() == 0);
+        assert!(ctx.state.get("test1").is_none());
+        assert!(ctx.state.get("test2").is_none());
+        assert!(ctx.state.transactions.len() == 0);
 
         ctx.set("test3", Variant::Int32(20));
-        assert!(ctx.transactions.len() == 0);
+        assert!(ctx.state.transactions.len() == 0);
     }
 
     #[test]
@@ -198,12 +215,12 @@ mod tests {
         ctx.set("test2", Variant::Bool(true));
         ctx.state_mut().commit_transaction();
 
-        assert!(ctx.world_state.get("test1").is_some());
-        assert!(ctx.world_state.get("test2").is_some());
-        assert!(ctx.transactions.len() == 0);
+        assert!(ctx.state.get("test1").is_some());
+        assert!(ctx.state.get("test2").is_some());
+        assert!(ctx.state.transactions.len() == 0);
 
         ctx.set("test3", Variant::Int32(20));
-        assert!(ctx.transactions.len() == 0);
+        assert!(ctx.state.transactions.len() == 0);
     }
 
 }
