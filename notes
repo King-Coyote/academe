@@ -4,3 +4,54 @@ ideas for terrain MVP:
 - Chunks are an area of space that can contain Tiles
 - Tiles fill in chunks and have a Sprite that can be rendered
 - a space should have a texture atlas for its terrain.
+
+--------------------------
+
+ai thing. The sequence does generally the following steps:
+- clear plan
+- for each task do:
+    - if not valid, revert ctx stack, empty plan, return failed status
+    - if compound, decompose and:
+        - if rejected, clear plan, revert stack, return rejected.
+        - if failed, same but return failed.
+        - add all subplans to current plan
+        - if paused, add partial plan entry of current task index and return partial
+        - if all works, set result to plan and return success
+    - if primitive, apply effects to ctx and enqueue current task
+    - if pause plan, pause ctx, enqueue current task to partial plan, and return partial
+    - if there's tasks in current plan, return success otherwise return failure
+- then just return the status.
+
+a selector does the following:
+- clear the plan.
+- for each subtask in current task:
+    - checks whether our current planning can possibly beat the one currently running.
+    if not, then return rejected.
+    - if task not valid, set result to current plan and return something
+    - if compound, do:
+        - add to mtr
+        - decompose the task
+        - if rejected, null the result and return rejected
+        - if failed, remove top of mtr, set result to plan and return failed
+        - enqueue all subtasks into plan
+        - if paused, set result to plan and return partial
+        - else set result to plan and return success if more than one task else failed.
+    - if primitive, apply effects and enqueue.
+    - set result to plan
+    - return success if > 0 tasks else return failure.
+- if rejected, succeeded or partial, return status and finish. CONTINUE ON FAILURE
+- set result to plan and return success if more than one task else failed.
+
+----------------------------------
+what the fuq is an MTR and how it work??
+
+An MTR is a list of indices of valid tasks during a decomposition.
+The reason that this isn't used in sequences is that in a sequence, you don't need to
+go back and continue from the last valid index; instead you either go all the way,
+or you discard the task completely.
+
+-----------------------------------
+
+
+
+-----------------------------------
