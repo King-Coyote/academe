@@ -22,7 +22,7 @@ impl<C> Planner<C>
         let mut replacing = false;
 
         // get plan if we need it
-        if !self.has_plan() && self.current_task.is_none() || ctx.is_dirty() {
+        if !self.has_plan() && self.current_task.is_none() || ctx.state_mut().dirty {
             replacing = self.plan.len() > 0;
             status = self.find_plan(ctx, behaviour);
         }
@@ -57,15 +57,15 @@ impl<C> Planner<C>
         -> DecompositionStatus
     {
 
-        let dirty = ctx.is_dirty();
-        ctx.set_dirty(false);
+        let dirty = ctx.state_mut().dirty;
+        ctx.state_mut().dirty = false;
         let mut last_partial_plan: VecDeque<usize> = VecDeque::new();
 
-        if dirty && ctx.is_paused() {
+        if dirty && ctx.state_mut().paused {
             //replan
-            ctx.set_paused(false);
-            last_partial_plan.extend(ctx.partial_queue().iter());
-            ctx.dump_into_last_record();
+            ctx.state_mut().paused = false;
+            last_partial_plan.extend(ctx.state_mut().partial_queue.iter());
+            ctx.state_mut().dump_into_last_record();
         }
 
         let plan_status = behaviour.find_plan(ctx);
@@ -84,18 +84,18 @@ impl<C> Planner<C>
                     }
                 }
 
-                ctx.dump_into_last_record();
+                ctx.state_mut().dump_into_last_record();
 
             },
             _ => {
                 if last_partial_plan.len() > 0 {
-                    ctx.set_paused(true);
-                    ctx.partial_queue().clear();
-                    ctx.partial_queue().extend(last_partial_plan);
+                    ctx.state_mut().paused = true;
+                    ctx.state_mut().partial_queue.clear();
+                    ctx.state_mut().partial_queue.extend(last_partial_plan);
 
-                    if !ctx.last_record().is_empty() {
-                        ctx.dump_into_record();
-                        ctx.last_record().clear();
+                    if !ctx.state_mut().last_record.is_empty() {
+                        ctx.state_mut().dump_into_record();
+                        ctx.state_mut().last_record.clear();
                     }
                 }
             }
@@ -133,8 +133,8 @@ impl<C> Planner<C>
                         // }
                         self.current_task = None;
                         if self.plan.len() == 0 {
-                            ctx.last_record().clear();
-                            ctx.set_dirty(false);
+                            ctx.state_mut().last_record.clear();
+                            ctx.state_mut().dirty = false;
                             // call tick again if immediate replanning is required
                         }
                     },
@@ -160,10 +160,10 @@ impl<C> Planner<C>
     fn clear_all(&mut self, ctx: &mut C) {
         self.current_task = None;
         self.plan.clear();
-        ctx.last_record().clear();
-        ctx.set_paused(false);
-        ctx.partial_queue().clear();
-        ctx.set_dirty(false);
+        ctx.state_mut().last_record.clear();
+        ctx.state_mut().paused = false;
+        ctx.state_mut().partial_queue.clear();
+        ctx.state_mut().dirty = false;
     }
 }
 

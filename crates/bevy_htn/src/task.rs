@@ -126,7 +126,7 @@ C: Context
         use DecompositionStatus::*;
 
         let mut sub_plan = Plan::default();
-        self.ctx.begin_transaction();
+        self.ctx.state_mut().begin_transaction();
         for sub_task_inx in task.sub_tasks.iter() {
             let sub_task = self.behaviour.get_task(*sub_task_inx);
             if !task.is_valid(self.ctx) {
@@ -136,7 +136,7 @@ C: Context
             let status = sub_task.decompose(self.ctx, self.behaviour, &mut sub_plan);
             match status {
                 Rejected | Failed | Partial => {
-                    self.ctx.rollback_transaction();                    
+                    self.ctx.state_mut().rollback_transaction();                    
                     return status;
                 },
                 _ => {}
@@ -146,7 +146,7 @@ C: Context
         match sub_plan.len() {
             l if l == 0 => Failed,
             _ => {
-                self.ctx.commit_transaction();
+                self.ctx.state_mut().commit_transaction();
                 over_plan.extend(sub_plan.iter());
                 Succeeded
             }
@@ -190,8 +190,8 @@ C: Context
     fn decompose_pause(&mut self, plan: &mut Plan) -> DecompositionStatus {
         use DecompositionStatus::*;
 
-        self.ctx.set_paused(true);
-        self.ctx.partial_queue().push_back(self.calling_task);
+        self.ctx.state_mut().paused = true;
+        self.ctx.state_mut().partial_queue.push_back(self.calling_task);
         
         Partial
     }

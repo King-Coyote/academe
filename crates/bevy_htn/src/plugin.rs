@@ -19,10 +19,10 @@ fn startup(
         .sequence("BeTestBehaviour")
             .sequence("FindEnemy")
                 .condition("No enemies in range", |ctx: &BeingContext| {
-                    !ctx.test_value("test", &Bool(true)).unwrap_or(false)
+                    !ctx.state().test_value("test", &Bool(true)).unwrap_or(false)
                 })
                 .selector("MoveRandomly")
-                    .effect("Test!", |ctx: &mut BeingContext| ctx.set("test", Bool(true)))
+                    .effect("Test!", |ctx: &mut BeingContext| ctx.state_mut().set("test", Bool(true)))
                     .do_action("TestOp", |ctx: &mut BeingContext| {
                         println!("I have many regrets; but the ass was fat");
                         TaskStatus::Success

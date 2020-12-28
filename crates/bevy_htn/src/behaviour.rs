@@ -29,13 +29,13 @@ impl<C: Context> Behaviour<C> {
     }
 
     pub fn find_plan(&self, ctx: &mut C) -> (Plan, DecompositionStatus) {
-        ctx.set_state(ContextState::Planning);
+        ctx.state_mut().exec_state = ExecutionState::Planning;
         // let mut plan_status: (Plan, DecompositionStatus);
         let mut plan = Plan::default();
         let mut status = DecompositionStatus::default();
 
-        if ctx.is_paused() && ctx.last_record().is_empty() {
-            ctx.set_paused(false);
+        if ctx.state_mut().paused && ctx.state_mut().last_record.is_empty() {
+            ctx.state_mut().paused = false;
             status = self.resume_partial(ctx, &mut plan);
         } else {
             status = self.full_replan(ctx, &mut plan);
@@ -53,7 +53,7 @@ impl<C: Context> Behaviour<C> {
         //     }
         // }
 
-        ctx.set_state(ContextState::Executing);
+        ctx.state_mut().exec_state = ExecutionState::Executing;
         (plan, status)
     }
 
@@ -64,8 +64,8 @@ impl<C: Context> Behaviour<C> {
 
         let mut status = DecompositionStatus::default();
         let mut decomposed = false;
-        while ctx.partial_queue().len() > 0 && !ctx.is_paused() {
-            let partial_task = &self.tasks[ctx.partial_queue().pop_front().unwrap()];
+        while ctx.state_mut().partial_queue.len() > 0 && !ctx.state_mut().paused {
+            let partial_task = &self.tasks[ctx.state_mut().partial_queue.pop_front().unwrap()];
             if !decomposed {
                 status = partial_task.decompose(ctx, &self, plan);
                 decomposed = true;
@@ -80,7 +80,7 @@ impl<C: Context> Behaviour<C> {
 
         // we failed to continue the paused partial plan, so we replan from root.
         if status == Rejected || status == Partial {
-            ctx.record().clear();
+            ctx.state_mut().record.clear();
             status = self.get_task(0).decompose(ctx, &self, plan);
         }
 
@@ -90,20 +90,20 @@ impl<C: Context> Behaviour<C> {
     fn full_replan(&self, ctx: &mut C, plan: &mut Plan) -> DecompositionStatus {
         let mut last_partial_plan = Plan::default();
         let mut was_paused = false;
-        if ctx.is_paused() {
-            ctx.set_paused(false);
+        if ctx.state_mut().paused {
+            ctx.state_mut().paused = false;
             was_paused = true;
-            last_partial_plan.extend(ctx.partial_queue().iter());
+            last_partial_plan.extend(ctx.state_mut().partial_queue.iter());
         }
 
-        ctx.record().clear();
+        ctx.state_mut().record.clear();
         let mut status = self.tasks[0].decompose(ctx, &self, plan);
 
         use DecompositionStatus::*;
         if was_paused && (status == Rejected || status == Failed) {
-            ctx.set_paused(true);
-            ctx.partial_queue().clear();
-            ctx.partial_queue().extend(last_partial_plan);
+            ctx.state_mut().paused = true;
+            ctx.state_mut().partial_queue.clear();
+            ctx.state_mut().partial_queue.extend(last_partial_plan);
         }
 
         status
