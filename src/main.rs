@@ -1,5 +1,8 @@
 use bevy::prelude::*;
 use bevy_htn::prelude::*;
+use main_cam::*;
+
+mod main_cam;
 
 // dfault stages look like this:
 // self.add_startup_stage(startup_stage::STARTUP)
@@ -14,6 +17,6 @@ use bevy_htn::prelude::*;
 fn main() {
     App::build()
         .add_plugins(DefaultPlugins)
-        .add_plugin(AiPlugin)
+        .add_plugin(MainCameraPlugin)
         .run();
 }
