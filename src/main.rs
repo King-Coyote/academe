@@ -1,5 +1,8 @@
 use bevy::prelude::*;
 use bevy_htn::prelude::*;
+use ai_demo::AiPlugin;
+
+mod ai_demo;
 
 // dfault stages look like this:
 // self.add_startup_stage(startup_stage::STARTUP)
