@@ -10,3 +10,4 @@ edition = "2018"
 bevy = "^0"
 bevy_htn = { path = "crates/bevy_htn", version = "^0.1.0"}
 rand = "^0"
+bevy_prototype_lyon = { git = "https://github.com/nilirad/bevy_prototype_lyon", branch = "master" }
