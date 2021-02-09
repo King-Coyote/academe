@@ -3,10 +3,19 @@ use bevy_htn::prelude::*;
 use rand::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use std::collections::HashMap;
+use std::ops;
 
 pub struct AiPlugin;
 
-type Position = [f32; 2];
+// type Position = Vec2;
+
+// impl ops::Sub for Position {
+//     type Output = Position;
+
+//     fn sub(&self, other: &Position) -> Self::Output {
+//         Position(Vec2::new(self.x - other.x, self.y - other.y))
+//     }
+// }
 
 impl Plugin for AiPlugin {
     fn build(&self, app: &mut AppBuilder) {
@@ -25,8 +34,8 @@ impl Plugin for AiPlugin {
 #[derive(Default,)]
 pub struct CreatureContext {
     state: ContextState,
-    move_target: Option<Position>, // if it's not None, nav should pick this up and go with it
-    current_pos: Position,
+    move_target: Option<Vec2>, // if it's not None, nav should pick this up and go with it
+    current_pos: Vec2,
     move_timer_expired: bool,
 }
 
@@ -87,8 +96,8 @@ fn startup(
     spawn_herbivore(
         world,
         materials.herb_mat.clone(),
-        [0.0, 0.0],
-        20.0
+        Vec2::new(0.0, 0.0),
+        10.0
     );
 
     world.spawn(Camera2dBundle::default());
@@ -160,7 +169,7 @@ struct BehaviourName(String);
 fn spawn_herbivore(
     world: &mut World,
     material: Handle<ColorMaterial>,
-    pos: Position,
+    pos: Vec2,
     r: f32,
 ) {
     let circle = shapes::Circle {
@@ -189,45 +198,24 @@ fn spawn_herbivore(
 const EPSILON: f32 = 0.001;
 const MAX_MOVE_DISTANCE: f32 = 100.0;
 const BOUNDARY: f32 = 400.0;
-const MOVE_MULTIPLIER: f32 = 100.0;
+const MOVE_MULTIPLIER: f32 = 10.0;
 
-fn locations_close(a: &Position, b: &Position) -> bool {
-    let dx = a[0] - b[0];
+fn locations_close(a: &Vec2, b: &Vec2) -> bool {
+    let dx = a.x - b.x;
     let dy = a[1] - b[1];
     (dx.powi(2) + dy.powi(2)).sqrt() <= EPSILON
 }
 
-fn random_nearby_location(p: &Position) -> Position {
+fn random_nearby_location(p: &Vec2) -> Vec2 {
     let mut rng = rand::thread_rng();
     let mid = MAX_MOVE_DISTANCE / 2.0;
     let dx: f32 = clamp_abs((MAX_MOVE_DISTANCE * rng.gen::<f32>()) - mid, BOUNDARY);
     let dy: f32 = clamp_abs((MAX_MOVE_DISTANCE * rng.gen::<f32>()) - mid, BOUNDARY);
-    [
-        p[0] + dx,
-        p[1] + dy
-    ]
+    Vec2::new(p.x + dx, p.y + dy)
 }
 
-// fn interpolate_positions(a: &Position, b: &Position, amount: f32) -> Position {
-//     let mult = 100.0;
-//     let c = [b[0] - a[0], b[1] - a[1]];
-//     [
-//         c[0] * amount * mult,q
-//         c[1] * amount * mult
-//     ]
-// }
-
-fn move_point_towards(from: &Position, to: &Position, amount: f32) -> Position {
-    let diff = [to[0] - from[0], to[1] - from[1]];
-    let diff_n = normalise(&[to[0] - from[0], from[1] - to[1]]);
-    let move_to = [
-        diff_n[0] * amount * MOVE_MULTIPLIER,
-        diff_n[1] * amount * MOVE_MULTIPLIER,
-    ];
-    if length(&move_to) > length(&diff) {
-        return to.clone();
-    }
-    move_to
+fn move_point_towards(from: &Vec2, to: &Vec2, amount: f32) -> Vec2 {
+    from.lerp(*to, amount * MOVE_MULTIPLIER)
 }
 
 fn clamp_abs(mut a: f32, to: f32) -> f32 {
@@ -240,14 +228,6 @@ fn clamp(n: f32, low: f32, high: f32) -> f32 {
     if n < low { return low; }
     if n > high { return high; }
     n
-}
-
-fn normalise(a: &Position) -> Position {
-    let length = (a[0].powi(2) + a[1].powi(2)).sqrt();
-    [
-        a[0] / length,
-        a[1] / length
-    ]
 }
 
 fn length(v: &[f32; 2]) -> f32 {
