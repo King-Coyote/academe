@@ -37,6 +37,8 @@ pub struct CreatureContext {
     move_target: Option<Vec2>, // if it's not None, nav should pick this up and go with it
     current_pos: Vec2,
     move_timer_expired: bool,
+    nearby_friendly: Vec<Entity>,
+    nearby_enemy: Vec<Entity>,
 }
 
 impl Context for CreatureContext {
@@ -64,17 +66,15 @@ fn startup(
                         if locations_close(target, &ctx.current_pos) {
                             // make a new move loc
                             ctx.move_target = Some(random_nearby_location(&ctx.current_pos));
-                            println!("Reached destination: choosing a new location: {:?}", &ctx.move_target);
+                            println!("I saw {:?} friendlies", ctx.nearby_friendly.len());
                             return TaskStatus::Success;
                         }
                     },
                     _ => {
                         ctx.move_target = Some(random_nearby_location(&ctx.current_pos));
-                        println!("No move target - making one: {:?}", &ctx.move_target);
                         return TaskStatus::Success;
                     }
                 }
-                // println!("Continuing to move...");
                 TaskStatus::Continue
             })
         .end()
@@ -91,14 +91,16 @@ fn startup(
         herb_mat: materials.add(Color::rgb(0.0, 0.75, 0.2).into()),
     };
 
-    println!("Spawning herbivore...");
+    println!("Spawning herbivores...");
 
-    spawn_herbivore(
-        world,
-        materials.herb_mat.clone(),
-        Vec2::new(0.0, 0.0),
-        10.0
-    );
+    for i in 0..4 {
+        spawn_herbivore(
+            world,
+            materials.herb_mat.clone(),
+            Vec2::new(i as f32 * 10.0, 0.0),
+            10.0
+        );
+    }
 
     world.spawn(Camera2dBundle::default());
     // let behaviour = builder.build();
@@ -122,13 +124,22 @@ fn ai_system(
 
 fn senses_system(
     mut ctx_query: Query<(&mut CreatureContext, &Transform)>,
-    mut herb_query: Query<(&Herbivore, &Transform)>,
-    mut carn_query: Query<(&Carnivore, &Transform)>
+    mut herb_query: Query<(&Herbivore, &Transform, Entity)>,
+    mut carn_query: Query<(&Carnivore, &Transform, Entity)>
 ) {
-    for (mut ctx, mut trans) in ctx_query.iter_mut() {
-        // for (_, other_trans) in other_herb_query.iter() {
-
-        // }
+    for (mut ctx, trans) in ctx_query.iter_mut() {
+        ctx.nearby_friendly.clear();
+        ctx.nearby_enemy.clear();
+        for (_, other_trans, entity) in herb_query.iter() {
+            if within_sight(trans, other_trans) {
+                ctx.nearby_friendly.push(entity);
+            }
+        }
+        for (_, other_trans, entity) in carn_query.iter() {
+            if within_sight(trans, other_trans) {
+                ctx.nearby_enemy.push(entity);
+            }
+        }
     }
 }
 
@@ -196,14 +207,19 @@ fn spawn_herbivore(
 }
 
 const EPSILON: f32 = 0.001;
-const MAX_MOVE_DISTANCE: f32 = 100.0;
+const MAX_MOVE_DISTANCE: f32 = 150.0;
 const BOUNDARY: f32 = 400.0;
-const MOVE_MULTIPLIER: f32 = 10.0;
+const MOVE_MULTIPLIER: f32 = 5.0;
+const HERBIVORE_SIGHT_RANGE: f32 = 200.0;
 
 fn locations_close(a: &Vec2, b: &Vec2) -> bool {
     let dx = a.x - b.x;
     let dy = a[1] - b[1];
     (dx.powi(2) + dy.powi(2)).sqrt() <= EPSILON
+}
+
+fn within_sight(a: &Transform, b: &Transform) -> bool {
+    a.translation.distance(b.translation) < HERBIVORE_SIGHT_RANGE
 }
 
 fn random_nearby_location(p: &Vec2) -> Vec2 {
