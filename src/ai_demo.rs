@@ -4,6 +4,7 @@ use rand::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use std::collections::HashMap;
 use std::ops;
+use std::f32;
 
 pub struct AiPlugin;
 
@@ -39,6 +40,7 @@ pub struct CreatureContext {
     move_timer_expired: bool,
     nearby_friendly: Vec<Entity>,
     nearby_enemy: Vec<Entity>,
+    nearest_enemy: Option<(Entity, f32)>,
 }
 
 impl Context for CreatureContext {
@@ -59,6 +61,15 @@ fn startup(
     use Variant::*;
     builder
     .selector("BeAHerbivore")
+        .primitive("RunAwayFromEnemies")
+            .condition("HasNearestEnemy", |ctx: &CreatureContext| ctx.nearest_enemy.is_some())
+            .do_action("Run away", |ctx: &mut CreatureContext| -> TaskStatus {
+                // check the distance that the enemy has
+                // if the distance is under some constant, then you need to keep moving away
+                // 
+                TaskStatus::Success
+            })
+        .end()
         .primitive("MoveRandomly")
             .do_action("Choose new location", |ctx: &mut CreatureContext| -> TaskStatus {
                 match ctx.move_target {
@@ -129,6 +140,8 @@ fn senses_system(
 ) {
     for (mut ctx, trans) in ctx_query.iter_mut() {
         ctx.nearby_friendly.clear();
+        let prev_nearest_enemy = ctx.nearest_enemy;
+        ctx.nearest_enemy = None;
         ctx.nearby_enemy.clear();
         for (_, other_trans, entity) in herb_query.iter() {
             if within_sight(trans, other_trans) {
@@ -136,9 +149,19 @@ fn senses_system(
             }
         }
         for (_, other_trans, entity) in carn_query.iter() {
+            let mut closest = f32::INFINITY;
             if within_sight(trans, other_trans) {
+                let dist = (trans.translation - other_trans.translation).length();
+                if dist < closest {
+                    closest = dist;
+                    ctx.nearest_enemy = Some((entity, dist));
+                }
                 ctx.nearby_enemy.push(entity);
             }
+        }
+        if prev_nearest_enemy != ctx.nearest_enemy {
+            // force replan if you done seen more enemies
+            ctx.state.dirty = true;
         }
     }
 }
@@ -173,7 +196,11 @@ struct Materials {
 
 struct Herbivore;
 struct Carnivore;
-struct Movement(u32);
+struct Movement{
+    level: u32,
+    vx: f32,
+    vy: f32,
+}
 struct DebugCircle;
 struct BehaviourName(String);
 
@@ -220,6 +247,11 @@ fn locations_close(a: &Vec2, b: &Vec2) -> bool {
 
 fn within_sight(a: &Transform, b: &Transform) -> bool {
     a.translation.distance(b.translation) < HERBIVORE_SIGHT_RANGE
+}
+
+fn location_away_from(current: &Vec2, from: &Vec2) -> Vec2 {
+    let diff = (*current - *from).normalize();
+    diff * MAX_MOVE_DISTANCE
 }
 
 fn random_nearby_location(p: &Vec2) -> Vec2 {
