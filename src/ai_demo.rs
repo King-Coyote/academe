@@ -8,16 +8,6 @@ use std::f32;
 
 pub struct AiPlugin;
 
-// type Position = Vec2;
-
-// impl ops::Sub for Position {
-//     type Output = Position;
-
-//     fn sub(&self, other: &Position) -> Self::Output {
-//         Position(Vec2::new(self.x - other.x, self.y - other.y))
-//     }
-// }
-
 impl Plugin for AiPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
@@ -38,9 +28,9 @@ pub struct CreatureContext {
     move_target: Option<Vec2>, // if it's not None, nav should pick this up and go with it
     current_pos: Vec2,
     move_timer_expired: bool,
-    nearby_friendly: Vec<Entity>,
-    nearby_enemy: Vec<Entity>,
-    nearest_enemy: Option<(Entity, f32)>,
+    nearby_herbivore: Vec<Entity>,
+    nearby_carnivore: Vec<Entity>,
+    nearest_carnivore: Option<(Entity, f32)>,
 }
 
 impl Context for CreatureContext {
@@ -57,42 +47,12 @@ fn startup(
     world: &mut World, 
     resources: &mut Resources
 ) {
-    let mut builder: BehaviourBuilder<CreatureContext> = BehaviourBuilder::new("Herbivore");
-    use Variant::*;
-    builder
-    .selector("BeAHerbivore")
-        .primitive("RunAwayFromEnemies")
-            .condition("HasNearestEnemy", |ctx: &CreatureContext| ctx.nearest_enemy.is_some())
-            .do_action("Run away", |ctx: &mut CreatureContext| -> TaskStatus {
-                // check the distance that the enemy has
-                // if the distance is under some constant, then you need to keep moving away
-                // 
-                TaskStatus::Success
-            })
-        .end()
-        .primitive("MoveRandomly")
-            .do_action("Choose new location", |ctx: &mut CreatureContext| -> TaskStatus {
-                match ctx.move_target {
-                    Some(ref target) => {
-                        if locations_close(target, &ctx.current_pos) {
-                            // make a new move loc
-                            ctx.move_target = Some(random_nearby_location(&ctx.current_pos));
-                            println!("I saw {:?} friendlies", ctx.nearby_friendly.len());
-                            return TaskStatus::Success;
-                        }
-                    },
-                    _ => {
-                        ctx.move_target = Some(random_nearby_location(&ctx.current_pos));
-                        return TaskStatus::Success;
-                    }
-                }
-                TaskStatus::Continue
-            })
-        .end()
-    .end();
-    let herbivore_behaviour = builder.build();
+
+    let herbivore_behaviour = herbivore_behaviour();
+    let carnivore_behaviour = carnivore_behaviour();
     let mut behaviour_map = BehaviourMap::default();
     behaviour_map.behaviours.insert("Herbivore".to_string(), herbivore_behaviour);
+    behaviour_map.behaviours.insert("Carnivore".to_string(), carnivore_behaviour);
     resources.insert_thread_local(behaviour_map);
 
     let mut materials = resources.get_mut::<Assets<ColorMaterial>>().unwrap();
@@ -112,6 +72,8 @@ fn startup(
             10.0
         );
     }
+
+    spawn_carnivore(world, materials.carn_mat.clone(), Vec2::new(-300.0, 0.0), 12.0);
 
     world.spawn(Camera2dBundle::default());
     // let behaviour = builder.build();
@@ -139,13 +101,13 @@ fn senses_system(
     mut carn_query: Query<(&Carnivore, &Transform, Entity)>
 ) {
     for (mut ctx, trans) in ctx_query.iter_mut() {
-        ctx.nearby_friendly.clear();
-        let prev_nearest_enemy = ctx.nearest_enemy;
-        ctx.nearest_enemy = None;
-        ctx.nearby_enemy.clear();
+        ctx.nearby_herbivore.clear();
+        let prev_nearest_carnivore = ctx.nearest_carnivore;
+        ctx.nearest_carnivore = None;
+        ctx.nearby_carnivore.clear();
         for (_, other_trans, entity) in herb_query.iter() {
             if within_sight(trans, other_trans) {
-                ctx.nearby_friendly.push(entity);
+                ctx.nearby_herbivore.push(entity);
             }
         }
         for (_, other_trans, entity) in carn_query.iter() {
@@ -154,32 +116,36 @@ fn senses_system(
                 let dist = (trans.translation - other_trans.translation).length();
                 if dist < closest {
                     closest = dist;
-                    ctx.nearest_enemy = Some((entity, dist));
+                    ctx.nearest_carnivore = Some((entity, dist));
                 }
-                ctx.nearby_enemy.push(entity);
+                ctx.nearby_carnivore.push(entity);
             }
         }
-        if prev_nearest_enemy != ctx.nearest_enemy {
+        if prev_nearest_carnivore != ctx.nearest_carnivore {
             // force replan if you done seen more enemies
+            ctx.move_target = None;
             ctx.state.dirty = true;
         }
     }
 }
 
 fn movement_system(
-    // time resource
     time: Res<Time>,
-    mut move_query: Query<(&Movement, &mut Transform, &mut CreatureContext)>
+    mut move_query: Query<(&mut Movement, &mut Transform, &mut CreatureContext)>
 ) {
-    // interpolate towards the move target if not equal to it
-    for (movement, mut trans, mut ctx) in move_query.iter_mut() {
+    for (mut movement, mut trans, mut ctx) in move_query.iter_mut() {
         if let Some(ref target) = ctx.move_target {
-            // get the difference between two points and give the new point, which is
-            // in the direction of the 
-            let level = movement.0 as f32;
-            ctx.current_pos = move_point_towards(&ctx.current_pos, target, time.delta_seconds() * level);
-            trans.translation.x = ctx.current_pos[0];
-            trans.translation.y = ctx.current_pos[1];
+            let level = movement.level as f32;
+            movement.velocity = move_velocity_towards(
+                &movement.velocity, 
+                &ctx.current_pos, 
+                target, 
+                level * time.delta_seconds()
+            );
+            trans.translation.x += movement.velocity.x;
+            trans.translation.y += movement.velocity.y;
+            ctx.current_pos.x = trans.translation.x;
+            ctx.current_pos.y = trans.translation.y;
         }
     }
 }
@@ -196,13 +162,27 @@ struct Materials {
 
 struct Herbivore;
 struct Carnivore;
-struct Movement{
-    level: u32,
-    vx: f32,
-    vy: f32,
-}
 struct DebugCircle;
 struct BehaviourName(String);
+
+struct Movement{
+    level: u32,
+    velocity: Vec2,
+}
+
+impl Movement {
+    fn new(level: u32) -> Self {
+        Movement{
+            level: level,
+            velocity: Vec2::new(0.0, 0.0)
+        }
+    }
+}
+
+const MAX_MOVE_DISTANCE: f32 = 150.0;
+const BOUNDARY: f32 = 400.0;
+const MOVE_MULTIPLIER: f32 = 25.0;
+const HERBIVORE_SIGHT_RANGE: f32 = 200.0;
 
 fn spawn_herbivore(
     world: &mut World,
@@ -226,23 +206,118 @@ fn spawn_herbivore(
     world.insert(e, (
         DebugCircle,
         Herbivore,
-        Movement(1),
+        Movement::new(1),
         CreatureContext::default(),
         Planner::<CreatureContext>::default(),
         BehaviourName("Herbivore".to_owned()),
     )).unwrap();
 }
 
-const EPSILON: f32 = 0.001;
-const MAX_MOVE_DISTANCE: f32 = 150.0;
-const BOUNDARY: f32 = 400.0;
-const MOVE_MULTIPLIER: f32 = 5.0;
-const HERBIVORE_SIGHT_RANGE: f32 = 200.0;
+fn herbivore_behaviour() -> Behaviour<CreatureContext> {
+    let mut builder: BehaviourBuilder<CreatureContext> = BehaviourBuilder::new("Herbivore");
+    builder
+    .selector("BeAHerbivore")
+        .primitive("RunAwayFromEnemies")
+            .condition("HasNearestEnemy", |ctx: &CreatureContext| ctx.nearest_carnivore.is_some())
+            .do_action("Run away", |ctx: &mut CreatureContext| -> TaskStatus {
+                // check the distance that the enemy has
+                // if the distance is under some constant, then you need to keep moving away
+                // 
+                println!("I see a carnivore!!");
+                TaskStatus::Success
+            })
+        .end()
+        .primitive("MoveRandomly")
+            .do_action("Choose new location", |ctx: &mut CreatureContext| -> TaskStatus {
+                match ctx.move_target {
+                    Some(ref target) => {
+                        if locations_close(target, &ctx.current_pos) {
+                            // make a new move loc
+                            ctx.move_target = Some(random_nearby_location(&ctx.current_pos));
+                            println!("Destination reached: now moving to {:?}", ctx.move_target.unwrap());
+                            return TaskStatus::Success;
+                        }
+                    },
+                    _ => {
+                        ctx.move_target = Some(random_nearby_location(&ctx.current_pos));
+                        println!("No move target: moving to {:?}", ctx.move_target.unwrap());
+                        return TaskStatus::Success;
+                    }
+                }
+                TaskStatus::Continue
+            })
+        .end()
+    .end();
+    builder.build()
+}
+
+fn carnivore_behaviour() -> Behaviour<CreatureContext> {
+    let mut builder: BehaviourBuilder<CreatureContext> = BehaviourBuilder::new("Carnivore");
+    builder
+    .selector("BeCarnivore")
+        // .primitive("AttackHerbivore")
+        //     .condition("HasNearestHerbivore", |ctx: &CreatureContext| -> ctx.nearest_herbivore.is_some())
+        //     .do_action("AttackHerbivore", |ctx: &mut CreatureContext| -> TaskStatus {
+
+        //         TaskStatus::Success
+        //     })
+        // .end()
+        .primitive("MoveRandomly")
+            .do_action("Choose new location", |ctx: &mut CreatureContext| -> TaskStatus {
+                match ctx.move_target {
+                    Some(ref target) => {
+                        if locations_close(target, &ctx.current_pos) {
+                            // make a new move loc
+                            ctx.move_target = Some(random_nearby_location(&ctx.current_pos));
+                            return TaskStatus::Success;
+                        }
+                    },
+                    _ => {
+                        ctx.move_target = Some(random_nearby_location(&ctx.current_pos));
+                        return TaskStatus::Success;
+                    }
+                }
+                TaskStatus::Continue
+            })
+        .end()
+    .end();
+    builder.build()
+}
+
+fn spawn_carnivore(
+    world: &mut World,
+    material: Handle<ColorMaterial>,
+    pos: Vec2,
+    r: f32,
+) {
+    let circle = shapes::Circle {
+        radius: r,
+        ..Default::default()
+    };
+
+    let e = world.spawn(
+        GeometryBuilder::build_as(
+            &circle,
+            material,
+            TessellationMode::Fill(FillOptions::default()),
+            Transform::from_translation(Vec3::new(pos[0], pos[1], 0.0)),
+        )
+    );
+    world.insert(e, (
+        DebugCircle,
+        Carnivore,
+        Movement::new(2),
+        CreatureContext::default(),
+        Planner::<CreatureContext>::default(),
+        BehaviourName("Carnivore".to_owned()),
+    )).unwrap();
+}
 
 fn locations_close(a: &Vec2, b: &Vec2) -> bool {
-    let dx = a.x - b.x;
-    let dy = a[1] - b[1];
-    (dx.powi(2) + dy.powi(2)).sqrt() <= EPSILON
+    a.abs_diff_eq(*b, 1.0)
+    // let dx = a.x - b.x;
+    // let dy = a[1] - b[1];
+    // (dx.powi(2) + dy.powi(2)).sqrt() <= f32::EPSILON
 }
 
 fn within_sight(a: &Transform, b: &Transform) -> bool {
@@ -251,7 +326,7 @@ fn within_sight(a: &Transform, b: &Transform) -> bool {
 
 fn location_away_from(current: &Vec2, from: &Vec2) -> Vec2 {
     let diff = (*current - *from).normalize();
-    diff * MAX_MOVE_DISTANCE
+    diff * MAX_MOVE_DISTANCE * -1.0
 }
 
 fn random_nearby_location(p: &Vec2) -> Vec2 {
@@ -264,6 +339,15 @@ fn random_nearby_location(p: &Vec2) -> Vec2 {
 
 fn move_point_towards(from: &Vec2, to: &Vec2, amount: f32) -> Vec2 {
     from.lerp(*to, amount * MOVE_MULTIPLIER)
+}
+
+fn move_velocity_towards(velocity: &Vec2, pos: &Vec2, target: &Vec2, amount: f32) -> Vec2 {
+    let dir = (*target - *pos).normalize();
+    let max_vel = dir * amount * MOVE_MULTIPLIER;
+    if velocity.abs_diff_eq(max_vel, f32::EPSILON) {
+        return velocity.clone();
+    }
+    velocity.lerp(max_vel, 0.5)
 }
 
 fn clamp_abs(mut a: f32, to: f32) -> f32 {
