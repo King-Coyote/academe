@@ -4,6 +4,7 @@ use space::*;
 
 mod input;
 mod space;
+mod utils;
 
 // dfault stages look like this:
 // self.add_startup_stage(startup_stage::STARTUP)

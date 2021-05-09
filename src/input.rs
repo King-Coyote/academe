@@ -1,10 +1,4 @@
-use bevy::{
-    prelude::*,
-    input::{
-        ElementState,
-        mouse::{MouseButtonInput, MouseMotion, MouseWheel},
-    }
-};
+use bevy::{input::{self, ElementState, mouse::{MouseButtonInput, MouseMotion, MouseWheel}}, prelude::*};
 
 pub struct MainCamera;
 
@@ -65,12 +59,34 @@ fn click_system(
     }
 }
 
+fn camera_control_system(
+    windows: Res<Windows>,
+    mut ev_motion: EventReader<MouseMotion>,
+    mut ev_scroll: EventReader<MouseWheel>,
+    input_mouse: Res<Input<MouseButton>>,
+    mut query: Query<&mut Transform, With<MainCamera>>,
+) {
+    let pan_button = MouseButton::Left;
+    let mut pan = Vec2::ZERO;
+
+    let mut cam_position = query.iter_mut().next().unwrap();
+
+    if input_mouse.pressed(pan_button) {
+        for e in ev_motion.iter() {
+            cam_position.translation.x -= e.delta.x;
+            cam_position.translation.y += e.delta.y;
+        }
+    }
+
+}
+
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
             .add_startup_system(setup.system())
             .add_system(mouse_state.system())
             .add_system(click_system.system())
+            .add_system(camera_control_system.system())
         ;
     }
 }
