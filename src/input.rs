@@ -1,4 +1,10 @@
-use bevy::{prelude::*};
+use bevy::{
+    prelude::*,
+    input::{
+        ElementState,
+        mouse::{MouseButtonInput, MouseMotion, MouseWheel},
+    }
+};
 
 pub struct MainCamera;
 
@@ -45,11 +51,23 @@ fn world_coords_system(
     }
 }
 
+fn click_test_system(
+    mouse: Res<MouseState>,
+    mut er_mouse: EventReader<MouseButtonInput>,
+) {
+    for e in er_mouse.iter() {
+        if e.button == MouseButton::Right && e.state == ElementState::Released {
+            println!("Ya done click't at screen: {}, world: {}", mouse.screen_pos, mouse.world_pos);
+        }
+    }
+}
+
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
             .add_startup_system(setup.system())
             .add_system(world_coords_system.system())
+            .add_system(click_test_system.system())
         ;
     }
 }
