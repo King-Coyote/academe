@@ -1,7 +1,7 @@
 use bevy::prelude::*;
-use main_cam::*;
+use input::*;
 
-mod main_cam;
+mod input;
 
 // dfault stages look like this:
 // self.add_startup_stage(startup_stage::STARTUP)
@@ -16,6 +16,6 @@ mod main_cam;
 fn main() {
     App::build()
         .add_plugins(DefaultPlugins)
-        .add_plugin(MainCameraPlugin)
+        .add_plugin(InputPlugin)
         .run();
 }
