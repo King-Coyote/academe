@@ -13,6 +13,7 @@ pub struct InputPlugin;
 pub struct MouseState {
     screen_pos: Vec2,
     world_pos: Vec2,
+    projected_pos: Vec2,
 }
 
 fn setup(mut commands: Commands) {
@@ -21,8 +22,9 @@ fn setup(mut commands: Commands) {
         .insert(MainCamera);
     
     commands.insert_resource(MouseState {
-        screen_pos: Vec2::new(0.0, 0.0),
-        world_pos: Vec2::new(0.0, 0.0),
+        screen_pos: Vec2::ZERO,
+        world_pos: Vec2::ZERO,
+        projected_pos: Vec2::ZERO,
     });
 }
 
@@ -48,6 +50,7 @@ fn mouse_state(
         let world_pos = camera_transform.compute_matrix() * p.extend(0.0).extend(1.0);
         mouse_state.screen_pos = e.position;
         mouse_state.world_pos = Vec2::new(world_pos.x, world_pos.y);
+        mouse_state.projected_pos = Vec2::new(world_pos.x, world_pos.y * 2.0);
     }
 }
 
@@ -57,7 +60,7 @@ fn click_system(
 ) {
     for e in er_mouse.iter() {
         if e.button == MouseButton::Right && e.state == ElementState::Released {
-            println!("Ya done click't at screen: {}, world: {}", mouse.screen_pos, mouse.world_pos);
+            println!("Ya done click't at screen: {}, world: {}, proj: {}", mouse.screen_pos, mouse.world_pos, mouse.projected_pos);
         }
     }
 }
