@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 use input::*;
+use space::*;
 
 mod input;
+mod space;
 
 // dfault stages look like this:
 // self.add_startup_stage(startup_stage::STARTUP)
@@ -17,5 +19,6 @@ fn main() {
     App::build()
         .add_plugins(DefaultPlugins)
         .add_plugin(InputPlugin)
+        .add_plugin(SpacePlugin)
         .run();
 }

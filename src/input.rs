@@ -26,7 +26,7 @@ fn setup(mut commands: Commands) {
     });
 }
 
-fn world_coords_system(
+fn mouse_state(
     // events to get cursor position
     mut evr_cursor: EventReader<CursorMoved>,
     // need to get window dimensions
@@ -51,7 +51,7 @@ fn world_coords_system(
     }
 }
 
-fn click_test_system(
+fn click_system(
     mouse: Res<MouseState>,
     mut er_mouse: EventReader<MouseButtonInput>,
 ) {
@@ -66,8 +66,8 @@ impl Plugin for InputPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
             .add_startup_system(setup.system())
-            .add_system(world_coords_system.system())
-            .add_system(click_test_system.system())
+            .add_system(mouse_state.system())
+            .add_system(click_system.system())
         ;
     }
 }
