@@ -15,7 +15,7 @@ use crate::{
 pub struct SpacePlugin;
 
 pub struct InteractablePolygon {
-    points: Vec<Vec2>,
+    pub points: Vec<Vec2>,
 }
 
 fn setup(
@@ -54,7 +54,11 @@ fn interactable_polygon_system(
 ) {
     for polygon in q_polygon.iter() {
         for e in er_mouse.iter() {
-
+            if point_inside_polygon(&mouse.world_pos, &polygon.points) {
+                println!("Clicked inside! :0");
+            } else {
+                println!("Outside :(");
+            }
         }
     }
 }
