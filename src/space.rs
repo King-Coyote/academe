@@ -18,6 +18,17 @@ pub struct InteractablePolygon {
     pub points: Vec<Vec2>,
 }
 
+#[derive(PartialEq)]
+pub enum InteractStateEnum {
+    Enabled,
+    Clicked,
+    Hovered,
+    Disabled,
+}
+
+#[derive(PartialEq)]
+pub struct InteractState(InteractStateEnum);
+
 fn setup(
     mut commands: Commands,
 ) {
@@ -44,20 +55,45 @@ fn setup(
             Transform::from_xyz(0.0, 0.0, 0.0),
         ))
         .insert(InteractablePolygon{points})
+        .insert(InteractState(InteractStateEnum::Enabled))
     ;
 }
 
-fn interactable_polygon_system(
+
+fn polygon_interact_system(
+    mut commands: Commands,
     mouse: Res<MouseState>,
-    mut er_mouse: EventReader<MouseButtonInput>,
-    q_polygon: Query<&InteractablePolygon>,
+    mut er_mousemove: EventReader<CursorMoved>,
+    mut er_mouseinput: EventReader<MouseButtonInput>,
+    mut q_polygon: Query<(Entity, &InteractablePolygon, &mut InteractState)>,
 ) {
-    for polygon in q_polygon.iter() {
-        for e in er_mouse.iter() {
-            if point_inside_polygon(&mouse.world_pos, &polygon.points) {
-                println!("Clicked inside! :0");
-            } else {
-                println!("Outside :(");
+    use InteractStateEnum::*;
+    for e in er_mousemove.iter() {
+        for (entity, polygon, mut state) in q_polygon.iter_mut() {
+            let inside = point_inside_polygon(&mouse.world_pos, &polygon.points);
+            if inside && state.0 == Enabled {
+                println!("Hovered over {:?}", entity);
+                state.0 = Hovered;
+            } else if !inside && state.0 == Hovered {
+                println!("Un-hovered {:?}", entity);
+                state.0 = Enabled;
+            }
+        }
+    }
+    for e in er_mouseinput.iter() {
+        for (entity, polygon, mut state) in q_polygon.iter_mut() {
+            if e.button != MouseButton::Right {
+                continue;
+            }
+            if state.0 != Hovered && state.0 != Clicked {
+                continue;
+            }
+            if e.state == ElementState::Pressed && state.0 == Hovered {
+                println!("Mousedown on {:?}", entity);
+                state.0 = Clicked;
+            } else if e.state == ElementState::Released && state.0 == Clicked {
+                println!("Clicked on {:?}", entity);
+                state.0 = Hovered;
             }
         }
     }
@@ -68,7 +104,7 @@ impl Plugin for SpacePlugin {
         app
             .add_plugin(ShapePlugin)
             .add_startup_system(setup.system())
-            .add_system(interactable_polygon_system.system())
+            .add_system(polygon_interact_system.system())
         ;
     }
 }

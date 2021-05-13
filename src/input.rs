@@ -58,6 +58,7 @@ fn mouse_state(
 
 fn camera_control_system(
     windows: Res<Windows>,
+    mouse: Res<MouseState>,
     mut ev_motion: EventReader<MouseMotion>,
     mut ev_scroll: EventReader<MouseWheel>,
     input_mouse: Res<Input<MouseButton>>,
@@ -75,6 +76,29 @@ fn camera_control_system(
             projection.update(window.width() as f32, window.height() as f32);
         }
     }
+
+    // let delta_zoom: f32 = ev_scroll.iter().map(|e| e.y).sum();
+    // if delta_zoom == 0. {
+    //     return;
+    // }
+
+    // let (mut pos, mut cam) = query.single_mut().unwrap();
+    // // put these in some kind of config file
+    // let ZOOM_SPEED = 1.0;
+    // let MIN_ZOOM = 0.0;
+    // let MAX_ZOOM = 1000.0;
+
+    // let window = windows.get_primary().unwrap();
+    // let window_size = Vec2::new(window.width(), window.height());
+    // let mouse_normalized_screen_pos =
+    //     (window.cursor_position().unwrap() / window_size) * 2. - Vec2::ONE;
+
+    // projection.scale -= ZOOM_SPEED * delta_zoom * projection.scale;
+    // projection.scale = projection.scale.clamp(MIN_ZOOM, MAX_ZOOM);
+
+    // cam_position.translation = (mouse.world_pos
+    //     - mouse_normalized_screen_pos * Vec2::new(projection.right, projection.top) * projection.scale)
+    //     .extend(cam_position.translation.z);
 
 }
 
