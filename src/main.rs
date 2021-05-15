@@ -1,3 +1,5 @@
+#![allow(clippy::type_complexity, unused_variables)]
+
 use bevy::prelude::*;
 use input::*;
 use space::*;

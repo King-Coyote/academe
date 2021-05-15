@@ -20,8 +20,6 @@ pub struct ContextMenuItem {
     pub event_tag: String,
 }
 
-struct Durr;
-
 #[derive(Clone)]
 pub struct ContextMenuButtonEvent {
     pub tag: String,
@@ -78,7 +76,6 @@ fn popup_system(
         return;
     }
     for (entity, _, children) in q_menu.iter() {
-        println!("durr");
         if !children_match_query(children, &q_buttons) {
             commands.entity(entity).despawn_recursive();
         }
@@ -86,9 +83,15 @@ fn popup_system(
 }
 
 fn context_menu_button(
-
+    mut er_mouse: EventReader<MouseButtonInput>,
+    mut ew_cmbutton: EventWriter<ContextMenuButtonEvent>,
+    q_buttons: Query<(&ContextMenuButtonEvent, &Interaction), (With<Button>, Changed<Interaction>)>
 ) {
-    
+    for (button_event, interaction) in q_buttons.iter() {
+        if let Interaction::Clicked = *interaction {
+            ew_cmbutton.send(button_event.clone());
+        }
+    }
 }
 
 fn context_button_clicked(
@@ -106,7 +109,7 @@ impl Plugin for UiPlugin {
             .add_event::<ContextMenuButtonEvent>()
             .add_startup_system(setup.system())
             .add_system(popup_system.system())
-            // .add_system(context_menu_button_system.system())
+            .add_system(context_menu_button.system())
             .add_system(context_button_clicked.system())
         ;
     }
@@ -166,7 +169,6 @@ pub fn spawn_context_menu(
                     ..Default::default()
                 });
             })
-            .insert(Durr)
             .insert(ContextMenuButtonEvent {
                 tag: item.event_tag.clone(),
                 mouse_snapshot: mouse.clone(),
