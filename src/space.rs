@@ -8,7 +8,7 @@ use bevy::{
 use bevy_prototype_lyon::prelude::*;
 use crate::{
     input::*,
-    utils::{point_inside_polygon,},
+    utils::geometry::{point_inside_polygon,},
     ui::*,
 };
 
@@ -58,11 +58,11 @@ fn polygon_interact_system(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut er_mousemove: EventReader<CursorMoved>,
     mut er_mouseinput: EventReader<MouseButtonInput>,
-    mut q_polygon: Query<(Entity, &InteractablePolygon, &mut InteractState)>,
+    mut q_polygon: Query<(Entity, &InteractablePolygon, &mut InteractState, &ContextMenu)>,
 ) {
     use InteractStateEnum::*;
     for e in er_mousemove.iter() {
-        for (entity, polygon, mut state) in q_polygon.iter_mut() {
+        for (entity, polygon, mut state, _) in q_polygon.iter_mut() {
             let inside = point_inside_polygon(&mouse.world_pos, &polygon.points);
             if inside && state.0 == Enabled {
                 println!("Hovered over {:?}", entity);
@@ -74,7 +74,7 @@ fn polygon_interact_system(
         }
     }
     for e in er_mouseinput.iter() {
-        for (entity, polygon, mut state) in q_polygon.iter_mut() {
+        for (entity, polygon, mut state, menu) in q_polygon.iter_mut() {
             if e.button != MouseButton::Right {
                 continue;
             }
@@ -86,12 +86,13 @@ fn polygon_interact_system(
                 state.0 = Clicked;
             } else if e.state == ElementState::Released && state.0 == Clicked {
                 println!("Clicked on {:?}", entity);
-                let position = Rect{
-                    left: Val::Px(mouse.ui_pos.x),
-                    top: Val::Px(mouse.ui_pos.y),
-                    ..Default::default()
-                };
-                spawn_context_menu(&mut commands, &asset_server, &mut materials, position);
+                spawn_context_menu(
+                    &mut commands,
+                    &asset_server,
+                    &mut materials,
+                    mouse.clone(),
+                    &menu
+                );
                 state.0 = Hovered;
             }
         }

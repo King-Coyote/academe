@@ -5,6 +5,10 @@ use bevy::{
         mouse::{MouseButtonInput},
     },
 };
+use crate::{
+    input::{MouseState,},
+    utils::entities::{children_match_query,},
+};
 
 // systems relating to showing UI elements, views on objects, etc
 pub struct InteractablePolygon {
@@ -14,6 +18,14 @@ pub struct InteractablePolygon {
 pub struct ContextMenuItem {
     pub label: String,
     pub event_tag: String,
+}
+
+struct Durr;
+
+#[derive(Clone)]
+pub struct ContextMenuButtonEvent {
+    pub tag: String,
+    pub mouse_snapshot: MouseState, // where the CM was opened, not where the button was clicked
 }
 
 // TODO make macro for instantiating this
@@ -40,40 +52,62 @@ fn setup(
     commands.spawn_bundle(UiCameraBundle::default());
 }
 
+// fn popup_system(
+//     mut commands: Commands,
+//     mut er_mouse: EventReader<MouseButtonInput>,
+//     q_popup: Query<(Entity, &Node, &Interaction), (With<Popup>)>,
+// ) {
+//     if er_mouse.iter().count() == 0 {
+//         return;
+//     }
+//     for (entity, _, interaction) in q_popup.iter() {
+//         if let Interaction::None = *interaction {
+//             commands.entity(entity).despawn_recursive();
+//         }
+//     }
+// }
+
 fn popup_system(
     mut commands: Commands,
     mut er_mouse: EventReader<MouseButtonInput>,
-    q_popup: Query<(Entity, &Node, &Interaction), (With<Popup>)>,
+    mut ew_cmbutton: EventWriter<ContextMenuButtonEvent>,
+    q_menu: Query<(Entity, &Node, &Children), With<Popup>>,
+    q_buttons: Query<(&Button, &ContextMenuButtonEvent), Changed<Interaction>>
 ) {
     if er_mouse.iter().count() == 0 {
         return;
     }
-    for (entity, _, interaction) in q_popup.iter() {
-        if let Interaction::None = *interaction {
+    for (entity, _, children) in q_menu.iter() {
+        println!("durr");
+        if !children_match_query(children, &q_buttons) {
             commands.entity(entity).despawn_recursive();
         }
     }
 }
 
-fn button_system(
-    mut commands: Commands,
-    mut er_mouse: EventReader<MouseButtonInput>,
-    q_popup: Query<(&Button, &Interaction), (Changed<Interaction>, With<Popup>)>,
+fn context_menu_button(
+
 ) {
-    for (_, interaction) in q_popup.iter() {
-        match *interaction {
-            Interaction::Clicked => println!("Button clicked"),
-            _ => {}
-        }
+    
+}
+
+fn context_button_clicked(
+    mut er_cmbutton: EventReader<ContextMenuButtonEvent>,
+) {
+    for e in er_cmbutton.iter() {
+        let wp = e.mouse_snapshot.world_pos;
+        println!("Button clicked for world position {}", wp);
     }
 }
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
+            .add_event::<ContextMenuButtonEvent>()
             .add_startup_system(setup.system())
             .add_system(popup_system.system())
-            .add_system(button_system.system())
+            // .add_system(context_menu_button_system.system())
+            .add_system(context_button_clicked.system())
         ;
     }
 }
@@ -84,26 +118,27 @@ pub fn spawn_context_menu(
     commands: &mut Commands,
     asset_server: &Res<AssetServer>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
-    position: Rect<Val>,
-    // menu: &ContextMenu,
+    mouse: MouseState,
+    menu: &ContextMenu,
 ) {
     commands
-    .spawn_bundle(ButtonBundle {
+    .spawn_bundle(NodeBundle {
         style: Style {
             display: Display::Flex,
             position_type: PositionType::Absolute,
             flex_direction: FlexDirection::Column,
-            //direction: Direction,
-            //align_content: AlignContent,
-            //justify_content: JustifyContent,
-            position,
+            position: Rect{
+                left: Val::Px(mouse.ui_pos.x),
+                top: Val::Px(mouse.ui_pos.y),
+                ..Default::default()
+            },
             ..Default::default()
         },
-        material: materials.add(Color::BLACK.into()),
+        material: materials.add(Color::NONE.into()),
         ..Default::default()
     })
     .with_children(|parent| {
-        for i in 0..5 {
+        for item in menu.0.iter() {
             parent
             .spawn_bundle(ButtonBundle {
                 style: Style {
@@ -113,23 +148,28 @@ pub fn spawn_context_menu(
                     margin: Rect::all(Val::Px(3.0)),
                     ..Default::default()
                 },
-                focus_policy: bevy::ui::FocusPolicy::Pass,
                 material: materials.add(Color::GRAY.into()),
                 ..Default::default()
             })
             .with_children(|parent| {
                 parent.spawn_bundle(TextBundle {
                     text: Text::with_section(
-                        "Button",
+                        item.label.clone(),
                         TextStyle {
                             font: asset_server.load("fonts/OpenSans-Regular.ttf"),
                             font_size: 16.0,
-                            color: Color::BLACK,
+                            color: Color::WHITE,
                         },
                         Default::default(),
                     ),
+                    focus_policy: bevy::ui::FocusPolicy::Pass,
                     ..Default::default()
                 });
+            })
+            .insert(Durr)
+            .insert(ContextMenuButtonEvent {
+                tag: item.event_tag.clone(),
+                mouse_snapshot: mouse.clone(),
             });
         }
     })

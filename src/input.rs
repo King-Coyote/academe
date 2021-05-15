@@ -4,6 +4,7 @@ pub struct MainCamera;
 
 pub struct InputPlugin;
 
+#[derive(Clone)]
 pub struct MouseState {
     pub screen_pos: Vec2,
     pub ui_pos: Vec2,
