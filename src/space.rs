@@ -9,25 +9,11 @@ use bevy_prototype_lyon::prelude::*;
 use crate::{
     input::*,
     utils::{point_inside_polygon,},
+    ui::*,
 };
 
 // curently for rendering spaces and allowing them to be interacted with.
 pub struct SpacePlugin;
-
-pub struct InteractablePolygon {
-    pub points: Vec<Vec2>,
-}
-
-#[derive(PartialEq)]
-pub enum InteractStateEnum {
-    Enabled,
-    Clicked,
-    Hovered,
-    Disabled,
-}
-
-#[derive(PartialEq)]
-pub struct InteractState(InteractStateEnum);
 
 fn setup(
     mut commands: Commands,
@@ -56,13 +42,20 @@ fn setup(
         ))
         .insert(InteractablePolygon{points})
         .insert(InteractState(InteractStateEnum::Enabled))
+        .insert(ContextMenu(vec![
+            ContextMenuItem{
+                label: "Spawn entity".to_owned(),
+                event_tag: "spawn_entity".to_owned()
+            },
+        ]))
     ;
 }
-
 
 fn polygon_interact_system(
     mut commands: Commands,
     mouse: Res<MouseState>,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
     mut er_mousemove: EventReader<CursorMoved>,
     mut er_mouseinput: EventReader<MouseButtonInput>,
     mut q_polygon: Query<(Entity, &InteractablePolygon, &mut InteractState)>,
@@ -93,6 +86,12 @@ fn polygon_interact_system(
                 state.0 = Clicked;
             } else if e.state == ElementState::Released && state.0 == Clicked {
                 println!("Clicked on {:?}", entity);
+                let position = Rect{
+                    left: Val::Px(mouse.ui_pos.x),
+                    top: Val::Px(mouse.ui_pos.y),
+                    ..Default::default()
+                };
+                spawn_context_menu(&mut commands, &asset_server, &mut materials, position);
                 state.0 = Hovered;
             }
         }

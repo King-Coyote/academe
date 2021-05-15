@@ -6,6 +6,7 @@ pub struct InputPlugin;
 
 pub struct MouseState {
     pub screen_pos: Vec2,
+    pub ui_pos: Vec2,
     pub world_pos: Vec2,
     pub projected_pos: Vec2,
 }
@@ -17,6 +18,7 @@ fn setup(mut commands: Commands) {
     
     commands.insert_resource(MouseState {
         screen_pos: Vec2::ZERO,
+        ui_pos: Vec2::ZERO,
         world_pos: Vec2::ZERO,
         projected_pos: Vec2::ZERO,
     });
@@ -34,10 +36,13 @@ fn mouse_state(
     let camera_transform = q_camera.iter().next().unwrap();
     for e in evr_cursor.iter() {
         // apply the camera transform
-        let world_pos = get_world_pos(&e.position, camera_transform, &windows.get(e.id).unwrap());
+        let window = windows.get_primary().unwrap();
+        let world_pos = get_world_pos(&e.position, camera_transform, &window);
         mouse_state.screen_pos = e.position;
+        mouse_state.ui_pos = Vec2::new(e.position.x, window.height() as f32 - e.position.y);
         mouse_state.world_pos = Vec2::new(world_pos.x, world_pos.y);
         mouse_state.projected_pos = Vec2::new(world_pos.x, world_pos.y * 2.0);
+        // println!("Screen pos is now {},{}", e.position.x, e.position.y);
     }
 }
 

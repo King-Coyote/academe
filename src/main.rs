@@ -1,10 +1,12 @@
 use bevy::prelude::*;
 use input::*;
 use space::*;
+use ui::*;
 
 mod input;
 mod space;
 mod utils;
+mod ui;
 
 // dfault stages look like this:
 // self.add_startup_stage(startup_stage::STARTUP)
@@ -21,5 +23,6 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(InputPlugin)
         .add_plugin(SpacePlugin)
+        .add_plugin(UiPlugin)
         .run();
 }
