@@ -43,15 +43,14 @@ fn setup(
 fn popup_system(
     mut commands: Commands,
     mut er_mouse: EventReader<MouseButtonInput>,
-    q_popup: Query<(&Node, &Interaction), (With<Popup>)>,
+    q_popup: Query<(Entity, &Node, &Interaction), (With<Popup>)>,
 ) {
     if er_mouse.iter().count() == 0 {
         return;
     }
-    for (_, interaction) in q_popup.iter() {
-        match *interaction {
-            Interaction::None => println!("Deleting interactable"),
-            _ => {}
+    for (entity, _, interaction) in q_popup.iter() {
+        if let Interaction::None = *interaction {
+            commands.entity(entity).despawn_recursive();
         }
     }
 }
