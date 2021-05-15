@@ -29,6 +29,31 @@ pub struct ContextMenuButtonEvent {
 // TODO make macro for instantiating this
 pub struct ContextMenu(pub Vec<ContextMenuItem>);
 
+pub struct ButtonStyle {
+    color_normal: Handle<ColorMaterial>,
+    color_hovered: Handle<ColorMaterial>,
+    color_clicked: Handle<ColorMaterial>,
+    text_style: TextStyle,
+}
+
+impl FromWorld for ButtonStyle {
+    fn from_world(world: &mut World) -> Self {
+        let asset_server = world.get_resource_mut::<AssetServer>().unwrap();
+        let font_handle: Handle<Font> = asset_server.load("fonts/OpenSans-Regular.ttf");
+        let mut materials = world.get_resource_mut::<Assets<ColorMaterial>>().unwrap();
+        ButtonStyle {
+            color_normal: materials.add(Color::rgb(0.15, 0.15, 0.15).into()),
+            color_hovered: materials.add(Color::rgb(0.25, 0.25, 0.25).into()),
+            color_clicked: materials.add(Color::rgb(0.35, 0.75, 0.35).into()),
+            text_style: TextStyle {
+                font: font_handle,
+                font_size: 16.0,
+                color: Color::WHITE,
+            }
+        }
+    }
+}
+
 struct Popup;
 
 #[derive(PartialEq)]
@@ -48,22 +73,9 @@ fn setup(
     mut commands: Commands,
 ) {
     commands.spawn_bundle(UiCameraBundle::default());
-}
 
-// fn popup_system(
-//     mut commands: Commands,
-//     mut er_mouse: EventReader<MouseButtonInput>,
-//     q_popup: Query<(Entity, &Node, &Interaction), (With<Popup>)>,
-// ) {
-//     if er_mouse.iter().count() == 0 {
-//         return;
-//     }
-//     for (entity, _, interaction) in q_popup.iter() {
-//         if let Interaction::None = *interaction {
-//             commands.entity(entity).despawn_recursive();
-//         }
-//     }
-// }
+
+}
 
 fn popup_system(
     mut commands: Commands,
@@ -78,6 +90,25 @@ fn popup_system(
     for (entity, _, children) in q_menu.iter() {
         if !children_match_query(children, &q_buttons) {
             commands.entity(entity).despawn_recursive();
+        }
+    }
+}
+
+fn button(
+    button_style: Res<ButtonStyle>,
+    mut q_buttons: Query<(&Interaction, &mut Handle<ColorMaterial>), With<Button>>,
+) {
+    for (interaction, mut material) in q_buttons.iter_mut() {
+        match *interaction {
+            Interaction::Clicked => {
+                *material = button_style.color_clicked.clone();
+            },
+            Interaction::Hovered => {
+                *material = button_style.color_hovered.clone();
+            },
+            Interaction::None => {
+                *material = button_style.color_normal.clone();
+            }
         }
     }
 }
@@ -107,7 +138,9 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
             .add_event::<ContextMenuButtonEvent>()
+            .init_resource::<ButtonStyle>()
             .add_startup_system(setup.system())
+            .add_system(button.system())
             .add_system(popup_system.system())
             .add_system(context_menu_button.system())
             .add_system(context_button_clicked.system())
@@ -119,6 +152,7 @@ impl Plugin for UiPlugin {
 
 pub fn spawn_context_menu(
     commands: &mut Commands,
+    button_style: &Res<ButtonStyle>,
     asset_server: &Res<AssetServer>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
     mouse: MouseState,
@@ -158,11 +192,7 @@ pub fn spawn_context_menu(
                 parent.spawn_bundle(TextBundle {
                     text: Text::with_section(
                         item.label.clone(),
-                        TextStyle {
-                            font: asset_server.load("fonts/OpenSans-Regular.ttf"),
-                            font_size: 16.0,
-                            color: Color::WHITE,
-                        },
+                        button_style.text_style.clone(),
                         Default::default(),
                     ),
                     focus_policy: bevy::ui::FocusPolicy::Pass,

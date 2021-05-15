@@ -54,6 +54,7 @@ fn setup(
 fn polygon_interact_system(
     mut commands: Commands,
     mouse: Res<MouseState>,
+    button_style: Res<ButtonStyle>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut er_mousemove: EventReader<CursorMoved>,
@@ -88,6 +89,7 @@ fn polygon_interact_system(
                 println!("Clicked on {:?}", entity);
                 spawn_context_menu(
                     &mut commands,
+                    &button_style,
                     &asset_server,
                     &mut materials,
                     mouse.clone(),
