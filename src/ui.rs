@@ -1,9 +1,12 @@
+use std::marker::PhantomData;
+
 use bevy::{
     prelude::*,
     input::{
         ElementState,
         mouse::{MouseButtonInput},
     },
+    ecs::component::Component,
 };
 use crate::{
     input::{MouseState,},
@@ -15,6 +18,7 @@ pub struct InteractablePolygon {
     pub points: Vec<Vec2>,
 }
 
+#[derive(Clone)]
 pub struct ContextMenuItem {
     pub label: String,
     pub event_tag: String,
@@ -26,7 +30,7 @@ pub struct ContextMenuButtonEvent {
     pub mouse_snapshot: MouseState, // where the CM was opened, not where the button was clicked
 }
 
-// TODO make macro for instantiating this
+#[derive(Clone)]
 pub struct ContextMenu(pub Vec<ContextMenuItem>);
 
 pub struct ButtonStyle {
@@ -54,7 +58,10 @@ impl FromWorld for ButtonStyle {
     }
 }
 
-struct Popup;
+pub struct Popup;
+
+// this, when it exists on an entity, will allow certain components of type T to be seen in the ui
+pub struct View<T: Component>(pub PhantomData<T>);
 
 #[derive(PartialEq)]
 pub enum InteractStateEnum {
@@ -80,7 +87,6 @@ fn setup(
 fn popup_system(
     mut commands: Commands,
     mut er_mouse: EventReader<MouseButtonInput>,
-    mut ew_cmbutton: EventWriter<ContextMenuButtonEvent>,
     q_menu: Query<(Entity, &Node, &Children), With<Popup>>,
     q_buttons: Query<(&Button, &ContextMenuButtonEvent), Changed<Interaction>>
 ) {
@@ -114,7 +120,6 @@ fn button(
 }
 
 fn context_menu_button(
-    mut er_mouse: EventReader<MouseButtonInput>,
     mut ew_cmbutton: EventWriter<ContextMenuButtonEvent>,
     q_buttons: Query<(&ContextMenuButtonEvent, &Interaction), (With<Button>, Changed<Interaction>)>
 ) {
@@ -134,6 +139,68 @@ fn context_button_clicked(
     }
 }
 
+fn context_menu_view(
+    mut commands: Commands,
+    button_style: Res<ButtonStyle>,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    q_view: Query<(Entity, &ContextMenu, &MouseState), Added<View<ContextMenu>>>,
+) {
+    for (entity, menu, mouse) in q_view.iter() {
+        commands
+            .spawn_bundle(NodeBundle {
+                style: Style {
+                    display: Display::Flex,
+                    position_type: PositionType::Absolute,
+                    flex_direction: FlexDirection::Column,
+                    position: Rect{
+                        left: Val::Px(mouse.ui_pos.x),
+                        top: Val::Px(mouse.ui_pos.y),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                material: materials.add(Color::NONE.into()),
+                ..Default::default()
+            })
+            .with_children(|parent| {
+                for item in menu.0.iter() {
+                    parent
+                    .spawn_bundle(ButtonBundle {
+                        style: Style {
+                            size: Size::new(Val::Px(75.0), Val::Px(26.0)),
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            margin: Rect::all(Val::Px(3.0)),
+                            padding: Rect::all(Val::Px(3.0)),
+                            ..Default::default()
+                        },
+                        material: materials.add(Color::GRAY.into()),
+                        ..Default::default()
+                    })
+                    .with_children(|parent| {
+                        parent.spawn_bundle(TextBundle {
+                            text: Text::with_section(
+                                item.label.clone(),
+                                button_style.text_style.clone(),
+                                Default::default(),
+                            ),
+                            focus_policy: bevy::ui::FocusPolicy::Pass,
+                            ..Default::default()
+                        });
+                    })
+                    .insert(ContextMenuButtonEvent {
+                        tag: item.event_tag.clone(),
+                        mouse_snapshot: mouse.clone(),
+                    });
+                }
+            })
+            .insert(Popup)
+        ;
+        commands.entity(entity).despawn();
+    }
+}
+
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
@@ -144,67 +211,9 @@ impl Plugin for UiPlugin {
             .add_system(popup_system.system())
             .add_system(context_menu_button.system())
             .add_system(context_button_clicked.system())
+            .add_system(context_menu_view.system())
         ;
     }
 }
 
 // UTILITY FNS
-
-pub fn spawn_context_menu(
-    commands: &mut Commands,
-    button_style: &Res<ButtonStyle>,
-    asset_server: &Res<AssetServer>,
-    materials: &mut ResMut<Assets<ColorMaterial>>,
-    mouse: MouseState,
-    menu: &ContextMenu,
-) {
-    commands
-    .spawn_bundle(NodeBundle {
-        style: Style {
-            display: Display::Flex,
-            position_type: PositionType::Absolute,
-            flex_direction: FlexDirection::Column,
-            position: Rect{
-                left: Val::Px(mouse.ui_pos.x),
-                top: Val::Px(mouse.ui_pos.y),
-                ..Default::default()
-            },
-            ..Default::default()
-        },
-        material: materials.add(Color::NONE.into()),
-        ..Default::default()
-    })
-    .with_children(|parent| {
-        for item in menu.0.iter() {
-            parent
-            .spawn_bundle(ButtonBundle {
-                style: Style {
-                    size: Size::new(Val::Px(75.0), Val::Px(26.0)),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    margin: Rect::all(Val::Px(3.0)),
-                    ..Default::default()
-                },
-                material: materials.add(Color::GRAY.into()),
-                ..Default::default()
-            })
-            .with_children(|parent| {
-                parent.spawn_bundle(TextBundle {
-                    text: Text::with_section(
-                        item.label.clone(),
-                        button_style.text_style.clone(),
-                        Default::default(),
-                    ),
-                    focus_policy: bevy::ui::FocusPolicy::Pass,
-                    ..Default::default()
-                });
-            })
-            .insert(ContextMenuButtonEvent {
-                tag: item.event_tag.clone(),
-                mouse_snapshot: mouse.clone(),
-            });
-        }
-    })
-    .insert(Popup)
-    ;
-}

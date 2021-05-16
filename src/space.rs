@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use bevy::{
     input::{
         ElementState,
@@ -87,14 +89,12 @@ fn polygon_interact_system(
                 state.0 = Clicked;
             } else if e.state == ElementState::Released && state.0 == Clicked {
                 println!("Clicked on {:?}", entity);
-                spawn_context_menu(
-                    &mut commands,
-                    &button_style,
-                    &asset_server,
-                    &mut materials,
-                    mouse.clone(),
-                    &menu
-                );
+                let view: View<ContextMenu> = View(PhantomData);
+                commands.spawn()
+                    .insert((*menu).clone())
+                    .insert(view)
+                    .insert(mouse.clone())
+                    ;
                 state.0 = Hovered;
             }
         }
