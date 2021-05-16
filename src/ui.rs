@@ -80,8 +80,6 @@ fn setup(
     mut commands: Commands,
 ) {
     commands.spawn_bundle(UiCameraBundle::default());
-
-
 }
 
 fn popup_system(
@@ -135,7 +133,6 @@ fn context_button_clicked(
 ) {
     for e in er_cmbutton.iter() {
         let wp = e.mouse_snapshot.world_pos;
-        println!("Button clicked for world position {}", wp);
     }
 }
 

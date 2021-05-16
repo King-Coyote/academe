@@ -9,6 +9,7 @@ mod input;
 mod space;
 mod utils;
 mod ui;
+mod game;
 
 // dfault stages look like this:
 // self.add_startup_stage(startup_stage::STARTUP)
