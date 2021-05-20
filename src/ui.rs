@@ -11,6 +11,7 @@ use bevy::{
 use crate::{
     input::{MouseState,},
     utils::entities::{children_match_query,},
+    game::*,
 };
 
 // systems relating to showing UI elements, views on objects, etc
@@ -18,19 +19,16 @@ pub struct InteractablePolygon {
     pub points: Vec<Vec2>,
 }
 
-#[derive(Clone)]
 pub struct ContextMenuItem {
     pub label: String,
-    pub event_tag: String,
+    pub command: Spell,
 }
 
-#[derive(Clone)]
 pub struct ContextMenuButtonEvent {
     pub tag: String,
     pub mouse_snapshot: MouseState, // where the CM was opened, not where the button was clicked
 }
 
-#[derive(Clone)]
 pub struct ContextMenu(pub Vec<ContextMenuItem>);
 
 pub struct ButtonStyle {
@@ -123,7 +121,7 @@ fn context_menu_button(
 ) {
     for (button_event, interaction) in q_buttons.iter() {
         if let Interaction::Clicked = *interaction {
-            ew_cmbutton.send(button_event.clone());
+            // ew_cmbutton.send(button_event.clone());
         }
     }
 }
@@ -185,10 +183,6 @@ fn context_menu_view(
                             focus_policy: bevy::ui::FocusPolicy::Pass,
                             ..Default::default()
                         });
-                    })
-                    .insert(ContextMenuButtonEvent {
-                        tag: item.event_tag.clone(),
-                        mouse_snapshot: mouse.clone(),
                     });
                 }
             })

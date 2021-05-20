@@ -12,6 +12,7 @@ use crate::{
     input::*,
     utils::geometry::{point_inside_polygon,},
     ui::*,
+    game::*,
 };
 
 // curently for rendering spaces and allowing them to be interacted with.
@@ -44,12 +45,6 @@ fn setup(
         ))
         .insert(InteractablePolygon{points})
         .insert(InteractState(InteractStateEnum::Enabled))
-        .insert(ContextMenu(vec![
-            ContextMenuItem{
-                label: "Spawn entity".to_owned(),
-                event_tag: "spawn_entity".to_owned()
-            },
-        ]))
     ;
 }
 
@@ -91,7 +86,7 @@ fn polygon_interact_system(
                 println!("Clicked on {:?}", entity);
                 let view: View<ContextMenu> = View(PhantomData);
                 commands.spawn()
-                    .insert((*menu).clone())
+                    // .insert((*menu).clone())
                     .insert(view)
                     .insert(mouse.clone())
                     ;

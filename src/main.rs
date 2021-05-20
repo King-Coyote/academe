@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use input::*;
 use space::*;
 use ui::*;
+use game::*;
 
 mod input;
 mod space;
@@ -27,5 +28,6 @@ fn main() {
         .add_plugin(InputPlugin)
         .add_plugin(SpacePlugin)
         .add_plugin(UiPlugin)
+        .add_plugin(GamePlugin)
         .run();
 }
