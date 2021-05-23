@@ -1,7 +1,5 @@
 use std::{
-    any::{Any, TypeId}, 
     marker::PhantomData,
-    sync::Arc,
     ops::{Deref, DerefMut,},
 };
 use bevy::{
@@ -9,10 +7,10 @@ use bevy::{
     ecs::{
         component::Component,
         reflect::ReflectComponent,
+        system::{CommandQueue,},
     },
     reflect::{
         TypeRegistryArc,
-        TypeRegistry,
         serde::{ReflectSerializer, ReflectDeserializer,}
     },
     
@@ -103,7 +101,7 @@ impl DerefMut for GameCommandQueue {
 pub struct GamePlugin;
 
 fn startup_test(
-    mut world: &mut World,
+    world: &mut World,
 ) {
     let body = Body {
         strength: 10,
@@ -127,8 +125,16 @@ fn startup_test(
         .and_then(|registration| {
             registration.data::<ReflectComponent>()
         }).unwrap();
-    let durr = reflect_comp.add_component(world, entity, &*deserialized);
-    reflect_comp.remove_component(world, entity, &*deserialized);
+    // let durr = reflect_comp.add_component(world, entity, &*deserialized);
+    // reflect_comp.remove_component(world, entity);
+
+    let rc = read_registry
+        .get_with_short_name("Body")
+        .and_then(|reg| {
+            reg.data::<ReflectComponent>()
+        }).unwrap();
+    rc.create_component(world, entity);
+    rc.remove_component(world, entity);
 }
 
 fn body_test(
@@ -140,14 +146,57 @@ fn body_test(
 }
 
 fn execute_game_commands(
-    mut world: &mut World,
-    // mut command_queue: ResMut<GameCommandQueue>,
+    world: &mut World,
 ) {
-    let mut command_queue = world.get_resource_mut::<GameCommandQueue>().unwrap();
+    let mut command_queue_res = world.get_resource_mut::<GameCommandQueue>().unwrap();
+    if command_queue_res.len() == 0 {
+        return;
+    }
+    let command_queue = command_queue_res.clone();
+    command_queue_res.clear();
+
+    let registry = world.get_resource::<TypeRegistryArc>().unwrap().clone();
+    let read_registry = registry.read();
+
     for cmd in command_queue.iter() {
         println!("Executing command: {:?}", cmd);
+        let target = match cmd.target {
+            Target::World(coords) => {
+                let coords = coords.unwrap();
+                let pos = Vec3::new(coords.x, coords.y, 0.0);
+                world.spawn()
+                    .insert(Transform::from_translation(pos))
+                    .id()
+            },
+            Target::Entity(entity) => entity.unwrap(),
+            Target::Screen(coords) => {
+                let coords = coords.unwrap();
+                let pos = Vec3::new(coords.x, coords.y, 0.0);
+                world.spawn()
+                    .insert(Transform::from_translation(pos))
+                    .id()
+            }
+        };
+        use GameCommandType::*;
+        match cmd.command {
+            Create(ref name) => {
+                let rc = read_registry
+                    .get_with_short_name(name)
+                    .and_then(|reg| {
+                        reg.data::<ReflectComponent>()
+                    }).unwrap();
+                rc.create_component(world, target);
+            },
+            Destroy(ref name) => {
+                let rc = read_registry
+                    .get_with_short_name(name)
+                    .and_then(|reg| {
+                        reg.data::<ReflectComponent>()
+                    }).unwrap();
+                rc.remove_component(world, target);
+            },
+        };
     }
-    command_queue.clear();
 }
 
 impl Plugin for GamePlugin {
@@ -155,10 +204,9 @@ impl Plugin for GamePlugin {
         app
             .register_type::<Body>()
             .insert_resource(GameCommandQueue(vec![]))
-            .add_startup_system(startup_test.exclusive_system())
+            // .add_startup_system(startup_test.exclusive_system())
             .add_system(execute_game_commands.exclusive_system())
             .add_system(body_test.system())
-            // .add_system(magic.system())
         ;
     }
 }
