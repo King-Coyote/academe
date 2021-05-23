@@ -1,4 +1,7 @@
-use std::marker::PhantomData;
+use std::{
+    marker::PhantomData,
+    sync::Arc,
+};
 
 use bevy::{
     prelude::*,
@@ -10,7 +13,10 @@ use bevy::{
 };
 use crate::{
     input::{MouseState,},
-    utils::entities::{children_match_query,},
+    utils::{
+        entities::{children_match_query,},
+        geometry::point_inside_polygon,
+    },
     game::*,
 };
 
@@ -21,12 +27,7 @@ pub struct InteractablePolygon {
 
 pub struct ContextMenuItem {
     pub label: String,
-    pub command: Spell,
-}
-
-pub struct ContextMenuButtonEvent {
-    pub tag: String,
-    pub mouse_snapshot: MouseState, // where the CM was opened, not where the button was clicked
+    pub commands: Arc<GameCommandQueue>,
 }
 
 pub struct ContextMenu(pub Vec<ContextMenuItem>);
@@ -84,7 +85,7 @@ fn popup_system(
     mut commands: Commands,
     mut er_mouse: EventReader<MouseButtonInput>,
     q_menu: Query<(Entity, &Node, &Children), With<Popup>>,
-    q_buttons: Query<(&Button, &ContextMenuButtonEvent), Changed<Interaction>>
+    q_buttons: Query<&Button, Changed<Interaction>>
 ) {
     if er_mouse.iter().count() == 0 {
         return;
@@ -115,33 +116,67 @@ fn button(
     }
 }
 
-fn context_menu_button(
-    mut ew_cmbutton: EventWriter<ContextMenuButtonEvent>,
-    q_buttons: Query<(&ContextMenuButtonEvent, &Interaction), (With<Button>, Changed<Interaction>)>
+fn command_button(
+    mut command_queue: ResMut<GameCommandQueue>,
+    mut q_buttons: Query<(&Button, &Interaction, &GameCommandQueue), Changed<Interaction>>,
 ) {
-    for (button_event, interaction) in q_buttons.iter() {
+    for (_, interaction, commands) in q_buttons.iter() {
         if let Interaction::Clicked = *interaction {
-            // ew_cmbutton.send(button_event.clone());
+            command_queue.extend(commands.iter().cloned());
         }
     }
 }
 
-fn context_button_clicked(
-    mut er_cmbutton: EventReader<ContextMenuButtonEvent>,
+fn polygon_interaction(
+    mut commands: Commands,
+    mouse: Res<MouseState>,
+    button_style: Res<ButtonStyle>,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut er_mousemove: EventReader<CursorMoved>,
+    mut er_mouseinput: EventReader<MouseButtonInput>,
+    mut q_polygon: Query<(Entity, &InteractablePolygon, &mut InteractState, &ContextMenu)>,
 ) {
-    for e in er_cmbutton.iter() {
-        let wp = e.mouse_snapshot.world_pos;
+    use InteractStateEnum::*;
+    for e in er_mousemove.iter() {
+        for (entity, polygon, mut state, _) in q_polygon.iter_mut() {
+            let inside = point_inside_polygon(&mouse.world_pos, &polygon.points);
+            if inside && state.0 == Enabled {
+                state.0 = Hovered;
+            } else if !inside && state.0 == Hovered {
+                state.0 = Enabled;
+            }
+        }
+    }
+    for e in er_mouseinput.iter() {
+        for (entity, polygon, mut state, menu) in q_polygon.iter_mut() {
+            if e.button != MouseButton::Right {
+                continue;
+            }
+            if state.0 != Hovered && state.0 != Clicked {
+                continue;
+            }
+            if e.state == ElementState::Pressed && state.0 == Hovered {
+                state.0 = Clicked;
+            } else if e.state == ElementState::Released && state.0 == Clicked {
+                let view: View<ContextMenu> = View(PhantomData);
+                commands.entity(entity).insert(view);
+                state.0 = Hovered;
+            }
+        }
     }
 }
 
 fn context_menu_view(
     mut commands: Commands,
+    mouse: Res<MouseState>,
     button_style: Res<ButtonStyle>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    q_view: Query<(Entity, &ContextMenu, &MouseState), Added<View<ContextMenu>>>,
+    q_view: Query<(Entity, &ContextMenu), Added<View<ContextMenu>>>,
 ) {
-    for (entity, menu, mouse) in q_view.iter() {
+    for (entity, menu) in q_view.iter() {
+        commands.entity(entity).remove::<View<ContextMenu>>();
         commands
             .spawn_bundle(NodeBundle {
                 style: Style {
@@ -163,7 +198,7 @@ fn context_menu_view(
                     parent
                     .spawn_bundle(ButtonBundle {
                         style: Style {
-                            size: Size::new(Val::Px(75.0), Val::Px(26.0)),
+                            min_size: Size::new(Val::Px(75.0), Val::Px(26.0)),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
                             margin: Rect::all(Val::Px(3.0)),
@@ -183,28 +218,50 @@ fn context_menu_view(
                             focus_policy: bevy::ui::FocusPolicy::Pass,
                             ..Default::default()
                         });
-                    });
+                    })
+                    .insert(clone_commands_with_targets(&item.commands, entity, &mouse))
+                    ;
                 }
             })
             .insert(Popup)
         ;
-        commands.entity(entity).despawn();
     }
 }
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
-            .add_event::<ContextMenuButtonEvent>()
             .init_resource::<ButtonStyle>()
             .add_startup_system(setup.system())
             .add_system(button.system())
+            .add_system(command_button.system())
             .add_system(popup_system.system())
-            .add_system(context_menu_button.system())
-            .add_system(context_button_clicked.system())
             .add_system(context_menu_view.system())
+            .add_system(polygon_interaction.system())
         ;
     }
 }
 
 // UTILITY FNS
+fn clone_commands_with_targets(
+    queue: &GameCommandQueue,
+    entity: Entity,
+    mouse: &MouseState,
+) -> GameCommandQueue {
+    use Target::*;
+    GameCommandQueue (
+        queue.iter().map(|cmd| {
+            let new_target: Target = match cmd.target {
+                World(_) => World(Some(mouse.world_pos)),
+                Screen(_) => Screen(Some(mouse.screen_pos)),
+                Entity(_) => Entity(Some(entity)),
+            };
+            GameCommand {
+                target: new_target,
+                command: cmd.command.clone(),
+                level: cmd.level
+            }
+        })
+        .collect()
+    )
+}

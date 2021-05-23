@@ -1,6 +1,8 @@
 use std::{
     any::{Any, TypeId}, 
     marker::PhantomData,
+    sync::Arc,
+    ops::{Deref, DerefMut,},
 };
 use bevy::{
     prelude::*,
@@ -59,38 +61,46 @@ pub struct Spirit {
 }
 
 #[derive(Reflect)]
-pub struct Appearance; // wat do 
+pub struct Appearance; // wat do
 
-pub struct GamePlugin;
-
-pub struct SpellQueue(Vec<Spell>);
-
-pub struct Spell {
-    // verb: Verb,
-    // noun: Noun,
-    // target: Subject,
-    // power: u32,
-    test: String,
-    target: Entity,
+#[derive(Clone, Debug)]
+pub enum Target {
+    World(Option<Vec2>),
+    Screen(Option<Vec2>),
+    Entity(Option<Entity>),
 }
 
-// fn magic(mut world: &mut World) {
-//     let mut queue = world.get_resource::<SpellQueue>().unwrap();
-//     if queue.0.len() == 0 {
-//         return;
-//     }
-//     let registry = world.get_resource::<TypeRegistryArc>().unwrap().clone();
-//     // target is an enum that can be entity, location, self, etc
-//     // Noun is the name of a component
-//     for spell in queue.0.iter() {
-//         // somehow get rid of them simultaneously - drain??
-//         let reflect_component = registry.read()
-//             .get_with_name(&spell.test)
-//             .and_then(|registration| registration.data::<ReflectComponent>())
-//             .unwrap();
-//         reflect_component.add_component(world, spell.target, component)
-//     }
-// }
+#[derive(Clone, Debug)]
+pub enum GameCommandType {
+    Create(String),
+    Destroy(String),
+}
+
+#[derive(Clone, Debug)]
+pub struct GameCommand {
+    pub target: Target,
+    pub command: GameCommandType,
+    pub level: u32,
+}
+
+#[derive(Clone)]
+pub struct GameCommandQueue(pub Vec<GameCommand>);
+
+impl Deref for GameCommandQueue {
+    type Target = Vec<GameCommand>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for GameCommandQueue {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+pub struct GamePlugin;
 
 fn startup_test(
     mut world: &mut World,
@@ -129,12 +139,24 @@ fn body_test(
     }
 }
 
+fn execute_game_commands(
+    mut world: &mut World,
+    // mut command_queue: ResMut<GameCommandQueue>,
+) {
+    let mut command_queue = world.get_resource_mut::<GameCommandQueue>().unwrap();
+    for cmd in command_queue.iter() {
+        println!("Executing command: {:?}", cmd);
+    }
+    command_queue.clear();
+}
+
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
             .register_type::<Body>()
-            .insert_resource(SpellQueue(vec![]))
+            .insert_resource(GameCommandQueue(vec![]))
             .add_startup_system(startup_test.exclusive_system())
+            .add_system(execute_game_commands.exclusive_system())
             .add_system(body_test.system())
             // .add_system(magic.system())
         ;

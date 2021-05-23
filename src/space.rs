@@ -1,4 +1,7 @@
-use std::marker::PhantomData;
+use std::{
+    marker::PhantomData,
+    sync::Arc,
+};
 
 use bevy::{
     input::{
@@ -44,56 +47,20 @@ fn setup(
             Transform::from_xyz(0.0, 0.0, 0.0),
         ))
         .insert(InteractablePolygon{points})
+        .insert(ContextMenu(vec![
+            ContextMenuItem {
+                label: "Spawn creature".to_string(),
+                commands: Arc::new(GameCommandQueue(vec![
+                    GameCommand{
+                        target: Target::World(None),
+                        command: GameCommandType::Create("Body".to_string()),
+                        level: 5,
+                    },
+                ]))
+            }
+        ]))
         .insert(InteractState(InteractStateEnum::Enabled))
     ;
-}
-
-fn polygon_interact_system(
-    mut commands: Commands,
-    mouse: Res<MouseState>,
-    button_style: Res<ButtonStyle>,
-    asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut er_mousemove: EventReader<CursorMoved>,
-    mut er_mouseinput: EventReader<MouseButtonInput>,
-    mut q_polygon: Query<(Entity, &InteractablePolygon, &mut InteractState, &ContextMenu)>,
-) {
-    use InteractStateEnum::*;
-    for e in er_mousemove.iter() {
-        for (entity, polygon, mut state, _) in q_polygon.iter_mut() {
-            let inside = point_inside_polygon(&mouse.world_pos, &polygon.points);
-            if inside && state.0 == Enabled {
-                println!("Hovered over {:?}", entity);
-                state.0 = Hovered;
-            } else if !inside && state.0 == Hovered {
-                println!("Un-hovered {:?}", entity);
-                state.0 = Enabled;
-            }
-        }
-    }
-    for e in er_mouseinput.iter() {
-        for (entity, polygon, mut state, menu) in q_polygon.iter_mut() {
-            if e.button != MouseButton::Right {
-                continue;
-            }
-            if state.0 != Hovered && state.0 != Clicked {
-                continue;
-            }
-            if e.state == ElementState::Pressed && state.0 == Hovered {
-                println!("Mousedown on {:?}", entity);
-                state.0 = Clicked;
-            } else if e.state == ElementState::Released && state.0 == Clicked {
-                println!("Clicked on {:?}", entity);
-                let view: View<ContextMenu> = View(PhantomData);
-                commands.spawn()
-                    // .insert((*menu).clone())
-                    .insert(view)
-                    .insert(mouse.clone())
-                    ;
-                state.0 = Hovered;
-            }
-        }
-    }
 }
 
 impl Plugin for SpacePlugin {
@@ -101,7 +68,6 @@ impl Plugin for SpacePlugin {
         app
             .add_plugin(ShapePlugin)
             .add_startup_system(setup.system())
-            .add_system(polygon_interact_system.system())
         ;
     }
 }
