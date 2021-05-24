@@ -1,13 +1,3 @@
-// #[macro_export]
-// macro_rules! context_menu {
-//     ($($item:block),*) => {
-//         ContextMenu(vec![
-//             $(ContextMenuItem 
-//                 $item
-//             ,)*
-//         ])
-//     };
-// }
 #[macro_export]
 macro_rules! context_menu {
     (
@@ -45,29 +35,3 @@ macro_rules! game_commands {
         ]))
     };
 }
-
-#[macro_export]
-macro_rules! test {
-    ($($x:block),*) => {
-        $($x)*;
-    };
-}
-/*
-ContextMenu(vec![
-            ContextMenuItem {
-                label: "Spawn creature".to_string(),
-                commands: Arc::new(GameCommandQueue(vec![
-                    GameCommand{
-                        target: Target::World(None),
-                        command: GameCommandType::Create("Body".to_string()),
-                        level: 5,
-                    },
-                ])),
-                closing: true,
-            }
-        ])
-
-context_menu!(
-    {},
-)
-*/
