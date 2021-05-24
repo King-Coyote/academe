@@ -193,7 +193,7 @@ fn context_menu_view(
                     },
                     ..Default::default()
                 },
-                material: materials.add(Color::NONE.into()),
+                material: materials.add(Color::BLACK.into()),
                 ..Default::default()
             })
             .with_children(|parent| {
@@ -205,7 +205,7 @@ fn context_menu_view(
                             min_size: Size::new(Val::Px(75.0), Val::Px(26.0)),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
-                            margin: Rect::all(Val::Px(3.0)),
+                            margin: Rect::all(Val::Px(2.0)),
                             padding: Rect::all(Val::Px(3.0)),
                             ..Default::default()
                         },
