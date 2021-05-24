@@ -28,6 +28,7 @@ pub struct InteractablePolygon {
 pub struct ContextMenuItem {
     pub label: String,
     pub commands: Arc<GameCommandQueue>,
+    pub closing: bool,
 }
 
 pub struct ContextMenu(pub Vec<ContextMenuItem>);
@@ -58,6 +59,7 @@ impl FromWorld for ButtonStyle {
 }
 
 pub struct Popup;
+pub struct ClosingButton;
 
 // this, when it exists on an entity, will allow certain components of type T to be seen in the ui
 pub struct View<T: Component>(pub PhantomData<T>);
@@ -85,13 +87,14 @@ fn popup_system(
     mut commands: Commands,
     mut er_mouse: EventReader<MouseButtonInput>,
     q_menu: Query<(Entity, &Node, &Children), With<Popup>>,
-    q_buttons: Query<&Button, Changed<Interaction>>
+    q_buttons: Query<(&Button, &Option<ClosingButton>), Changed<Interaction>>,
 ) {
     if er_mouse.iter().count() == 0 {
         return;
     }
     for (entity, _, children) in q_menu.iter() {
-        if !children_match_query(children, &q_buttons) {
+        if !children_match_query(children, &q_buttons) 
+        || q_buttons.iter().any(|(_, closing)| closing.is_some()) {
             commands.entity(entity).despawn_recursive();
         }
     }
@@ -195,6 +198,7 @@ fn context_menu_view(
             })
             .with_children(|parent| {
                 for item in menu.0.iter() {
+                    let closing = item.closing.then(|| ClosingButton);
                     parent
                     .spawn_bundle(ButtonBundle {
                         style: Style {
@@ -220,6 +224,7 @@ fn context_menu_view(
                         });
                     })
                     .insert(clone_commands_with_targets(&item.commands, entity, &mouse))
+                    .insert(closing)
                     ;
                 }
             })

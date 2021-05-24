@@ -140,9 +140,9 @@ fn startup_test(
 fn body_test(
     query: Query<&Body>
 ) {
-    for b in query.iter() {
-        println!("u have one lmao: {:?}", b);
-    }
+    // for b in query.iter() {
+    //     println!("u have one lmao: {:?}", b);
+    // }
 }
 
 fn execute_game_commands(

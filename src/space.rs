@@ -56,7 +56,8 @@ fn setup(
                         command: GameCommandType::Create("Body".to_string()),
                         level: 5,
                     },
-                ]))
+                ])),
+                closing: true,
             }
         ]))
         .insert(InteractState(InteractStateEnum::Enabled))
