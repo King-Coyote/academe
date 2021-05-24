@@ -66,13 +66,11 @@ fn setup(
                         target: Target::LastCreated,
                         command: GameCommandType::Modify{
                             name: "Body".to_string(),
-                            values: {
-                                let mut ds = DynamicStruct::default();
-                                ds.insert("strength", 20u32);
-                                ds.insert("coordination", 20u32);
-                                ds.insert("endurance", 20u32);
-                                Arc::new(ds)
-                            }
+                            values: dynamic_struct!(
+                                {"strength", 20u32},
+                                {"coordination", 20u32},
+                                {"endurance", 20u32}
+                            )
                         },
                         level: 4,
                     }
