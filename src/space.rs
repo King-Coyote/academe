@@ -47,19 +47,24 @@ fn setup(
             Transform::from_xyz(0.0, 0.0, 0.0),
         ))
         .insert(InteractablePolygon{points})
-        .insert(ContextMenu(vec![
-            ContextMenuItem {
-                label: "Spawn creature".to_string(),
-                commands: Arc::new(GameCommandQueue(vec![
-                    GameCommand{
+        .insert(context_menu!(
+            {
+                label: "Spawn creature",
+                commands: game_commands!(
+                    {
                         target: Target::World(None),
                         command: GameCommandType::Create("Body".to_string()),
                         level: 5,
-                    },
-                ])),
-                closing: true,
+                    }
+                ),
+                closing: true
+            },
+            {
+                label: "test",
+                commands: game_commands!(),
+                closing: true
             }
-        ]))
+        ))
         .insert(InteractState(InteractStateEnum::Enabled))
     ;
 }

@@ -6,6 +6,8 @@ use space::*;
 use ui::*;
 use game::*;
 
+#[macro_use]
+mod macros;
 mod input;
 mod space;
 mod utils;
