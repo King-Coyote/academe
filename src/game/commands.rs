@@ -1,25 +1,47 @@
 use std::{
     ops::{Deref, DerefMut,},
+    sync::Arc,
+    fmt,
 };
 use bevy::{
     prelude::*,
     reflect::{
         TypeRegistryArc,
+        TypeRegistry,
+        DynamicStruct
     },
     
 };
+use crate::game::*;
 
 #[derive(Clone, Debug)]
 pub enum Target {
     World(Option<Vec2>),
     Screen(Option<Vec2>),
     Entity(Option<Entity>),
+    LastCreated,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum GameCommandType {
     Create(String),
     Destroy(String),
+    Modify{
+        name: String,
+        values: Arc<DynamicStruct>,
+    },
+}
+
+impl fmt::Debug for GameCommandType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "GameCommandType::").unwrap();
+        use GameCommandType::*;
+        match *self {
+            Create(ref name) => write!(f, "Create({})", name),
+            Destroy(ref name) => write!(f, "Destroy({})", name),
+            Modify{ref name, values: _} => write!(f, "Modify({}, _)", name),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -59,43 +81,64 @@ pub fn execute_game_commands(
     let registry = world.get_resource::<TypeRegistryArc>().unwrap().clone();
     let read_registry = registry.read();
 
+    let get_rc_by_name = |name: &str| -> &ReflectComponent {
+        read_registry.get_with_short_name(name)
+            .and_then(|reg| {
+                reg.data::<ReflectComponent>()
+            }).unwrap_or_else(|| panic!("Couldn't get ReflectComponent for name {}; have you forgotten to register it?", name))
+    };
+
+    let mut last_created: Option<Entity> = None;
     for cmd in command_queue.iter() {
         println!("Executing command: {:?}", cmd);
         let target = match cmd.target {
             Target::World(coords) => {
                 let coords = coords.unwrap();
                 let pos = Vec3::new(coords.x, coords.y, 0.0);
-                world.spawn()
+                let new = world.spawn()
                     .insert(Transform::from_translation(pos))
-                    .id()
+                    .id();
+                last_created = Some(new);
+                new
             },
             Target::Entity(entity) => entity.unwrap(),
             Target::Screen(coords) => {
                 let coords = coords.unwrap();
                 let pos = Vec3::new(coords.x, coords.y, 0.0);
-                world.spawn()
+                let new = world.spawn()
                     .insert(Transform::from_translation(pos))
-                    .id()
+                    .id();
+                last_created = Some(new);
+                new
+            },
+            Target::LastCreated => {
+                last_created.expect("Tried to use LastCreated, but there is no entity!")
             }
         };
         use GameCommandType::*;
         match cmd.command {
             Create(ref name) => {
-                let rc = read_registry
-                    .get_with_short_name(name)
-                    .and_then(|reg| {
-                        reg.data::<ReflectComponent>()
-                    }).unwrap();
+                let rc = get_rc_by_name(name);
                 rc.create_component(world, target);
             },
             Destroy(ref name) => {
-                let rc = read_registry
-                    .get_with_short_name(name)
-                    .and_then(|reg| {
-                        reg.data::<ReflectComponent>()
-                    }).unwrap();
+                let rc = get_rc_by_name(name);
                 rc.remove_component(world, target);
+            },
+            Modify{ref name, ref values} => {
+                let rc = get_rc_by_name(name);
+                let mut reflect = rc.reflect_component_mut(world, target).expect("Could not get reflected component");
+                reflect.apply(&**values);
             },
         };
     }
 }
+
+// UTILITY FNS
+// fn get_rc_by_name<'r>(registry: &'r TypeRegistry, name: &str) -> &'r ReflectComponent {
+//     // let read_registry = registry.read();
+//     registry.read().get_with_short_name(name)
+//         .and_then(|reg| {
+//             reg.data::<ReflectComponent>()
+//         }).unwrap_or_else(|| panic!("Couldn't get ReflectComponent for name {}; have you forgotten to register it?", name))
+// }

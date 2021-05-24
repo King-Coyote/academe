@@ -260,6 +260,7 @@ fn clone_commands_with_targets(
                 World(_) => World(Some(mouse.world_pos)),
                 Screen(_) => Screen(Some(mouse.screen_pos)),
                 Entity(_) => Entity(Some(entity)),
+                LastCreated => LastCreated,
             };
             GameCommand {
                 target: new_target,

@@ -38,19 +38,22 @@ pub struct Body {
     // something to represent form
 }
 
-#[derive(Reflect)]
+#[derive(Reflect, Default, Debug)]
+#[reflect(Component)]
 pub struct Mind {
     pub analysis: u32,
     pub memory: u32,
     pub wit: u32,
 }
 
-#[derive(Reflect)]
+#[derive(Reflect, Default, Debug)]
+#[reflect(Component)]
 pub struct Spirit {
     pub charisma: u32,
     pub will: u32,
     pub insight: u32,
 }
 
-#[derive(Reflect)]
+#[derive(Reflect, Default, Debug)]
+#[reflect(Component)]
 pub struct Appearance; // wat do

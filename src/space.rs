@@ -9,6 +9,7 @@ use bevy::{
         mouse::{MouseButtonInput},
     },
     prelude::*,
+    reflect::DynamicStruct,
 };
 use bevy_prototype_lyon::prelude::*;
 use crate::{
@@ -55,6 +56,25 @@ fn setup(
                         target: Target::World(None),
                         command: GameCommandType::Create("Body".to_string()),
                         level: 5,
+                    },
+                    {
+                        target: Target::LastCreated,
+                        command: GameCommandType::Create("Mind".to_string()),
+                        level: 5,
+                    },
+                    {
+                        target: Target::LastCreated,
+                        command: GameCommandType::Modify{
+                            name: "Body".to_string(),
+                            values: {
+                                let mut ds = DynamicStruct::default();
+                                ds.insert("strength", 20u32);
+                                ds.insert("coordination", 20u32);
+                                ds.insert("endurance", 20u32);
+                                Arc::new(ds)
+                            }
+                        },
+                        level: 4,
                     }
                 ),
                 closing: true
