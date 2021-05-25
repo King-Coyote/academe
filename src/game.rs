@@ -24,6 +24,7 @@ impl Plugin for GamePlugin {
             .register_type::<Appearance>()
             .insert_resource(GameCommandQueue(vec![]))
             .add_system(execute_game_commands.exclusive_system())
+            .add_system(appearance_added.system())
             .add_system(test_command_aspects.system())
         ;
     }

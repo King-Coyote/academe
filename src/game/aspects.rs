@@ -56,4 +56,40 @@ pub struct Spirit {
 
 #[derive(Reflect, Default, Debug)]
 #[reflect(Component)]
-pub struct Appearance; // wat do
+pub struct Appearance{
+    pub entity: Option<Entity>, // whomst does this look like; used for senses in ai
+    pub filename: String,
+}
+
+pub fn appearance_added(
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut q_appearance: Query<(Entity, &mut Appearance, &Transform), Added<Appearance>>,
+) {
+    for (entity, mut appearance, transform) in q_appearance.iter_mut() {
+        println!("fuckin, added appearance with filename {}", appearance.filename);
+        let handle = assets.load("textures/sprites/circle_lmao.png");
+        appearance.entity = Some(entity);
+        commands.entity(entity)
+            .insert_bundle(SpriteBundle {
+                material: materials.add(handle.into()),
+                transform: Transform {
+                    scale: Vec3::new(0.05, 0.2, 1.0),
+                    ..*transform
+                },
+                ..Default::default()
+            });
+    }
+}
+
+// pub fn appearance_changed(
+//     assets: Res<AssetServer>,
+//     mut materials: ResMut<Assets<ColorMaterial>>,
+//     mut q_appearance: Query<(&mut Handle<ColorMaterial>, &Appearance), Changed<Appearance>>
+// ) {
+//     for (mut material, appearance) in q_appearance.iter_mut() {
+//         let new_handle = assets.load(appearance.filename.as_str());
+//         *material = new_handle.into();
+//     }
+// }

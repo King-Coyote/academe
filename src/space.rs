@@ -59,17 +59,15 @@ fn setup(
                     },
                     {
                         target: Target::LastCreated,
-                        command: GameCommandType::Create("Mind".to_string()),
+                        command: GameCommandType::Create("Appearance".to_string()),
                         level: 5,
                     },
                     {
                         target: Target::LastCreated,
                         command: GameCommandType::Modify{
-                            name: "Body".to_string(),
+                            name: "Appearance".to_string(),
                             values: dynamic_struct!(
-                                {"strength", 20u32},
-                                {"coordination", 20u32},
-                                {"endurance", 20u32}
+                                {"filename", "durr".to_string()}
                             )
                         },
                         level: 4,

@@ -34,7 +34,7 @@ pub enum GameCommandType {
 
 impl fmt::Debug for GameCommandType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "GameCommandType::").unwrap();
+        write!(f, "GameCommandType::")?;
         use GameCommandType::*;
         match *self {
             Create(ref name) => write!(f, "Create({})", name),
@@ -118,16 +118,15 @@ pub fn execute_game_commands(
         use GameCommandType::*;
         match cmd.command {
             Create(ref name) => {
-                let rc = get_rc_by_name(name);
-                rc.create_component(world, target);
+                get_rc_by_name(name).create_component(world, target);
             },
             Destroy(ref name) => {
-                let rc = get_rc_by_name(name);
-                rc.remove_component(world, target);
+                get_rc_by_name(name).remove_component(world, target);
             },
             Modify{ref name, ref values} => {
-                let rc = get_rc_by_name(name);
-                let mut reflect = rc.reflect_component_mut(world, target).expect("Could not get reflected component");
+                let mut reflect = get_rc_by_name(name)
+                    .reflect_component_mut(world, target)
+                    .expect("Could not get reflected component");
                 reflect.apply(&**values);
             },
         };
@@ -135,10 +134,3 @@ pub fn execute_game_commands(
 }
 
 // UTILITY FNS
-// fn get_rc_by_name<'r>(registry: &'r TypeRegistry, name: &str) -> &'r ReflectComponent {
-//     // let read_registry = registry.read();
-//     registry.read().get_with_short_name(name)
-//         .and_then(|reg| {
-//             reg.data::<ReflectComponent>()
-//         }).unwrap_or_else(|| panic!("Couldn't get ReflectComponent for name {}; have you forgotten to register it?", name))
-// }
