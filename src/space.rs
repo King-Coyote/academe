@@ -14,7 +14,7 @@ use bevy::{
 use bevy_prototype_lyon::prelude::*;
 use crate::{
     input::*,
-    utils::geometry::{point_inside_polygon,},
+    utils::geometry::*,
     ui::*,
     game::*,
 };
@@ -25,15 +25,16 @@ pub struct SpacePlugin;
 fn setup(
     mut commands: Commands,
 ) {
-    let points = vec![
+    let points = Arc::new(vec![
         Vec2::new(0.0, 150.0),
         Vec2::new(300.0, 0.0),
         Vec2::new(0.0, -150.0),
         Vec2::new(-300.0, 0.0),
-    ];
-
+    ]);
+    let closure_points = points.clone();
+    let max_dim = max_polygon_width(&points);
     let shape = shapes::Polygon {
-        points: points.clone(),
+        points: (*points).clone(),
         closed: true
     };
     
@@ -47,7 +48,14 @@ fn setup(
             },
             Transform::from_xyz(0.0, 0.0, 0.0),
         ))
-        .insert(InteractablePolygon{points})
+        .insert(Polygon{points})
+        .insert(Interactable {
+            min_dist: max_dim / 2.0,
+            mouse_inside: Some(Box::new(move |mouse: &MouseState| {
+                point_inside_polygon(&mouse.world_pos, &*closure_points)
+            })),
+            ..Default::default()
+        })
         .insert(context_menu!(
             {
                 label: "Spawn creature",
@@ -74,14 +82,8 @@ fn setup(
                     }
                 ),
                 closing: true
-            },
-            {
-                label: "test",
-                commands: game_commands!(),
-                closing: true
             }
         ))
-        .insert(InteractState(InteractStateEnum::Enabled))
     ;
 }
 

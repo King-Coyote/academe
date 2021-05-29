@@ -2,11 +2,9 @@ use std::{
     marker::PhantomData,
     sync::Arc,
 };
-
 use bevy::{
     prelude::*,
     input::{
-        ElementState,
         mouse::{MouseButtonInput},
     },
     ecs::component::Component,
@@ -15,14 +13,16 @@ use crate::{
     input::{MouseState,},
     utils::{
         entities::{children_match_query,},
-        geometry::point_inside_polygon,
     },
     game::*,
 };
 
+mod interaction;
+pub use interaction::*;
+
 // systems relating to showing UI elements, views on objects, etc
-pub struct InteractablePolygon {
-    pub points: Vec<Vec2>,
+pub struct Polygon {
+    pub points: Arc<Vec<Vec2>>,
 }
 
 pub struct ContextMenuItem {
@@ -64,23 +64,29 @@ pub struct ClosingButton;
 // this, when it exists on an entity, will allow certain components of type T to be seen in the ui
 pub struct View<T: Component>(pub PhantomData<T>);
 
-#[derive(PartialEq)]
-pub enum InteractStateEnum {
-    Enabled,
-    Clicked,
-    Hovered,
-    Disabled,
-}
-
-#[derive(PartialEq)]
-pub struct InteractState(pub InteractStateEnum);
-
 pub struct UiPlugin;
 
 fn setup(
     mut commands: Commands,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     commands.spawn_bundle(UiCameraBundle::default());
+
+    commands.spawn_bundle(ButtonBundle {
+        style: Style {
+            size: Size::new(Val::Percent(25.0), Val::Percent(25.0)),
+            position: Rect {
+                left: Val::Px(100.0),
+                top: Val::Px(100.0),
+                bottom: Val::Px(300.0),
+                right: Val::Px(300.0),
+            },
+            ..Default::default()
+        },
+        material: materials.add(Color::BLACK.into()),
+        ..Default::default()
+    })
+    ;
 }
 
 fn popup_system(
@@ -97,6 +103,31 @@ fn popup_system(
         || q_buttons.iter().any(|(_, closing)| closing.is_some()) {
             commands.entity(entity).despawn_recursive();
         }
+    }
+}
+
+fn capture_interactions(
+    mut order: ResMut<InteractableOrder>,
+    q_interaction: Query<(Entity, &Interaction), Changed<Interaction>>,
+) {
+    use Interaction::*;
+    for (entity, interact) in q_interaction.iter() {
+        match *interact {
+            Clicked | Hovered => {
+                order.ui_blocking = Some(entity);
+                println!("Blocking with entity {:?}", entity);
+                break;
+            },
+            None => {
+                if let Some(e) = &order.ui_blocking {
+                    if *e == entity {
+                        // this was the blocking entity and it's no longer blocking.
+                        println!("Entity {:?} no longer blocking", entity);
+                        order.ui_blocking = Option::None;
+                    }
+                }
+            }
+        };
     }
 }
 
@@ -121,7 +152,7 @@ fn button(
 
 fn command_button(
     mut command_queue: ResMut<GameCommandQueue>,
-    mut q_buttons: Query<(&Button, &Interaction, &GameCommandQueue), Changed<Interaction>>,
+    q_buttons: Query<(&Button, &Interaction, &GameCommandQueue), Changed<Interaction>>,
 ) {
     for (_, interaction, commands) in q_buttons.iter() {
         if let Interaction::Clicked = *interaction {
@@ -130,45 +161,6 @@ fn command_button(
     }
 }
 
-fn polygon_interaction(
-    mut commands: Commands,
-    mouse: Res<MouseState>,
-    button_style: Res<ButtonStyle>,
-    asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut er_mousemove: EventReader<CursorMoved>,
-    mut er_mouseinput: EventReader<MouseButtonInput>,
-    mut q_polygon: Query<(Entity, &InteractablePolygon, &mut InteractState, &ContextMenu)>,
-) {
-    use InteractStateEnum::*;
-    for e in er_mousemove.iter() {
-        for (entity, polygon, mut state, _) in q_polygon.iter_mut() {
-            let inside = point_inside_polygon(&mouse.world_pos, &polygon.points);
-            if inside && state.0 == Enabled {
-                state.0 = Hovered;
-            } else if !inside && state.0 == Hovered {
-                state.0 = Enabled;
-            }
-        }
-    }
-    for e in er_mouseinput.iter() {
-        for (entity, polygon, mut state, menu) in q_polygon.iter_mut() {
-            if e.button != MouseButton::Right {
-                continue;
-            }
-            if state.0 != Hovered && state.0 != Clicked {
-                continue;
-            }
-            if e.state == ElementState::Pressed && state.0 == Hovered {
-                state.0 = Clicked;
-            } else if e.state == ElementState::Released && state.0 == Clicked {
-                let view: View<ContextMenu> = View(PhantomData);
-                commands.entity(entity).insert(view);
-                state.0 = Hovered;
-            }
-        }
-    }
-}
 
 fn context_menu_view(
     mut commands: Commands,
@@ -237,12 +229,18 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
             .init_resource::<ButtonStyle>()
+            .insert_resource(InteractableOrder::default())
             .add_startup_system(setup.system())
             .add_system(button.system())
             .add_system(command_button.system())
             .add_system(popup_system.system())
             .add_system(context_menu_view.system())
-            .add_system(polygon_interaction.system())
+            .add_system(capture_interactions.system())
+            .add_system(interactable_zindex.system())
+            .add_system(interactable_zindex_change.system())
+            .add_system(interactable_mouse_inside.system())
+            .add_system(interactable_capture.system())
+            .add_system(interactable_input.system())
         ;
     }
 }

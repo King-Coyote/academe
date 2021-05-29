@@ -48,3 +48,35 @@ macro_rules! dynamic_struct {
         }
     };
 }
+
+// use for newtype structs
+#[macro_export]
+macro_rules! impl_deref {
+    ($type:ty, $target:ty) => {
+        impl Deref for $type {
+            type Target = $target;
+            fn deref(&self) -> &Self::Target {
+                &self.0
+            }
+        }
+    };
+}
+
+// use for newtype structs
+#[macro_export]
+macro_rules! impl_deref_mut {
+    ($type:ty, $target:ty) => {
+        impl Deref for $type {
+            type Target = $target;
+            fn deref(&self) -> &Self::Target {
+                &self.0
+            }
+        }
+
+        impl DerefMut for $type {
+            fn deref_mut(&mut self) -> &mut Self::Target {
+                &mut self.0
+            }
+        }
+    };
+}

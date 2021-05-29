@@ -10,6 +10,10 @@ use bevy::{
     
 };
 
+use crate::{
+    ui::{InteractState,},
+};
+
 #[derive(Bundle)]
 pub struct GameComponent<T: Component> {
     pub level: Level<T>,
@@ -74,12 +78,10 @@ pub fn appearance_added(
         commands.entity(entity)
             .insert_bundle(SpriteBundle {
                 material: materials.add(handle.into()),
-                transform: Transform {
-                    scale: Vec3::new(0.05, 0.2, 1.0),
-                    ..*transform
-                },
+                transform: *transform,
                 ..Default::default()
-            });
+            })
+            ;
     }
 }
 

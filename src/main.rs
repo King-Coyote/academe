@@ -1,4 +1,5 @@
 #![allow(clippy::type_complexity, clippy::clippy::too_many_arguments, unused_variables, dead_code)]
+#![feature(btree_retain)]
 
 use bevy::prelude::*;
 use input::*;
