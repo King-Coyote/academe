@@ -24,6 +24,9 @@ pub struct SpacePlugin;
 
 fn setup(
     mut commands: Commands,
+    button_style: Res<ButtonStyle>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    q_view: Query<(Entity, &ContextMenu), Added<View<ContextMenu>>>,
 ) {
     let points = Arc::new(vec![
         Vec2::new(0.0, 150.0),
@@ -37,6 +40,10 @@ fn setup(
         points: (*points).clone(),
         closed: true
     };
+
+    let bg_color = materials.add(Color::BLACK.into());
+    let button_mat = button_style.color_normal.clone();
+    let text_style = button_style.text_style.clone();
     
     commands.spawn()
         .insert_bundle(GeometryBuilder::build_as(
@@ -54,37 +61,41 @@ fn setup(
             mouse_inside: Some(Box::new(move |mouse: &MouseState| {
                 point_inside_polygon(&mouse.world_pos, &*closure_points)
             })),
+            on_rightclick: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
+                let menu_pos = mouse.world_pos;
+                create_context_menu(
+                    cmds,
+                    &bg_color,
+                    &button_mat,
+                    &text_style,
+                    &mouse.ui_pos,
+                    &mut [
+                        ContextMenuItem {
+                            label: "Spawn test".to_string(),
+                            handlers: Some(ClickHandlers {
+                                left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
+                                    let mut entity = cmds.spawn();
+                                    entity.insert(Appearance {
+                                            entity: Some(entity.id()),
+                                            filename: "textures/sprites/circle_lmao.png".to_string(),
+                                        })
+                                        .insert(Body {
+                                            strength: 10,
+                                            coordination: 10,
+                                            endurance: 10,
+                                        })
+                                        .insert(Transform::from_translation(menu_pos.extend(menu_pos.y)))
+                                        ;
+                                })),
+                                ..Default::default()
+                            })
+                        }
+                    ],
+                );
+            })),
             ..Default::default()
         })
-        .insert(context_menu!(
-            {
-                label: "Spawn creature",
-                commands: game_commands!(
-                    {
-                        target: Target::World(None),
-                        command: GameCommandType::Create("Body".to_string()),
-                        level: 5,
-                    },
-                    {
-                        target: Target::LastCreated,
-                        command: GameCommandType::Create("Appearance".to_string()),
-                        level: 5,
-                    },
-                    {
-                        target: Target::LastCreated,
-                        command: GameCommandType::Modify{
-                            name: "Appearance".to_string(),
-                            values: dynamic_struct!(
-                                {"filename", "durr".to_string()}
-                            )
-                        },
-                        level: 4,
-                    }
-                ),
-                closing: true
-            }
-        ))
-    ;
+        ;
 }
 
 impl Plugin for SpacePlugin {

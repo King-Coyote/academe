@@ -1,14 +1,10 @@
 use std::{
     marker::PhantomData,
 };
-use bevy::{
-    prelude::*,
-    ecs::{
+use bevy::{app, ecs::{
         component::Component,
         reflect::ReflectComponent,
-    },
-    
-};
+    }, prelude::*};
 
 use crate::{
     ui::{InteractState,},
@@ -72,8 +68,7 @@ pub fn appearance_added(
     mut q_appearance: Query<(Entity, &mut Appearance, &Transform), Added<Appearance>>,
 ) {
     for (entity, mut appearance, transform) in q_appearance.iter_mut() {
-        println!("fuckin, added appearance with filename {}", appearance.filename);
-        let handle = assets.load("textures/sprites/circle_lmao.png");
+        let handle = assets.load::<Texture, _>(appearance.filename.as_str());
         appearance.entity = Some(entity);
         commands.entity(entity)
             .insert_bundle(SpriteBundle {

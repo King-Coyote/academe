@@ -32,8 +32,8 @@ pub struct Interactable{
     pub min_dist: f32, // only really look at things inside this distance. For efficiency
     pub state: InteractState,
     pub mouse_inside: Option<Box<dyn Fn(&MouseState) -> bool + Send + Sync>>,
-    pub on_click: Option<Box<dyn (Fn(&MouseState) -> Box<dyn Component>) + Send + Sync>>,
-    pub on_rightclick: Option<Box<dyn (Fn(&MouseState) -> Box<dyn Component>) + Send + Sync>>,
+    pub on_click: Option<Box<dyn Fn(&mut Commands, &MouseState) + Send + Sync>>,
+    pub on_rightclick: Option<Box<dyn Fn(&mut Commands, &MouseState) + Send + Sync>>,
 }
 
 pub struct MouseInside;
@@ -103,7 +103,6 @@ pub fn interactable_mouse_inside(
                 };
                 if let Some(current) = order.current {
                     if current == entity {
-                        println!("Left bounds of currently active interactable");
                         // no longer inside bounds of currently hovered entity
                         order.current = None;
                     }
@@ -135,7 +134,6 @@ pub fn interactable_capture(
         }
     }
     if let Some(new) = new_current {
-        println!("New entity hovered: {:?}", new);
         order.current = Some(new);
     }
 }
@@ -152,7 +150,6 @@ pub fn interactable_input(
     }
     let current = order.current.as_ref().unwrap();
     let interactable = q_interact.get(*current).unwrap();
-    let mut entity_cmds = commands.entity(*current);
     for e in er_mouseinput.iter() {
         if let ElementState::Pressed = e.state {
             continue;
@@ -164,9 +161,9 @@ pub fn interactable_input(
                 // }
             },
             MouseButton::Right => {
-                // if let Some(handler) = interactable.on_rightclick.as_ref() {
-                //     entity_cmds.insert((handler)(&*mouse));
-                // }
+                if let Some(handler) = interactable.on_rightclick.as_ref() {
+                    (handler)(&mut commands, &*mouse);
+                }
             },
             MouseButton::Middle => {
 
