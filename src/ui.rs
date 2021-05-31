@@ -192,8 +192,8 @@ impl Plugin for UiPlugin {
             .add_system(interactable_zindex.system())
             .add_system(interactable_zindex_change.system())
             .add_system(interactable_mouse_inside.system())
-            .add_system(interactable_capture.system())
-            .add_system(interactable_input.system())
+            .add_system(interactable_handling.system())
+            .add_system(make_appearance_interactive.system())
         ;
     }
 }

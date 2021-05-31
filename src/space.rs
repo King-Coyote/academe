@@ -56,12 +56,15 @@ fn setup(
             Transform::from_xyz(0.0, 0.0, 0.0),
         ))
         .insert(Polygon{points})
-        .insert(Interactable {
+        .insert(InteractableObject {
             min_dist: max_dim / 2.0,
-            mouse_inside: Some(Box::new(move |mouse: &MouseState| {
+            mouse_inside: Some(Box::new(move |pos: &Vec2, mouse: &MouseState| {
                 point_inside_polygon(&mouse.world_pos, &*closure_points)
             })),
-            on_rightclick: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
+            ..Default::default()
+        })
+        .insert(ClickHandlers {
+            right: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
                 let menu_pos = mouse.world_pos;
                 create_context_menu(
                     cmds,
@@ -74,17 +77,18 @@ fn setup(
                             label: "Spawn test".to_string(),
                             handlers: Some(ClickHandlers {
                                 left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
+                                    info!("Spawning critter...");
                                     let mut entity = cmds.spawn();
                                     entity.insert(Appearance {
-                                            entity: Some(entity.id()),
                                             filename: "textures/sprites/circle_lmao.png".to_string(),
+                                            ..Default::default()
                                         })
                                         .insert(Body {
                                             strength: 10,
                                             coordination: 10,
                                             endurance: 10,
                                         })
-                                        .insert(Transform::from_translation(menu_pos.extend(menu_pos.y)))
+                                        .insert(Transform::from_translation(menu_pos.extend(100.0)))
                                         ;
                                 })),
                                 ..Default::default()

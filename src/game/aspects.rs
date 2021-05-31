@@ -1,13 +1,16 @@
 use std::{
     marker::PhantomData,
 };
-use bevy::{app, ecs::{
+use bevy::{
+    ecs::{
         component::Component,
         reflect::ReflectComponent,
-    }, prelude::*};
-
+    }, 
+    prelude::*,
+};
 use crate::{
-    ui::{InteractState,},
+    ui::{InteractableObject},
+    input::MouseState,
 };
 
 #[derive(Bundle)]
@@ -61,6 +64,7 @@ pub struct Appearance{
     pub filename: String,
 }
 
+// this also adds the ability to interact with creatures etc
 pub fn appearance_added(
     mut commands: Commands,
     assets: Res<AssetServer>,
@@ -69,13 +73,14 @@ pub fn appearance_added(
 ) {
     for (entity, mut appearance, transform) in q_appearance.iter_mut() {
         let handle = assets.load::<Texture, _>(appearance.filename.as_str());
+        let sprite_bundle = SpriteBundle {
+            material: materials.add(handle.into()),
+            transform: *transform,
+            ..Default::default()
+        };
         appearance.entity = Some(entity);
         commands.entity(entity)
-            .insert_bundle(SpriteBundle {
-                material: materials.add(handle.into()),
-                transform: *transform,
-                ..Default::default()
-            })
+            .insert_bundle(sprite_bundle)
             ;
     }
 }
