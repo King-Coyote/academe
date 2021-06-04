@@ -1,4 +1,8 @@
 use bevy::prelude::*;
+use crate::{
+    input::MouseState,
+    ui::*,
+};
 
 mod aspects;
 pub use aspects::*;
@@ -28,4 +32,42 @@ impl Plugin for GamePlugin {
             .add_system(test_command_aspects.system())
         ;
     }
+}
+
+// UTILITY FNS
+
+pub fn spawn_standard_boi(pos: &Vec2, cmds: &mut Commands, mouse: &MouseState) {
+    let mut entity = cmds.spawn();
+    let handler_entity = entity.id().clone();
+    entity
+        .insert(Appearance {
+            filename: "textures/sprites/circle_lmao.png".to_string(),
+            ..Default::default()
+        })
+        .insert(Body {
+            strength: 10,
+            coordination: 10,
+            endurance: 10,
+        })
+        .insert(Transform::from_translation(pos.extend(100.0)))
+        .insert(ClickHandlers {
+            right: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
+                cmds.spawn().insert(ContextMenuSpawn {
+                    pos: mouse.ui_pos,
+                    items: vec![
+                        ContextMenuItem {
+                            label: "Test".to_owned(),
+                            handlers: Some(ClickHandlers {
+                                left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
+                                    println!("Durr!");
+                                })),
+                                ..Default::default()
+                            }),
+                        }
+                    ]
+                });
+            })),
+            ..Default::default()
+        })
+        ;
 }

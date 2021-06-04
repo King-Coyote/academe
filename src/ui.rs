@@ -24,7 +24,10 @@ pub struct ContextMenuItem {
     pub handlers: Option<ClickHandlers>,
 }
 
-pub struct ContextMenu(pub Vec<ContextMenuItem>);
+pub struct ContextMenuSpawn {
+    pub pos: Vec2,
+    pub items: Vec<ContextMenuItem>,
+}
 
 pub struct ButtonStyle {
     pub color_normal: Handle<ColorMaterial>,
@@ -61,9 +64,6 @@ pub struct ClickHandlers {
     pub middle: Option<Box<dyn Fn(&mut Commands, &MouseState) + Send + Sync>>,
 }
 
-// this, when it exists on an entity, will allow certain components of type T to be seen in the ui
-pub struct View<T: Component>(pub PhantomData<T>);
-
 pub struct UiPlugin;
 
 fn setup(
@@ -71,22 +71,6 @@ fn setup(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     commands.spawn_bundle(UiCameraBundle::default());
-
-    commands.spawn_bundle(ButtonBundle {
-        style: Style {
-            size: Size::new(Val::Percent(25.0), Val::Percent(25.0)),
-            position: Rect {
-                left: Val::Px(100.0),
-                top: Val::Px(100.0),
-                bottom: Val::Px(300.0),
-                right: Val::Px(300.0),
-            },
-            ..Default::default()
-        },
-        material: materials.add(Color::BLACK.into()),
-        ..Default::default()
-    })
-    ;
 }
 
 fn popup_system(
@@ -179,6 +163,64 @@ fn interaction_with_handlers(
     }
 }
 
+fn context_menu_spawn(
+    mut commands: Commands,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    button_style: Res<ButtonStyle>,
+    mut q_cmspawn: Query<(Entity, &mut ContextMenuSpawn), Added<ContextMenuSpawn>>,
+) {
+    for (entity, mut cm) in q_cmspawn.iter_mut() {
+        let mut entity_cmds = commands.entity(entity);
+        entity_cmds.remove::<ContextMenuSpawn>();
+        entity_cmds.insert_bundle(NodeBundle {
+            style: Style {
+                display: Display::Flex,
+                position_type: PositionType::Absolute,
+                flex_direction: FlexDirection::Column,
+                position: Rect{
+                    left: Val::Px(cm.pos.x),
+                    top: Val::Px(cm.pos.y),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            material: materials.add(Color::BLACK.into()),
+            ..Default::default()
+        })
+        .with_children(|parent| {
+            for item in cm.items.iter_mut() {
+                parent
+                .spawn_bundle(ButtonBundle {
+                    style: Style {
+                        min_size: Size::new(Val::Px(75.0), Val::Px(26.0)),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        margin: Rect::all(Val::Px(2.0)),
+                        padding: Rect::all(Val::Px(3.0)),
+                        ..Default::default()
+                    },
+                    material: button_style.color_normal.clone(),
+                    ..Default::default()
+                })
+                .with_children(|parent| {
+                    parent.spawn_bundle(TextBundle {
+                        text: Text::with_section(
+                            item.label.clone(),
+                            button_style.text_style.clone(),
+                            Default::default(),
+                        ),
+                        focus_policy: bevy::ui::FocusPolicy::Pass,
+                        ..Default::default()
+                    });
+                })
+                .insert(item.handlers.take().unwrap())
+                ;
+            }
+        })
+        .insert(Popup);
+    }
+}
+
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
@@ -188,6 +230,7 @@ impl Plugin for UiPlugin {
             .add_system(button.system())
             .add_system(interaction_with_handlers.system())
             .add_system(popup_system.system())
+            .add_system(context_menu_spawn.system())
             .add_system(capture_interactions.system())
             .add_system(interactable_zindex.system())
             .add_system(interactable_zindex_change.system())
@@ -198,83 +241,58 @@ impl Plugin for UiPlugin {
     }
 }
 
-// // UTILITY FNS
-// fn clone_commands_with_targets(
-//     queue: &GameCommandQueue,
-//     entity: Entity,
-//     mouse: &MouseState,
-// ) -> GameCommandQueue {
-//     use Target::*;
-//     GameCommandQueue (
-//         queue.iter().map(|cmd| {
-//             let new_target: Target = match cmd.target {
-//                 World(_) => World(Some(mouse.world_pos)),
-//                 Screen(_) => Screen(Some(mouse.screen_pos)),
-//                 Entity(_) => Entity(Some(entity)),
-//                 LastCreated => LastCreated,
-//             };
-//             GameCommand {
-//                 target: new_target,
-//                 command: cmd.command.clone(),
-//                 level: cmd.level
-//             }
-//         })
-//         .collect()
-//     )
+// pub fn create_context_menu(
+//     commands: &mut Commands,
+//     bg_color: &Handle<ColorMaterial>,
+//     button_mat: &Handle<ColorMaterial>,
+//     text_style: &TextStyle,
+//     pos: &Vec2,
+//     items: &mut [ContextMenuItem],
+// ) {
+//     commands.spawn_bundle(NodeBundle {
+//         style: Style {
+//             display: Display::Flex,
+//             position_type: PositionType::Absolute,
+//             flex_direction: FlexDirection::Column,
+//             position: Rect{
+//                 left: Val::Px(pos.x),
+//                 top: Val::Px(pos.y),
+//                 ..Default::default()
+//             },
+//             ..Default::default()
+//         },
+//         material: bg_color.clone(),
+//         ..Default::default()
+//     })
+//     .with_children(|parent| {
+//         for item in items.iter_mut() {
+//             parent
+//             .spawn_bundle(ButtonBundle {
+//                 style: Style {
+//                     min_size: Size::new(Val::Px(75.0), Val::Px(26.0)),
+//                     justify_content: JustifyContent::Center,
+//                     align_items: AlignItems::Center,
+//                     margin: Rect::all(Val::Px(2.0)),
+//                     padding: Rect::all(Val::Px(3.0)),
+//                     ..Default::default()
+//                 },
+//                 material: button_mat.clone(),
+//                 ..Default::default()
+//             })
+//             .with_children(|parent| {
+//                 parent.spawn_bundle(TextBundle {
+//                     text: Text::with_section(
+//                         item.label.clone(),
+//                         text_style.clone(),
+//                         Default::default(),
+//                     ),
+//                     focus_policy: bevy::ui::FocusPolicy::Pass,
+//                     ..Default::default()
+//                 });
+//             })
+//             .insert(item.handlers.take().unwrap())
+//             ;
+//         }
+//     })
+//     .insert(Popup);
 // }
-
-pub fn create_context_menu(
-    commands: &mut Commands,
-    bg_color: &Handle<ColorMaterial>,
-    button_mat: &Handle<ColorMaterial>,
-    text_style: &TextStyle,
-    pos: &Vec2,
-    items: &mut [ContextMenuItem],
-) {
-    commands.spawn_bundle(NodeBundle {
-        style: Style {
-            display: Display::Flex,
-            position_type: PositionType::Absolute,
-            flex_direction: FlexDirection::Column,
-            position: Rect{
-                left: Val::Px(pos.x),
-                top: Val::Px(pos.y),
-                ..Default::default()
-            },
-            ..Default::default()
-        },
-        material: bg_color.clone(),
-        ..Default::default()
-    })
-    .with_children(|parent| {
-        for item in items.iter_mut() {
-            parent
-            .spawn_bundle(ButtonBundle {
-                style: Style {
-                    min_size: Size::new(Val::Px(75.0), Val::Px(26.0)),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    margin: Rect::all(Val::Px(2.0)),
-                    padding: Rect::all(Val::Px(3.0)),
-                    ..Default::default()
-                },
-                material: button_mat.clone(),
-                ..Default::default()
-            })
-            .with_children(|parent| {
-                parent.spawn_bundle(TextBundle {
-                    text: Text::with_section(
-                        item.label.clone(),
-                        text_style.clone(),
-                        Default::default(),
-                    ),
-                    focus_policy: bevy::ui::FocusPolicy::Pass,
-                    ..Default::default()
-                });
-            })
-            .insert(item.handlers.take().unwrap())
-            ;
-        }
-    })
-    .insert(Popup);
-}

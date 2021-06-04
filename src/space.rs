@@ -26,7 +26,6 @@ fn setup(
     mut commands: Commands,
     button_style: Res<ButtonStyle>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    q_view: Query<(Entity, &ContextMenu), Added<View<ContextMenu>>>,
 ) {
     let points = Arc::new(vec![
         Vec2::new(0.0, 150.0),
@@ -65,37 +64,22 @@ fn setup(
         })
         .insert(ClickHandlers {
             right: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
-                let menu_pos = mouse.world_pos;
-                create_context_menu(
-                    cmds,
-                    &bg_color,
-                    &button_mat,
-                    &text_style,
-                    &mouse.ui_pos,
-                    &mut [
+                let world_pos = mouse.world_pos;
+                let ui_pos = mouse.ui_pos;
+                cmds.spawn().insert(ContextMenuSpawn {
+                    pos: ui_pos,
+                    items: vec![
                         ContextMenuItem {
                             label: "Spawn test".to_string(),
                             handlers: Some(ClickHandlers {
                                 left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
-                                    info!("Spawning critter...");
-                                    let mut entity = cmds.spawn();
-                                    entity.insert(Appearance {
-                                            filename: "textures/sprites/circle_lmao.png".to_string(),
-                                            ..Default::default()
-                                        })
-                                        .insert(Body {
-                                            strength: 10,
-                                            coordination: 10,
-                                            endurance: 10,
-                                        })
-                                        .insert(Transform::from_translation(menu_pos.extend(100.0)))
-                                        ;
+                                    spawn_standard_boi(&world_pos, cmds, mouse);
                                 })),
                                 ..Default::default()
                             })
                         }
-                    ],
-                );
+                    ]
+                });
             })),
             ..Default::default()
         })

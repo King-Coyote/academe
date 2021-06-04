@@ -94,7 +94,6 @@ pub fn interactable_mouse_inside(
         let mut any_inside = false;
         for (zindex, ord_entity) in order.map.iter().rev() {
             if let Ok((entity, mut interactable, transform)) = q_interactable.get_mut(*ord_entity) {
-                info!("Ordering entity {:?} with zind {}", ord_entity, zindex);
                 let pos = Vec2::new(transform.translation.x, transform.translation.y);
                 let maybe_inside = pos.distance(mouse.world_pos) <= interactable.min_dist;
                 let inside_fn = interactable.mouse_inside.as_ref().unwrap();
