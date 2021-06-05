@@ -52,8 +52,8 @@ impl Default for InteractableObject {
 
 #[derive(PartialEq)]
 pub struct ZIndex {
-    last: i32,
-    current: i32
+    pub last: i32,
+    pub current: i32
 }
 
 impl ZIndex {
@@ -110,8 +110,6 @@ pub fn interactable_mouse_inside(
             order.current = None;
             return;
         }
-        // let mut any_inside = false;
-        // let mut new_current: Option<Entity> = None;
         for (zindex, ent_vec) in order.map.iter().rev() {
             for ord_entity in ent_vec {
                 if let Ok((entity, mut interactable, transform)) = q_interactable.get_mut(*ord_entity) {
@@ -182,10 +180,8 @@ pub fn make_appearance_interactive(
         let size = sprite.size;
         // wait until it has a size...
         if size.x < f32::EPSILON && size.y < f32::EPSILON {
-            info!("Sprite of {:?} is unsized - waiting...", entity);
             continue;
         }
-        info!("Sizing sprite of {:?}!", entity);
         let mut max_dim: f32;
         if size.y > size.x {
             max_dim = size.y / 2.0;

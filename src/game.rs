@@ -8,16 +8,10 @@ mod aspects;
 pub use aspects::*;
 mod commands;
 pub use commands::*;
+mod objects;
+pub use objects::*;
 
 pub struct GamePlugin;
-
-fn test_command_aspects(
-    query: Query<(&Body, &Mind)>,
-) {
-    for (body, mind) in query.iter() {
-        println!("Mind and body found as {:?},\n {:?}", mind, body);
-    }
-}
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut AppBuilder) {
@@ -29,7 +23,7 @@ impl Plugin for GamePlugin {
             .insert_resource(GameCommandQueue(vec![]))
             .add_system(execute_game_commands.exclusive_system())
             .add_system(appearance_added.system())
-            .add_system(test_command_aspects.system())
+            .add_system(cleanup_despawned.system())
         ;
     }
 }
@@ -59,7 +53,7 @@ pub fn spawn_standard_boi(pos: &Vec2, cmds: &mut Commands, mouse: &MouseState) {
                             label: "Test".to_owned(),
                             handlers: Some(ClickHandlers {
                                 left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
-                                    cmds.entity(spawned).despawn();
+                                    cmds.entity(spawned).insert(Despawning);
                                 })),
                                 ..Default::default()
                             }),
