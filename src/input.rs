@@ -43,97 +43,28 @@ fn mouse_state(
         mouse_state.ui_pos = Vec2::new(e.position.x, window.height() as f32 - e.position.y);
         mouse_state.world_pos = Vec2::new(world_pos.x, world_pos.y);
         mouse_state.projected_pos = Vec2::new(world_pos.x, world_pos.y * 2.0);
-        // println!("Screen pos is now {},{}", e.position.x, e.position.y);
     }
 }
-
-// fn click_world_system(
-//     mut er_mouse: EventReader<MouseButtonInput>,
-//     mut ew_worldmouse: EventWriter<MouseButtonInputWorld>,
-//     windows: Res<Windows>,
-//     q_camera: Query<&Transform, With<MainCamera>>
-// ) {
-//     let camera_transform = q_camera.iter().next().unwrap();
-//     for e in er_mouse.iter() {
-//         let world_pos = get_world_pos(&e.position, &camera_transform, &windows.get_primary());
-//         ew_worldmouse.send(MouseButtonInputWorld {
-
-//         })
-//     }
-// }
 
 fn camera_control_system(
     windows: Res<Windows>,
     mouse: Res<MouseState>,
-    mut ev_motion: EventReader<MouseMotion>,
-    mut ev_scroll: EventReader<MouseWheel>,
     input_mouse: Res<Input<MouseButton>>,
+    input_keys: Res<Input<KeyCode>>,
     mut query: Query<(&mut Transform, &mut OrthographicProjection), With<MainCamera>>,
 ) {
-    let pan_button = MouseButton::Left;
+    let (mut cam_position, _) = query.iter_mut().next().unwrap();
+    let window = windows.get_primary().unwrap();
+    let pan_speed = 7.0;
 
-    let (mut cam_position, mut projection) = query.iter_mut().next().unwrap();
+    let mut movement = Vec2::ZERO;
+    if input_keys.pressed(KeyCode::W) {movement.y += pan_speed;}
+    if input_keys.pressed(KeyCode::A) {movement.x -= pan_speed;}
+    if input_keys.pressed(KeyCode::S) {movement.y -= pan_speed;}
+    if input_keys.pressed(KeyCode::D) {movement.x += pan_speed;}
 
-    if input_mouse.pressed(pan_button) {
-        for e in ev_motion.iter() {
-            let window = windows.get_primary().unwrap();
-            cam_position.translation.x -= e.delta.x;
-            cam_position.translation.y += e.delta.y;
-            projection.update(window.width() as f32, window.height() as f32);
-        }
-    }
-
-    // let delta_zoom: f32 = ev_scroll.iter().map(|e| e.y).sum();
-    // if delta_zoom == 0. {
-    //     return;
-    // }
-
-    // let (mut pos, mut cam) = query.single_mut().unwrap();
-    // // put these in some kind of config file
-    // let ZOOM_SPEED = 1.0;
-    // let MIN_ZOOM = 0.0;
-    // let MAX_ZOOM = 1000.0;
-
-    // let window = windows.get_primary().unwrap();
-    // let window_size = Vec2::new(window.width(), window.height());
-    // let mouse_normalized_screen_pos =
-    //     (window.cursor_position().unwrap() / window_size) * 2. - Vec2::ONE;
-
-    // projection.scale -= ZOOM_SPEED * delta_zoom * projection.scale;
-    // projection.scale = projection.scale.clamp(MIN_ZOOM, MAX_ZOOM);
-
-    // cam_position.translation = (mouse.world_pos
-    //     - mouse_normalized_screen_pos * Vec2::new(projection.right, projection.top) * projection.scale)
-    //     .extend(cam_position.translation.z);
-
+    cam_position.translation += movement.extend(0.0);
 }
-
-// fn zoom_system(
-//     mut whl: EventReader<MouseWheel>,
-//     mut cam: Query<(&mut Transform, &mut OrthographicProjection), With<MainCamera>>,
-//     windows: Res<Windows>,
-// ) {
-//     let delta_zoom: f32 = whl.iter().map(|e| e.y).sum();
-//     if delta_zoom == 0. {
-//         return;
-//     }
-
-//     let (mut pos, mut cam) = cam.single_mut().unwrap();
-
-//     let window = windows.get_primary().unwrap();
-//     let window_size = Vec2::new(window.width(), window.height());
-//     let mouse_normalized_screen_pos =
-//         (window.cursor_position().unwrap() / window_size) * 2. - Vec2::ONE;
-//     let mouse_world_pos = pos.translation.truncate()
-//         + mouse_normalized_screen_pos * Vec2::new(cam.right, cam.top) * cam.scale;
-
-//     cam.scale -= ZOOM_SPEED * delta_zoom * cam.scale;
-//     cam.scale = cam.scale.clamp(MIN_ZOOM, MAX_ZOOM);
-
-//     pos.translation = (mouse_world_pos
-//         - mouse_normalized_screen_pos * Vec2::new(cam.right, cam.top) * cam.scale)
-//         .extend(pos.translation.z);
-// }
 
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut AppBuilder) {
