@@ -13,13 +13,14 @@ use bevy::{
 use crate::{
     input::*,
     game::*,
+    utils::data_struct::*,
 };
 
 use super::ClickHandlers;
 
 #[derive(Default)]
 pub struct InteractableOrder{
-    pub map: BTreeMap<i32, Entity>,
+    pub map: MultiTreeMap<i32, Entity>,
     pub ui_blocking: Option<Entity>,
     pub current: Option<Entity>,
 }
@@ -50,8 +51,24 @@ impl Default for InteractableObject {
 }
 
 #[derive(PartialEq)]
-pub struct ZIndex(i32);
-impl_deref_mut!(ZIndex, i32);
+pub struct ZIndex {
+    last: i32,
+    current: i32
+}
+
+impl ZIndex {
+    pub fn from_transform(t: &Transform) -> Self {
+        ZIndex {
+            last: t.translation.z as i32,
+            current: t.translation.z as i32,
+        }
+    }
+
+    pub fn update(&mut self, t: &Transform) {
+        self.last = self.current;
+        self.current = t.translation.z as i32;
+    }
+}
 
 pub fn interactable_zindex(
     mut commands: Commands,
@@ -60,12 +77,14 @@ pub fn interactable_zindex(
     mut q_interact_change: Query<(&Transform, &mut ZIndex), (With<InteractableObject>, Changed<Transform>)>,
 ) {
     for (entity, t) in q_interact_link.iter() {
-        let z_index = t.translation.z as i32;
-        commands.entity(entity).insert(ZIndex(z_index));
-        order.map.insert(z_index, entity);
+        let z_index = ZIndex::from_transform(t);
+        multimap_insert(&mut order.map, z_index.current, entity);
+        commands.entity(entity).insert(z_index);
     }
-    for (t, mut z) in q_interact_change.iter_mut().filter(|q| q.1.0 != q.0.translation.z as i32) {
-        z.0 = t.translation.z as i32;
+    for (t, mut z) in q_interact_change.iter_mut()
+        .filter(|(t, z)| z.current != t.translation.z as i32) 
+    {
+        z.update(t);
     }
 }
 
@@ -74,8 +93,8 @@ pub fn interactable_zindex_change(
     q_interact: Query<(Entity, &ZIndex), (With<InteractableObject>, Changed<ZIndex>)>,
 ) {
     for (entity, z_index) in q_interact.iter() {
-        order.map.retain(|_, v| entity != *v);
-        order.map.insert(z_index.0, entity);
+        multimap_remove(&mut order.map, z_index.last, entity);
+        multimap_insert(&mut order.map, z_index.current, entity);
     }
 }
 
@@ -91,24 +110,24 @@ pub fn interactable_mouse_inside(
             order.current = None;
             return;
         }
-        let mut any_inside = false;
-        for (zindex, ord_entity) in order.map.iter().rev() {
-            if let Ok((entity, mut interactable, transform)) = q_interactable.get_mut(*ord_entity) {
-                let pos = Vec2::new(transform.translation.x, transform.translation.y);
-                let maybe_inside = pos.distance(mouse.world_pos) <= interactable.min_dist;
-                let inside_fn = interactable.mouse_inside.as_ref().unwrap();
-                if order.ui_blocking.is_none() && maybe_inside && (inside_fn)(&pos, &*mouse) {
-                    if let Enabled = interactable.state {
-                        any_inside = true;
-                        order.current = Some(entity);
-                        break;
-                    };
+        // let mut any_inside = false;
+        // let mut new_current: Option<Entity> = None;
+        for (zindex, ent_vec) in order.map.iter().rev() {
+            for ord_entity in ent_vec {
+                if let Ok((entity, mut interactable, transform)) = q_interactable.get_mut(*ord_entity) {
+                    let pos = Vec2::new(transform.translation.x, transform.translation.y);
+                    let maybe_inside = pos.distance(mouse.world_pos) <= interactable.min_dist;
+                    let inside_fn = interactable.mouse_inside.as_ref().unwrap();
+                    if order.ui_blocking.is_none() && maybe_inside && (inside_fn)(&pos, &*mouse) {
+                        if let Enabled = interactable.state {
+                            order.current = Some(entity);
+                            return;
+                        };
+                    }
                 }
             }
         }
-        if !any_inside {
-            order.current = None;
-        }
+        order.current = None;
     }
 }
 

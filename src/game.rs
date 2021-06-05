@@ -38,7 +38,7 @@ impl Plugin for GamePlugin {
 
 pub fn spawn_standard_boi(pos: &Vec2, cmds: &mut Commands, mouse: &MouseState) {
     let mut entity = cmds.spawn();
-    let handler_entity = entity.id().clone();
+    let spawned = entity.id();
     entity
         .insert(Appearance {
             filename: "textures/sprites/circle_lmao.png".to_string(),
@@ -59,7 +59,7 @@ pub fn spawn_standard_boi(pos: &Vec2, cmds: &mut Commands, mouse: &MouseState) {
                             label: "Test".to_owned(),
                             handlers: Some(ClickHandlers {
                                 left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
-                                    println!("Durr!");
+                                    cmds.entity(spawned).despawn();
                                 })),
                                 ..Default::default()
                             }),
