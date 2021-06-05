@@ -1,5 +1,3 @@
-use std::iter::Filter;
-
 use bevy::{
     prelude::*,
     ecs::query::{
@@ -9,9 +7,7 @@ use bevy::{
     },
 };
 
-pub fn children_match_query<Q, F>(
-    children: &Children, 
-    query: &Query<Q, F>) -> bool
+pub fn children_match_query<Q, F>(children: &Children, query: &Query<Q, F>) -> bool
 where
     Q: WorldQuery,
     F: WorldQuery,

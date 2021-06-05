@@ -76,40 +76,44 @@ fn setup(
 fn popup_system(
     mut commands: Commands,
     mut er_mouse: EventReader<MouseButtonInput>,
+    mouse_input: Res<Input<MouseButton>>,
     q_menu: Query<(Entity, &Node, &Children), With<Popup>>,
-    q_buttons: Query<(&Button), Changed<Interaction>>,
+    q_not_buttons: Query<&Node, (Changed<Interaction>, Without<Button>)>,
+    q_buttons: Query<&Button, Changed<Interaction>>,
 ) {
-    if er_mouse.iter().count() == 0 {
+    if mouse_input.get_just_released().is_empty()
+    || er_mouse.iter().count() == 0 {
         return;
     }
     for (entity, _, children) in q_menu.iter() {
-        if !children_match_query(children, &q_buttons) {
-            commands.entity(entity).despawn_recursive();
+        if children_match_query(children, &q_buttons)
+        || !children_match_query(children, &q_not_buttons) {
+            commands.entity(entity).insert(Despawning);
         }
     }
 }
 
 fn capture_interactions(
     mut order: ResMut<InteractableOrder>,
-    q_interaction: Query<(Entity, &Interaction), Changed<Interaction>>,
+    mut er_mousebutton: EventReader<MouseButtonInput>,
+    mut er_mousemove: EventReader<CursorMoved>,
+    q_interaction: Query<(Entity, &Interaction)>,
 ) {
     use Interaction::*;
+    if er_mousebutton.iter().next().is_none()
+    && er_mousemove.iter().next().is_none() {
+        return;
+    }
     for (entity, interact) in q_interaction.iter() {
         match *interact {
             Clicked | Hovered => {
                 order.ui_blocking = Some(entity);
-                break;
+                return;
             },
-            None => {
-                if let Some(e) = &order.ui_blocking {
-                    if *e == entity {
-                        // this was the blocking entity and it's no longer blocking.
-                        order.ui_blocking = Option::None;
-                    }
-                }
-            }
+            _ => {}
         };
     }
+    order.ui_blocking = Option::None;
 }
 
 fn button(

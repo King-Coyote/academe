@@ -107,6 +107,7 @@ pub fn interactable_mouse_inside(
     use InteractState::*;
     for e in er_mousemove.iter() {
         if order.ui_blocking.is_some() {
+            info!("Ui is blocking interaction!");
             order.current = None;
             return;
         }
