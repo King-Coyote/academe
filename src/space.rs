@@ -69,7 +69,8 @@ fn setup(
                             })
                         }
                     ]
-                });
+                })
+                .insert(Popup);
             })),
             ..Default::default()
         })
