@@ -13,6 +13,8 @@ use crate::{
 
 mod interaction;
 pub use interaction::*;
+mod editor_interface;
+pub use editor_interface::*;
 
 // systems relating to showing UI elements, views on objects, etc
 pub struct Polygon {
@@ -29,27 +31,57 @@ pub struct ContextMenuSpawn {
     pub items: Vec<ContextMenuItem>,
 }
 
+pub struct MainStyle {
+    panel: PanelStyle,
+    button: ButtonStyle,
+    text: TextStyle,
+}
+
+impl FromWorld for MainStyle {
+    fn from_world(world: &mut World) -> Self {
+        let asset_server = world.get_resource_mut::<AssetServer>().unwrap();
+        let font_handle: Handle<Font> = asset_server.load("fonts/OpenSans-Regular.ttf");
+        let mut materials = world.get_resource_mut::<Assets<ColorMaterial>>().unwrap();
+        MainStyle {
+            panel: PanelStyle::from_world(world),
+            button: ButtonStyle::from_world(world),
+            text: TextStyle {
+                font: font_handle,
+                font_size: 16.0,
+                color: Color::WHITE,
+            }
+        }
+    }
+}
+
 pub struct ButtonStyle {
     pub color_normal: Handle<ColorMaterial>,
     pub color_hovered: Handle<ColorMaterial>,
     pub color_clicked: Handle<ColorMaterial>,
-    pub text_style: TextStyle,
 }
 
 impl FromWorld for ButtonStyle {
     fn from_world(world: &mut World) -> Self {
         let asset_server = world.get_resource_mut::<AssetServer>().unwrap();
-        let font_handle: Handle<Font> = asset_server.load("fonts/OpenSans-Regular.ttf");
         let mut materials = world.get_resource_mut::<Assets<ColorMaterial>>().unwrap();
         ButtonStyle {
             color_normal: materials.add(Color::rgb(0.15, 0.15, 0.15).into()),
             color_hovered: materials.add(Color::rgb(0.25, 0.25, 0.25).into()),
             color_clicked: materials.add(Color::rgb(0.35, 0.75, 0.35).into()),
-            text_style: TextStyle {
-                font: font_handle,
-                font_size: 16.0,
-                color: Color::WHITE,
-            }
+        }
+    }
+}
+
+pub struct PanelStyle {
+    pub color: Handle<ColorMaterial>,
+}
+
+impl FromWorld for PanelStyle {
+    fn from_world(world: &mut World) -> Self {
+        let asset_server = world.get_resource_mut::<AssetServer>().unwrap();
+        let mut materials = world.get_resource_mut::<Assets<ColorMaterial>>().unwrap();
+        PanelStyle {
+            color: materials.add(Color::GRAY.into()),
         }
     }
 }
@@ -117,19 +149,19 @@ fn capture_interactions(
 }
 
 fn button(
-    button_style: Res<ButtonStyle>,
+    style: Res<MainStyle>,
     mut q_buttons: Query<(&Interaction, &mut Handle<ColorMaterial>), (Changed<Interaction>, With<Button>)>,
 ) {
     for (interaction, mut material) in q_buttons.iter_mut() {
         match *interaction {
             Interaction::Clicked => {
-                *material = button_style.color_clicked.clone();
+                *material = style.button.color_clicked.clone();
             },
             Interaction::Hovered => {
-                *material = button_style.color_hovered.clone();
+                *material = style.button.color_hovered.clone();
             },
             Interaction::None => {
-                *material = button_style.color_normal.clone();
+                *material = style.button.color_normal.clone();
             }
         }
     }
@@ -170,7 +202,7 @@ fn interaction_with_handlers(
 fn context_menu_spawn(
     mut commands: Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    button_style: Res<ButtonStyle>,
+    style: Res<MainStyle>,
     mut q_cmspawn: Query<(Entity, &mut ContextMenuSpawn), Added<ContextMenuSpawn>>,
 ) {
     for (entity, mut cm) in q_cmspawn.iter_mut() {
@@ -203,14 +235,14 @@ fn context_menu_spawn(
                         padding: Rect::all(Val::Px(3.0)),
                         ..Default::default()
                     },
-                    material: button_style.color_normal.clone(),
+                    material: style.button.color_normal.clone(),
                     ..Default::default()
                 })
                 .with_children(|parent| {
                     parent.spawn_bundle(TextBundle {
                         text: Text::with_section(
                             item.label.clone(),
-                            button_style.text_style.clone(),
+                            style.text.clone(),
                             Default::default(),
                         ),
                         focus_policy: bevy::ui::FocusPolicy::Pass,
@@ -225,12 +257,14 @@ fn context_menu_spawn(
     }
 }
 
+// TODO shouldnt this be split up a bit?
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
-            .init_resource::<ButtonStyle>()
+            .init_resource::<MainStyle>()
             .insert_resource(InteractableOrder::default())
             .add_startup_system(setup.system())
+            .add_startup_system(editor_interface::setup.system())
             .add_system(button.system())
             .add_system(interaction_with_handlers.system())
             .add_system(popup_system.system())

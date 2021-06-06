@@ -1,15 +1,8 @@
 use std::{
-    marker::PhantomData,
     sync::Arc,
 };
-
 use bevy::{
-    input::{
-        ElementState,
-        mouse::{MouseButtonInput},
-    },
     prelude::*,
-    reflect::DynamicStruct,
 };
 use bevy_prototype_lyon::prelude::*;
 use crate::{
@@ -24,7 +17,6 @@ pub struct SpacePlugin;
 
 fn setup(
     mut commands: Commands,
-    button_style: Res<ButtonStyle>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let points = Arc::new(vec![
@@ -41,8 +33,6 @@ fn setup(
     };
 
     let bg_color = materials.add(Color::BLACK.into());
-    let button_mat = button_style.color_normal.clone();
-    let text_style = button_style.text_style.clone();
     
     commands.spawn()
         .insert_bundle(GeometryBuilder::build_as(
