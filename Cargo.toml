@@ -3,13 +3,11 @@ name = "bevyacad"
 version = "0.1.0"
 authors = ["King-Coyote <alex.hartstone@gmail.com>"]
 edition = "2018"
-resolve = "2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 bevy = {git = "https://github.com/King-Coyote/bevy", branch = "remove-comp-kc-0.5" }
-bevy_egui = "0.5"
 bevy_prototype_lyon = "0.3.1"
 ron = "0.6.2"
 

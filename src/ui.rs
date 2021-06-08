@@ -10,7 +10,6 @@ use crate::{
     },
     game::*,
 };
-use bevy_egui::{egui, EguiContext, EguiPlugin, EguiSettings,};
 
 mod interaction;
 pub use interaction::*;
@@ -75,7 +74,6 @@ impl FromWorld for ButtonStyle {
 
 pub struct PanelStyle {
     pub color: Handle<ColorMaterial>,
-    pub clear: Handle<ColorMaterial>,
 }
 
 impl FromWorld for PanelStyle {
@@ -84,7 +82,6 @@ impl FromWorld for PanelStyle {
         let mut materials = world.get_resource_mut::<Assets<ColorMaterial>>().unwrap();
         PanelStyle {
             color: materials.add(Color::GRAY.into()),
-            clear: materials.add(Color::NONE.into()),
         }
     }
 }
@@ -202,91 +199,68 @@ fn interaction_with_handlers(
     }
 }
 
-fn context_menu_ui(
+fn context_menu_spawn(
     mut commands: Commands,
-    mouse: Res<MouseState>,
-    mut egui_ctx: ResMut<EguiContext>,
-    q_cm: Query<&ContextMenuSpawn>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    style: Res<MainStyle>,
+    mut q_cmspawn: Query<(Entity, &mut ContextMenuSpawn), Added<ContextMenuSpawn>>,
 ) {
-    for cm in q_cm.iter() {
-        egui::Window::new("Test")
-            .title_bar(false)
-            .fixed_pos([cm.pos.x, cm.pos.y])
-            .show(egui_ctx.ctx(), |ui| {
-                for item in &cm.items {
-                    if ui.button(&item.label).clicked() {
-                        if let Some(handlers) = item.handlers.as_ref() {
-                            (handlers.left.as_ref().unwrap())(&mut commands, &*mouse);
-                        }
-                    }
-                }
-            });
+    for (entity, mut cm) in q_cmspawn.iter_mut() {
+        let mut entity_cmds = commands.entity(entity);
+        entity_cmds.remove::<ContextMenuSpawn>();
+        entity_cmds.insert_bundle(NodeBundle {
+            style: Style {
+                display: Display::Flex,
+                position_type: PositionType::Absolute,
+                flex_direction: FlexDirection::Column,
+                position: Rect{
+                    left: Val::Px(cm.pos.x),
+                    top: Val::Px(cm.pos.y),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            material: materials.add(Color::BLACK.into()),
+            ..Default::default()
+        })
+        .with_children(|parent| {
+            for item in cm.items.iter_mut() {
+                parent
+                .spawn_bundle(ButtonBundle {
+                    style: Style {
+                        min_size: Size::new(Val::Px(75.0), Val::Px(26.0)),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        margin: Rect::all(Val::Px(2.0)),
+                        padding: Rect::all(Val::Px(3.0)),
+                        ..Default::default()
+                    },
+                    material: style.button.color_normal.clone(),
+                    ..Default::default()
+                })
+                .with_children(|parent| {
+                    parent.spawn_bundle(TextBundle {
+                        text: Text::with_section(
+                            item.label.clone(),
+                            style.text.clone(),
+                            Default::default(),
+                        ),
+                        focus_policy: bevy::ui::FocusPolicy::Pass,
+                        ..Default::default()
+                    });
+                })
+                .insert(item.handlers.take().unwrap())
+                ;
+            }
+        })
+        .insert(Popup);
     }
 }
-
-// fn context_menu_spawn(
-//     mut commands: Commands,
-//     mut materials: ResMut<Assets<ColorMaterial>>,
-//     style: Res<MainStyle>,
-//     mut q_cmspawn: Query<(Entity, &mut ContextMenuSpawn), Added<ContextMenuSpawn>>,
-// ) {
-//     for (entity, mut cm) in q_cmspawn.iter_mut() {
-//         let mut entity_cmds = commands.entity(entity);
-//         entity_cmds.remove::<ContextMenuSpawn>();
-//         entity_cmds.insert_bundle(NodeBundle {
-//             style: Style {
-//                 display: Display::Flex,
-//                 position_type: PositionType::Absolute,
-//                 flex_direction: FlexDirection::Column,
-//                 position: Rect{
-//                     left: Val::Px(cm.pos.x),
-//                     top: Val::Px(cm.pos.y),
-//                     ..Default::default()
-//                 },
-//                 ..Default::default()
-//             },
-//             material: materials.add(Color::BLACK.into()),
-//             ..Default::default()
-//         })
-//         .with_children(|parent| {
-//             for item in cm.items.iter_mut() {
-//                 parent
-//                 .spawn_bundle(ButtonBundle {
-//                     style: Style {
-//                         min_size: Size::new(Val::Px(75.0), Val::Px(26.0)),
-//                         justify_content: JustifyContent::Center,
-//                         align_items: AlignItems::Center,
-//                         margin: Rect::all(Val::Px(2.0)),
-//                         padding: Rect::all(Val::Px(3.0)),
-//                         ..Default::default()
-//                     },
-//                     material: style.button.color_normal.clone(),
-//                     ..Default::default()
-//                 })
-//                 .with_children(|parent| {
-//                     parent.spawn_bundle(TextBundle {
-//                         text: Text::with_section(
-//                             item.label.clone(),
-//                             style.text.clone(),
-//                             Default::default(),
-//                         ),
-//                         focus_policy: bevy::ui::FocusPolicy::Pass,
-//                         ..Default::default()
-//                     });
-//                 })
-//                 .insert(item.handlers.take().unwrap())
-//                 ;
-//             }
-//         })
-//         .insert(Popup);
-//     }
-// }
 
 // TODO shouldnt this be split up a bit?
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
-            .add_plugin(EguiPlugin)
             .init_resource::<MainStyle>()
             .insert_resource(InteractableOrder::default())
             .add_startup_system(setup.system())
@@ -294,8 +268,7 @@ impl Plugin for UiPlugin {
             .add_system(button.system())
             .add_system(interaction_with_handlers.system())
             .add_system(popup_system.system())
-            .add_system(context_menu_ui.system())
-            // .add_system(context_menu_spawn.system())
+            .add_system(context_menu_spawn.system())
             .add_system(capture_interactions.system())
             .add_system(interactable_zindex.system())
             .add_system(interactable_zindex_change.system())
