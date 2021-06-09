@@ -74,6 +74,7 @@ impl FromWorld for ButtonStyle {
 
 pub struct PanelStyle {
     pub color: Handle<ColorMaterial>,
+    pub clear: Handle<ColorMaterial>,
 }
 
 impl FromWorld for PanelStyle {
@@ -82,6 +83,7 @@ impl FromWorld for PanelStyle {
         let mut materials = world.get_resource_mut::<Assets<ColorMaterial>>().unwrap();
         PanelStyle {
             color: materials.add(Color::GRAY.into()),
+            clear: materials.add(Color::NONE.into())
         }
     }
 }
