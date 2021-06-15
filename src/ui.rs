@@ -15,6 +15,8 @@ mod interaction;
 pub use interaction::*;
 mod editor_interface;
 pub use editor_interface::*;
+mod debug;
+pub use debug::*;
 
 // systems relating to showing UI elements, views on objects, etc
 pub struct Polygon {
@@ -264,9 +266,9 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
             .init_resource::<MainStyle>()
+            .init_resource::<PolygonBuilder>()
             .insert_resource(InteractableOrder::default())
             .add_startup_system(setup.system())
-            .add_startup_system(editor_interface::setup.system())
             .add_system(button.system())
             .add_system(interaction_with_handlers.system())
             .add_system(popup_system.system())
@@ -277,6 +279,7 @@ impl Plugin for UiPlugin {
             .add_system(interactable_mouse_inside.system())
             .add_system(interactable_handling.system())
             .add_system(make_appearance_interactive.system())
+            .add_system(spawn_debug_ui.system())
         ;
     }
 }

@@ -12,6 +12,22 @@ use crate::{
     game::*,
 };
 
+/*
+[-711.90466, -97.48465]
+[-244.30817, 137.44873]
+[42.09662, -4.9219666]
+[331.9917, 133.8147]
+[528.577, 36.042236]
+[192.21948, -133.64969]
+[330.4182, -201.00244]
+[369.19006, -186.15796]
+[270.9057, -138.5155]
+[568.0725, 13.116638]
+[796.41724, -98.02606]
+[42.268982, -475.73297]
+[-710.77234, -97.637115]
+*/
+
 // curently for rendering spaces and allowing them to be interacted with.
 pub struct SpacePlugin;
 
@@ -20,10 +36,18 @@ fn setup(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let points = Arc::new(vec![
-        Vec2::new(0.0, 150.0),
-        Vec2::new(300.0, 0.0),
-        Vec2::new(0.0, -150.0),
-        Vec2::new(-300.0, 0.0),
+        Vec2::new(-711.90466, -97.48465),
+        Vec2::new(-244.30817, 137.44873),
+        Vec2::new(42.09662, -4.9219666),
+        Vec2::new(331.9917, 133.8147),
+        Vec2::new(528.577, 36.042236),
+        Vec2::new(192.21948, -133.64969),
+        Vec2::new(330.4182, -201.00244),
+        Vec2::new(369.19006, -186.15796),
+        Vec2::new(270.9057, -138.5155),
+        Vec2::new(568.0725, 13.116638),
+        Vec2::new(796.41724, -98.02606),
+        Vec2::new(42.268982, -475.73297),
     ]);
     let closure_points = points.clone();
     let max_dim = max_polygon_width(&points);
@@ -37,10 +61,10 @@ fn setup(
     commands.spawn()
         .insert_bundle(GeometryBuilder::build_as(
             &shape,
-            ShapeColors::outlined(Color::TEAL, Color::BLACK),
+            ShapeColors::outlined(Color::rgba(0.0, 0.3, 0.75, 0.25), Color::BLUE),
             DrawMode::Outlined {
                 fill_options: FillOptions::default(),
-                outline_options: StrokeOptions::default().with_line_width(5.0),
+                outline_options: StrokeOptions::default().with_line_width(1.0),
             },
             Transform::from_xyz(0.0, 0.0, 0.0),
         ))

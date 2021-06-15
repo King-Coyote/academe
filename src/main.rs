@@ -1,5 +1,5 @@
 #![allow(clippy::type_complexity, clippy::clippy::too_many_arguments, unused_variables, dead_code)]
-#![feature(btree_retain, exact_size_is_empty)]
+#![feature(exact_size_is_empty)]
 
 use bevy::prelude::*;
 use input::*;
@@ -34,15 +34,6 @@ fn area_texture_test(
     commands.spawn_bundle(SpriteBundle {
         material: materials.add(tex_handle.into()),
         ..Default::default()
-        // pub sprite: Sprite,
-        // pub mesh: Handle<Mesh>, // TODO: maybe abstract this out
-        // pub material: Handle<ColorMaterial>,
-        // pub main_pass: MainPass,
-        // pub draw: Draw,
-        // pub visible: Visible,
-        // pub render_pipelines: RenderPipelines,
-        // pub transform: Transform,
-        // pub global_transform: GlobalTransform,
     });
 }
 
