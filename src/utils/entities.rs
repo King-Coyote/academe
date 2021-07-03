@@ -1,10 +1,6 @@
 use bevy::{
+    ecs::query::{FilterFetch, ReadOnlyFetch, WorldQuery},
     prelude::*,
-    ecs::query::{
-        WorldQuery,
-        FilterFetch,
-        ReadOnlyFetch,
-    },
 };
 
 pub fn children_match_query<Q, F>(children: &Children, query: &Query<Q, F>) -> bool

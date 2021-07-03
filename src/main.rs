@@ -1,19 +1,24 @@
-#![allow(clippy::type_complexity, clippy::clippy::too_many_arguments, unused_variables, dead_code)]
+#![allow(
+    clippy::type_complexity,
+    clippy::clippy::too_many_arguments,
+    unused_variables,
+    dead_code
+)]
 #![feature(exact_size_is_empty)]
 
 use bevy::prelude::*;
+use game::*;
 use input::*;
 use space::*;
 use ui::*;
-use game::*;
 
 #[macro_use]
 mod macros;
+mod game;
 mod input;
 mod space;
-mod utils;
 mod ui;
-mod game;
+mod utils;
 
 // dfault stages look like this:
 // self.add_startup_stage(startup_stage::STARTUP)

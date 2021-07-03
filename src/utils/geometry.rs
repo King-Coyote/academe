@@ -15,7 +15,7 @@ impl Ray {
         Ray {
             o: a.clone(),
             d: diff.normalize(),
-            l: length
+            l: length,
         }
     }
 }
@@ -44,9 +44,9 @@ pub fn point_inside_sprite(point: &Vec2, sprite: &Sprite, transform: &Transform)
     let halfy = sprite.size.y * 0.5;
 
     point.x > transform.translation.x - halfx
-    && point.x <= transform.translation.x + halfx
-    && point.y > transform.translation.y - halfy
-    && point.y <= transform.translation.y + halfy
+        && point.x <= transform.translation.x + halfx
+        && point.y > transform.translation.y - halfy
+        && point.y <= transform.translation.y + halfy
 }
 
 fn do_lines_intersect(a: &Ray, b: &Ray) -> bool {
@@ -67,10 +67,7 @@ fn get_outside_point(points: &[Vec2]) -> Vec2 {
             furthest = p;
         }
     }
-    Vec2::new(
-        furthest.x + 10.0,
-        furthest.y
-    )
+    Vec2::new(furthest.x + 10.0, furthest.y)
 }
 
 // [top, left, bottom, right]
@@ -81,10 +78,18 @@ pub fn get_bounding_box(points: &[Vec2]) -> [f32; 4] {
     let mut min_y = f32::INFINITY;
 
     for p in points.iter() {
-        if p.x < min_x {min_x = p.x;}
-        if p.y < min_y {min_y = p.y;}
-        if p.x > max_x {max_x = p.x;}
-        if p.y > max_y {max_y = p.y;}
+        if p.x < min_x {
+            min_x = p.x;
+        }
+        if p.y < min_y {
+            min_y = p.y;
+        }
+        if p.x > max_x {
+            max_x = p.x;
+        }
+        if p.y > max_y {
+            max_y = p.y;
+        }
     }
     [max_y, min_x, min_y, max_x]
 }
@@ -93,6 +98,8 @@ pub fn max_polygon_width(points: &[Vec2]) -> f32 {
     let bb = get_bounding_box(points);
     let height = f32::abs(bb[0] - bb[2]);
     let width = f32::abs(bb[1] - bb[3]);
-    if height > width {return height;}
+    if height > width {
+        return height;
+    }
     width
 }

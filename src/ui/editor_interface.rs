@@ -1,17 +1,41 @@
-use bevy::{
-    input::ElementState,
-    prelude::*
-};
-use crate::{
-    ui::*,
+use crate::ui::*;
+use bevy::{input::ElementState, prelude::*, reflect::TypeRegistryArc, scene};
+use std::{
+    fs::File,
+    io::prelude::*,
+    path::Path,
 };
 
-#[derive(Default,)]
-pub struct PolygonBuilder {
-    pub building: bool,
-    pub first_point: Vec2,
-    pub points: Vec<Vec2>,
-    pub debug_ui: Option<Entity>,
+const SAVE_PATH: &str = "/home/alex/projects/bevyacad/assets/scenes/editor_test.scn";
+
+pub fn save_load(
+    world: &mut World,
+    // keys: Res<Input<KeyCode>>,
+    // scene_loader: Res<SceneLoader>,
+) {
+    let keys = world.get_resource::<Input<KeyCode>>().unwrap();
+    let registry = world.get_resource::<TypeRegistryArc>().unwrap();
+    // save
+    if keys.pressed(KeyCode::LControl) && keys.just_released(KeyCode::S) {
+        info!("Saving scene to {}", SAVE_PATH);
+        let scene = DynamicScene::from_world(world, &registry);
+        let ron = scene.serialize_ron(registry).unwrap();
+        info!("Serialized scene to {}", ron);
+        write_scene(&SAVE_PATH, &ron.as_bytes()).unwrap();
+    }
+    // load the scene ya filthy animal
+    if keys.pressed(KeyCode::LControl) && keys.just_released(KeyCode::L) {
+        info!("Loading scene from ");
+    }
+}
+
+fn write_scene<P>(path: &P, data: &[u8]) -> std::io::Result<()>
+where P: AsRef<Path> 
+{
+    info!("Writing to path {}", path.as_ref().display());
+    let mut file = File::create(path)?;
+    file.write_all(data)?;
+    Ok(())
 }
 
 // pub fn polygon_build_controls(
@@ -30,7 +54,7 @@ pub struct PolygonBuilder {
 //     //         continue;
 //     //     }
 
-//     //     if key_input.pressed(KeyCode::LControl) 
+//     //     if key_input.pressed(KeyCode::LControl)
 //     //     && !poly_build.building
 //     //     {
 //     //         poly_build.building = true;

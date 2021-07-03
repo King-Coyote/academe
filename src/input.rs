@@ -1,10 +1,19 @@
-use bevy::{input::{self, ElementState, mouse::{MouseButtonInput, MouseMotion, MouseWheel}}, prelude::*, render::camera::{CameraProjection, OrthographicProjection}};
+use bevy::{
+    ecs::{component::Component, reflect::ReflectComponent},
+    input::{
+        self,
+        mouse::{MouseButtonInput, MouseMotion, MouseWheel},
+        ElementState,
+    },
+    prelude::*,
+    render::camera::{CameraProjection, OrthographicProjection},
+};
 
 pub struct MainCamera;
 
 pub struct InputPlugin;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct MouseState {
     pub screen_pos: Vec2,
     pub ui_pos: Vec2,
@@ -13,10 +22,11 @@ pub struct MouseState {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn()
+    commands
+        .spawn()
         .insert_bundle(OrthographicCameraBundle::new_2d())
         .insert(MainCamera);
-    
+
     commands.insert_resource(MouseState {
         screen_pos: Vec2::ZERO,
         ui_pos: Vec2::ZERO,
@@ -32,7 +42,7 @@ fn mouse_state(
     windows: Res<Windows>,
     mut mouse_state: ResMut<MouseState>,
     // query to get camera transform
-    q_camera: Query<&Transform, With<MainCamera>>
+    q_camera: Query<&Transform, With<MainCamera>>,
 ) {
     let camera_transform = q_camera.iter().next().unwrap();
     for e in evr_cursor.iter() {
@@ -58,22 +68,34 @@ fn camera_control_system(
     let pan_speed = 7.0;
 
     let mut movement = Vec2::ZERO;
-    if input_keys.pressed(KeyCode::W) {movement.y += pan_speed;}
-    if input_keys.pressed(KeyCode::A) {movement.x -= pan_speed;}
-    if input_keys.pressed(KeyCode::S) {movement.y -= pan_speed;}
-    if input_keys.pressed(KeyCode::D) {movement.x += pan_speed;}
+    if input_keys.pressed(KeyCode::LControl)
+        || input_keys.pressed(KeyCode::LShift)
+        || input_keys.pressed(KeyCode::LAlt)
+    {
+        return;
+    }
+    if input_keys.pressed(KeyCode::W) {
+        movement.y += pan_speed;
+    }
+    if input_keys.pressed(KeyCode::A) {
+        movement.x -= pan_speed;
+    }
+    if input_keys.pressed(KeyCode::S) {
+        movement.y -= pan_speed;
+    }
+    if input_keys.pressed(KeyCode::D) {
+        movement.x += pan_speed;
+    }
 
     cam_position.translation += movement.extend(0.0);
 }
 
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app
-            .add_startup_system(setup.system())
+        app.add_startup_system(setup.system())
             .add_system(mouse_state.system())
             // .add_system(click_world_system.system())
-            .add_system(camera_control_system.system())
-        ;
+            .add_system(camera_control_system.system());
     }
 }
 

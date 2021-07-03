@@ -1,8 +1,5 @@
+use crate::{ui::*, utils::data_struct::*};
 use bevy::prelude::*;
-use crate::{
-    ui::*,
-    utils::data_struct::*,
-};
 
 // game object things like despaw n cleanup
 

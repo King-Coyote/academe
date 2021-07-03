@@ -1,6 +1,4 @@
-use bevy::{
-    prelude::*,
-};
+use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 
 // for debug displays of things, like shapes, polygons, navmeshes, etc
@@ -25,7 +23,8 @@ pub fn spawn_debug_ui(
     q_circle: Query<(Entity, &DebugCircleSpawn), Added<DebugCircleSpawn>>,
 ) {
     for (entity, line) in q_lines.iter() {
-        commands.entity(entity)
+        commands
+            .entity(entity)
             .remove::<DebugLineSpawn>()
             .insert_bundle(GeometryBuilder::build_as(
                 &shapes::Line(line.origin, line.dest),
@@ -35,11 +34,11 @@ pub fn spawn_debug_ui(
                     outline_options: StrokeOptions::default().with_line_width(1.0),
                 },
                 Transform::from_xyz(0.0, 0.0, 0.0),
-            ))
-        ;
+            ));
     }
     for (entity, circle) in q_circle.iter() {
-        commands.entity(entity)
+        commands
+            .entity(entity)
             .remove::<DebugCircleSpawn>()
             .insert_bundle(GeometryBuilder::build_as(
                 &shapes::Circle {
@@ -51,8 +50,7 @@ pub fn spawn_debug_ui(
                     fill_options: FillOptions::default(),
                     outline_options: StrokeOptions::default().with_line_width(1.0),
                 },
-                Transform::from_xyz(0.0, 0.0,0.0),
-            ))
-        ;
+                Transform::from_xyz(0.0, 0.0, 0.0),
+            ));
     }
 }

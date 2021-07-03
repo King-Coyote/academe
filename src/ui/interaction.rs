@@ -1,40 +1,31 @@
-use std::{
-    collections::BTreeMap,
-    ops::{Deref, DerefMut,},
-};
+use crate::{game::*, input::*, utils::data_struct::*};
 use bevy::{
+    input::{mouse::MouseButtonInput, ElementState},
     prelude::*,
-    ecs::component::Component,
-    input::{
-        ElementState,
-        mouse::{MouseButtonInput},
-    },
-};
-use crate::{
-    input::*,
-    game::*,
-    utils::data_struct::*,
 };
 
 use super::ClickHandlers;
 
 #[derive(Default)]
-pub struct InteractableOrder{
+pub struct InteractableOrder {
     pub map: MultiTreeMap<i32, Entity>,
     pub ui_blocking: Option<Entity>,
     pub current: Option<Entity>,
 }
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Clone, Copy, Reflect)]
 pub enum InteractState {
     Enabled,
     InsideBounds,
     Disabled,
 }
 
-pub struct InteractableObject{
+#[derive(Reflect)]
+#[reflect(Component)]
+pub struct InteractableObject {
     pub min_dist: f32, // only really look at things inside this distance. For efficiency
     pub state: InteractState,
+    #[reflect(ignore)]
     pub mouse_inside: Option<Box<dyn Fn(&Vec2, &MouseState) -> bool + Send + Sync>>,
 }
 
@@ -50,10 +41,11 @@ impl Default for InteractableObject {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(Default, PartialEq, Reflect)]
+#[reflect(Component)]
 pub struct ZIndex {
     pub last: i32,
-    pub current: i32
+    pub current: i32,
 }
 
 impl ZIndex {
@@ -74,15 +66,19 @@ pub fn interactable_zindex(
     mut commands: Commands,
     mut order: ResMut<InteractableOrder>,
     q_interact_link: Query<(Entity, &Transform), (With<InteractableObject>, Without<ZIndex>)>,
-    mut q_interact_change: Query<(&Transform, &mut ZIndex), (With<InteractableObject>, Changed<Transform>)>,
+    mut q_interact_change: Query<
+        (&Transform, &mut ZIndex),
+        (With<InteractableObject>, Changed<Transform>),
+    >,
 ) {
     for (entity, t) in q_interact_link.iter() {
         let z_index = ZIndex::from_transform(t);
         multimap_insert(&mut order.map, z_index.current, entity);
         commands.entity(entity).insert(z_index);
     }
-    for (t, mut z) in q_interact_change.iter_mut()
-        .filter(|(t, z)| z.current != t.translation.z as i32) 
+    for (t, mut z) in q_interact_change
+        .iter_mut()
+        .filter(|(t, z)| z.current != t.translation.z as i32)
     {
         z.update(t);
     }
@@ -112,7 +108,9 @@ pub fn interactable_mouse_inside(
         }
         for (zindex, ent_vec) in order.map.iter().rev() {
             for ord_entity in ent_vec {
-                if let Ok((entity, mut interactable, transform)) = q_interactable.get_mut(*ord_entity) {
+                if let Ok((entity, mut interactable, transform)) =
+                    q_interactable.get_mut(*ord_entity)
+                {
                     let pos = Vec2::new(transform.translation.x, transform.translation.y);
                     let maybe_inside = pos.distance(mouse.world_pos) <= interactable.min_dist;
                     let inside_fn = interactable.mouse_inside.as_ref().unwrap();
@@ -137,13 +135,13 @@ pub fn interactable_handling(
     q_interact: Query<(&InteractableObject, &ClickHandlers)>,
 ) {
     let mut peekable = er_mouseinput.iter().peekable();
-    if order.current.is_none()
-    || peekable.peek().is_none() {
+    if order.current.is_none() || peekable.peek().is_none() {
         return;
     }
-    let maybe_query = order.current.as_ref().and_then(|current| {
-        q_interact.get(*current).ok()
-    });
+    let maybe_query = order
+        .current
+        .as_ref()
+        .and_then(|current| q_interact.get(*current).ok());
     // this interactable doesn't have any click handlers for some reason
     if maybe_query.is_none() {
         return;
@@ -158,15 +156,13 @@ pub fn interactable_handling(
                 if let Some(handler) = handlers.left.as_ref() {
                     (handler)(&mut commands, &*mouse);
                 }
-            },
+            }
             MouseButton::Right => {
                 if let Some(handler) = handlers.right.as_ref() {
                     (handler)(&mut commands, &*mouse);
                 }
-            },
-            MouseButton::Middle => {
-
-            },
+            }
+            MouseButton::Middle => {}
             _ => {}
         };
     }
@@ -188,16 +184,13 @@ pub fn make_appearance_interactive(
         } else {
             max_dim = size.x / 2.0;
         }
-        commands.entity(entity)
-            .insert(InteractableObject {
-                min_dist: max_dim,
-                mouse_inside: Some(Box::new(move |pos: &Vec2, mouse: &MouseState| -> bool {
-                    let diff = *pos - mouse.world_pos;
-                    diff.x <= size.x / 2.0
-                    && diff.y <= size.y / 2.0
-                })),
-                ..Default::default()
-            })
-            ;
+        commands.entity(entity).insert(InteractableObject {
+            min_dist: max_dim,
+            mouse_inside: Some(Box::new(move |pos: &Vec2, mouse: &MouseState| -> bool {
+                let diff = *pos - mouse.world_pos;
+                diff.x <= size.x / 2.0 && diff.y <= size.y / 2.0
+            })),
+            ..Default::default()
+        });
     }
 }

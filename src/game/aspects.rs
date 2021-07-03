@@ -1,38 +1,29 @@
-use std::{
-    marker::PhantomData,
-};
+use crate::{input::MouseState, ui::InteractableObject};
 use bevy::{
-    ecs::{
-        component::Component,
-        reflect::ReflectComponent,
-    }, 
+    ecs::{component::Component,},
     prelude::*,
 };
-use crate::{
-    ui::{InteractableObject},
-    input::MouseState,
-};
+use std::marker::PhantomData;
 
-#[derive(Bundle)]
-pub struct GameComponent<T: Component> {
-    pub level: Level<T>,
-    pub component: T,
-}
+// #[derive(Bundle)]
+// pub struct GameComponent<T: Component> {
+//     pub level: Level<T>,
+//     pub component: T,
+// }
 
-impl<T: Component> GameComponent<T> {
-    fn new(level: u32, component: T) -> Self {
-        let game_component: GameComponent<T> = GameComponent {
-            level: Level(level, PhantomData),
-            component
-        };
-        game_component
-    }
-}
-
+// impl<T: Component> GameComponent<T> {
+//     fn new(level: u32, component: T) -> Self {
+//         let game_component: GameComponent<T> = GameComponent {
+//             level: Level(level, PhantomData),
+//             component,
+//         };
+//         game_component
+//     }
+// }
 
 pub struct Level<T: Component>(u32, PhantomData<T>);
 
-#[derive(Reflect, Default, Debug)]
+#[derive(Default, Debug, Reflect)]
 #[reflect(Component)]
 pub struct Body {
     pub strength: u32,
@@ -41,7 +32,7 @@ pub struct Body {
     // something to represent form
 }
 
-#[derive(Reflect, Default, Debug)]
+#[derive(Default, Debug, Reflect)]
 #[reflect(Component)]
 pub struct Mind {
     pub analysis: u32,
@@ -49,7 +40,7 @@ pub struct Mind {
     pub wit: u32,
 }
 
-#[derive(Reflect, Default, Debug)]
+#[derive(Default, Debug, Reflect)]
 #[reflect(Component)]
 pub struct Spirit {
     pub charisma: u32,
@@ -57,9 +48,9 @@ pub struct Spirit {
     pub insight: u32,
 }
 
-#[derive(Reflect, Default, Debug)]
+#[derive(Default, Debug, Reflect)]
 #[reflect(Component)]
-pub struct Appearance{
+pub struct Appearance {
     pub entity: Option<Entity>, // whomst does this look like; used for senses in ai
     pub filename: String,
 }
@@ -79,9 +70,7 @@ pub fn appearance_added(
             ..Default::default()
         };
         appearance.entity = Some(entity);
-        commands.entity(entity)
-            .insert_bundle(sprite_bundle)
-            ;
+        commands.entity(entity).insert_bundle(sprite_bundle);
     }
 }
 
