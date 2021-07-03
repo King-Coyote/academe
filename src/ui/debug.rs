@@ -18,7 +18,7 @@ pub struct DebugLineSpawn {
 
 pub fn spawn_debug_ui(
     mut commands: Commands,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    materials: ResMut<Assets<ColorMaterial>>,
     q_lines: Query<(Entity, &DebugLineSpawn), Added<DebugLineSpawn>>,
     q_circle: Query<(Entity, &DebugCircleSpawn), Added<DebugCircleSpawn>>,
 ) {

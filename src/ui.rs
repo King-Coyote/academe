@@ -1,10 +1,9 @@
 use crate::{game::*, input::MouseState, utils::entities::children_match_query};
 use bevy::{
-    ecs::component::Component,
-    input::mouse::{self, MouseButtonInput},
+    input::mouse::{MouseButtonInput},
     prelude::*,
 };
-use std::{marker::PhantomData, sync::Arc};
+use std::{sync::Arc};
 
 mod interaction;
 pub use interaction::*;
@@ -38,7 +37,7 @@ impl FromWorld for MainStyle {
     fn from_world(world: &mut World) -> Self {
         let asset_server = world.get_resource_mut::<AssetServer>().unwrap();
         let font_handle: Handle<Font> = asset_server.load("fonts/OpenSans-Regular.ttf");
-        let mut materials = world.get_resource_mut::<Assets<ColorMaterial>>().unwrap();
+        let materials = world.get_resource_mut::<Assets<ColorMaterial>>().unwrap();
         MainStyle {
             panel: PanelStyle::from_world(world),
             button: ButtonStyle::from_world(world),
@@ -97,7 +96,7 @@ pub struct ClickHandlers {
 
 pub struct UiPlugin;
 
-fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
+fn setup(mut commands: Commands, materials: ResMut<Assets<ColorMaterial>>) {
     commands.spawn_bundle(UiCameraBundle::default());
 }
 

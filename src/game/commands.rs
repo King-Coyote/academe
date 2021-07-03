@@ -1,7 +1,7 @@
 use crate::game::*;
 use bevy::{
     prelude::*,
-    reflect::{DynamicStruct, TypeRegistry, TypeRegistryArc},
+    reflect::{DynamicStruct, TypeRegistryArc},
 };
 use std::{
     fmt,

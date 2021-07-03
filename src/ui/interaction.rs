@@ -108,7 +108,7 @@ pub fn interactable_mouse_inside(
         }
         for (zindex, ent_vec) in order.map.iter().rev() {
             for ord_entity in ent_vec {
-                if let Ok((entity, mut interactable, transform)) =
+                if let Ok((entity, interactable, transform)) =
                     q_interactable.get_mut(*ord_entity)
                 {
                     let pos = Vec2::new(transform.translation.x, transform.translation.y);
@@ -178,7 +178,7 @@ pub fn make_appearance_interactive(
         if size.x < f32::EPSILON && size.y < f32::EPSILON {
             continue;
         }
-        let mut max_dim: f32;
+        let max_dim: f32;
         if size.y > size.x {
             max_dim = size.y / 2.0;
         } else {

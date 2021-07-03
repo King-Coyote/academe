@@ -1,12 +1,6 @@
 use bevy::{
-    ecs::{component::Component, reflect::ReflectComponent},
-    input::{
-        self,
-        mouse::{MouseButtonInput, MouseMotion, MouseWheel},
-        ElementState,
-    },
     prelude::*,
-    render::camera::{CameraProjection, OrthographicProjection},
+    render::camera::{OrthographicProjection},
 };
 
 pub struct MainCamera;

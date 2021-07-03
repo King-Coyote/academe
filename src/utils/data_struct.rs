@@ -1,7 +1,6 @@
 use std::{
     cmp::Ord,
-    collections::{btree_map::Entry, BTreeMap, HashSet},
-    hash::Hash,
+    collections::{btree_map::Entry, BTreeMap,}
 };
 
 pub type MultiTreeMap<K, V> = BTreeMap<K, Vec<V>>;
