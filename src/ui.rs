@@ -1,4 +1,11 @@
-use crate::{game::*, input::MouseState, utils::entities::children_match_query};
+use crate::{
+    game::*,
+    input::MouseState,
+    utils::{
+        entities::children_match_query,
+        geometry::point_inside_polygon,
+    },
+};
 use bevy::{
     input::mouse::{MouseButtonInput},
     prelude::*,
@@ -15,6 +22,7 @@ pub use debug::*;
 // systems relating to showing UI elements, views on objects, etc
 pub struct Polygon {
     pub points: Arc<Vec<Vec2>>,
+    pub max_dim: f32,
 }
 
 pub struct ContextMenuItem {
@@ -98,6 +106,39 @@ pub struct UiPlugin;
 
 fn setup(mut commands: Commands, materials: ResMut<Assets<ColorMaterial>>) {
     commands.spawn_bundle(UiCameraBundle::default());
+}
+
+fn polygon_interact_system(
+    mut order: ResMut<InteractableOrder>,
+    mouse: Res<MouseState>,
+    mut er_cursor: EventReader<CursorMoved>,
+    ew_hover: EventWriter<InteractableHover>,
+    mut q_polygon: Query<(Entity, &Polygon, &Transform, &mut ObjectInteraction)>,
+) {
+    use ObjectInteraction::*;
+    for e in er_cursor.iter() {
+        for (entity, polygon, transform, mut interaction) in q_polygon.iter_mut() {
+            if order.ui_blocking.is_some() {
+                if let Some(current) = order.current {
+                    info!("Removed {:?} from current order due to blocking ui.", current.0);
+                    order.current = None;
+                }
+                *interaction = Enabled;
+            } else {
+                let pos = Vec2::new(transform.translation.x, transform.translation.y);
+                let maybe_inside = pos.distance(mouse.world_pos) <= polygon.max_dim;
+                if maybe_inside && point_inside_polygon(&mouse.world_pos, &polygon.points) {
+                    if let Enabled = *interaction {
+                        *interaction = Hovered;
+                        info!("Hovered over {:?}", entity);
+                    };
+                } else if let Hovered = *interaction {
+                    *interaction = Enabled;
+                    info!("Un-hovered {:?}", entity);
+                }
+            }
+        }
+    }
 }
 
 fn popup_system(
@@ -259,15 +300,19 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.init_resource::<MainStyle>()
             .insert_resource(InteractableOrder::default())
+            .add_event::<InteractableHover>()
             .add_startup_system(setup.system())
+            .add_startup_system(deleteme_ui_test.system())
+            .add_system(polygon_interact_system.system())
             .add_system(button.system())
             .add_system(interaction_with_handlers.system())
             .add_system(popup_system.system())
             .add_system(context_menu_spawn.system())
             .add_system(capture_interactions.system())
-            .add_system(interactable_zindex.system())
-            .add_system(interactable_zindex_change.system())
-            .add_system(interactable_mouse_inside.system())
+            .add_system(object_interaction_ordering.system())
+            // .add_system(interactable_zindex.system())
+            // .add_system(interactable_zindex_change.system())
+            // .add_system(interactable_mouse_inside.system())
             .add_system(interactable_handling.system())
             .add_system(make_appearance_interactive.system())
             .add_system(spawn_debug_ui.system())

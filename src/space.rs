@@ -41,14 +41,15 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
             },
             Transform::from_xyz(0.0, 0.0, 0.0),
         ))
-        .insert(Polygon { points })
-        .insert(InteractableObject {
-            min_dist: max_dim / 2.0,
-            mouse_inside: Some(Box::new(move |pos: &Vec2, mouse: &MouseState| {
-                point_inside_polygon(&mouse.world_pos, &*closure_points)
-            })),
-            ..Default::default()
-        })
+        .insert(Polygon { points, max_dim })
+        .insert(ObjectInteraction::Enabled)
+        // .insert(InteractableObject {
+        //     min_dist: max_dim / 2.0,
+        //     mouse_inside: Some(Box::new(move |pos: &Vec2, mouse: &MouseState| {
+        //         point_inside_polygon(&mouse.world_pos, &*closure_points)
+        //     })),
+        //     ..Default::default()
+        // })
         .insert(ClickHandlers {
             right: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
                 let world_pos = mouse.world_pos;

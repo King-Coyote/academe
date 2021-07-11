@@ -19,7 +19,7 @@ impl Plugin for GamePlugin {
             .insert_resource(GameCommandQueue(vec![]))
             .add_system(execute_game_commands.exclusive_system())
             .add_system(appearance_added.system())
-            .add_system(cleanup_despawned.system());
+            ;
     }
 }
 
