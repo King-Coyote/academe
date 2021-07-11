@@ -53,95 +53,10 @@ impl Default for InteractableObject {
     }
 }
 
-// #[derive(Default, PartialEq, Reflect)]
-// #[reflect(Component)]
-// pub struct ZIndex {
-//     pub last: i32,
-//     pub current: i32,
-// }
-
-// impl ZIndex {
-//     pub fn from_transform(t: &Transform) -> Self {
-//         ZIndex {
-//             last: t.translation.z as i32,
-//             current: t.translation.z as i32,
-//         }
-//     }
-
-//     pub fn update(&mut self, t: &Transform) {
-//         self.last = self.current;
-//         self.current = t.translation.z as i32;
-//     }
-// }
-
-// pub fn interactable_zindex(
-//     mut commands: Commands,
-//     mut order: ResMut<InteractableOrder>,
-//     q_interact_link: Query<(Entity, &Transform), (With<InteractableObject>, Without<ZIndex>)>,
-//     mut q_interact_change: Query<
-//         (&Transform, &mut ZIndex),
-//         (With<InteractableObject>, Changed<Transform>),
-//     >,
-// ) {
-//     for (entity, t) in q_interact_link.iter() {
-//         let z_index = ZIndex::from_transform(t);
-//         multimap_insert(&mut order.map, z_index.current, entity);
-//         commands.entity(entity).insert(z_index);
-//     }
-//     for (t, mut z) in q_interact_change
-//         .iter_mut()
-//         .filter(|(t, z)| z.current != t.translation.z as i32)
-//     {
-//         z.update(t);
-//     }
-// }
-
-// pub fn interactable_zindex_change(
-//     mut order: ResMut<InteractableOrder>,
-//     q_interact: Query<(Entity, &ZIndex), (With<InteractableObject>, Changed<ZIndex>)>,
-// ) {
-//     for (entity, z_index) in q_interact.iter() {
-//         multimap_remove(&mut order.map, z_index.last, entity);
-//         multimap_insert(&mut order.map, z_index.current, entity);
-//     }
-// }
-
-// pub fn interactable_mouse_inside(
-//     mut order: ResMut<InteractableOrder>,
-//     mouse: Res<MouseState>,
-//     mut er_mousemove: EventReader<CursorMoved>,
-//     mut q_interactable: Query<(Entity, &mut InteractableObject, &Transform)>,
-// ) {
-//     use InteractState::*;
-//     for e in er_mousemove.iter() {
-//         if order.ui_blocking.is_some() {
-//             order.current = None;
-//             return;
-//         }
-//         for (zindex, ent_vec) in order.map.iter().rev() {
-//             for ord_entity in ent_vec {
-//                 if let Ok((entity, interactable, transform)) =
-//                     q_interactable.get_mut(*ord_entity)
-//                 {
-//                     let pos = Vec2::new(transform.translation.x, transform.translation.y);
-//                     let maybe_inside = pos.distance(mouse.world_pos) <= interactable.min_dist;
-//                     let inside_fn = interactable.mouse_inside.as_ref().unwrap();
-//                     if order.ui_blocking.is_none() && maybe_inside && (inside_fn)(&pos, &*mouse) {
-//                         if let Enabled = interactable.state {
-//                             order.current = Some(entity);
-//                             return;
-//                         };
-//                     }
-//                 }
-//             }
-//         }
-//         order.current = None;
-//     }
-// }
-
 pub fn object_interaction_ordering(
     mut order: ResMut<InteractableOrder>,
-    q_interaction: Query<(Entity, &Transform, &ObjectInteraction), Changed<ObjectInteraction>>,
+    q_interaction_changed: Query<(Entity, &Transform, &ObjectInteraction), Changed<ObjectInteraction>>,
+    mut q_interaction: Query<&mut ObjectInteraction>,
 ) {
     use ObjectInteraction::*;
     let mut max_z_index = f32::NEG_INFINITY;
@@ -152,7 +67,7 @@ pub fn object_interaction_ordering(
         }
         return;
     }
-    q_interaction
+    q_interaction_changed
         .iter()
         .fold(None, |acc, (entity, transform, interaction)| {
             match *interaction {
@@ -211,45 +126,44 @@ pub fn deleteme_ui_test(
     ;
 }
 
-pub fn interactable_handling(
+pub fn object_interaction_handling(
     mut commands: Commands,
     mouse: Res<MouseState>,
     order: Res<InteractableOrder>,
     mut er_mouseinput: EventReader<MouseButtonInput>,
-    q_interact: Query<(&InteractableObject, &ClickHandlers)>,
+    q_interact: Query<(&ObjectInteraction, &ClickHandlers)>,
 ) {
-    // let mut peekable = er_mouseinput.iter().peekable();
-    // if order.current.is_none() || peekable.peek().is_none() {
-    //     return;
-    // }
-    // let maybe_query = order
-    //     .current
-    //     .as_ref()
-    //     .and_then(|current| q_interact.get(*current).ok());
-    // // this interactable doesn't have any click handlers for some reason
-    // if maybe_query.is_none() {
-    //     return;
-    // }
-    // let (interactable, handlers) = maybe_query.unwrap();
-    // for e in peekable.into_iter() {
-    //     if let ElementState::Pressed = e.state {
-    //         continue;
-    //     }
-    //     match e.button {
-    //         MouseButton::Left => {
-    //             if let Some(handler) = handlers.left.as_ref() {
-    //                 (handler)(&mut commands, &*mouse);
-    //             }
-    //         }
-    //         MouseButton::Right => {
-    //             if let Some(handler) = handlers.right.as_ref() {
-    //                 (handler)(&mut commands, &*mouse);
-    //             }
-    //         }
-    //         MouseButton::Middle => {}
-    //         _ => {}
-    //     };
-    // }
+    if order.current.is_none() {
+        return;
+    }
+    let maybe_query = order
+        .current
+        .as_ref()
+        .and_then(|current| q_interact.get(current.0).ok());
+    // this interactable doesn't have any click handlers for some reason
+    if maybe_query.is_none() {
+        return;
+    }
+    let (interactable, handlers) = maybe_query.unwrap();
+    for e in er_mouseinput.iter() {
+        if let ElementState::Pressed = e.state {
+            continue;
+        }
+        match e.button {
+            MouseButton::Left => {
+                if let Some(handler) = handlers.left.as_ref() {
+                    (handler)(&mut commands, &*mouse);
+                }
+            }
+            MouseButton::Right => {
+                if let Some(handler) = handlers.right.as_ref() {
+                    (handler)(&mut commands, &*mouse);
+                }
+            }
+            MouseButton::Middle => {}
+            _ => {}
+        };
+    }
 }
 
 pub fn make_appearance_interactive(
@@ -268,7 +182,7 @@ pub fn make_appearance_interactive(
         } else {
             max_dim = size.x / 2.0;
         }
-        // commands.entity(entity).insert(InteractableObject {
+        // commands.entity(entity).insert(ObjectInteraction {
         //     min_dist: max_dim,
         //     mouse_inside: Some(Box::new(move |pos: &Vec2, mouse: &MouseState| -> bool {
         //         let diff = *pos - mouse.world_pos;

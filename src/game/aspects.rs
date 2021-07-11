@@ -3,6 +3,10 @@ use bevy::{
     prelude::*,
 };
 use std::marker::PhantomData;
+use crate::{
+    ui::*,
+    input::MouseState,
+};
 
 // #[derive(Bundle)]
 // pub struct GameComponent<T: Component> {
@@ -69,7 +73,42 @@ pub fn appearance_added(
             ..Default::default()
         };
         appearance.entity = Some(entity);
-        commands.entity(entity).insert_bundle(sprite_bundle);
+        commands.entity(entity)
+            .insert_bundle(sprite_bundle)
+            .insert(ObjectInteraction::Enabled)
+            ;
+    }
+}
+
+pub fn appearance_interact_system(
+    mut order: ResMut<InteractableOrder>,
+    mouse: Res<MouseState>,
+    mut er_cursor: EventReader<CursorMoved>,
+    mut q_appearance: Query<(Entity, &Sprite, &Transform, &mut ObjectInteraction), With<Appearance>>,
+) {
+    use ObjectInteraction::*;
+    for e in er_cursor.iter() {
+        for (entity, sprite, transform, mut interaction) in q_appearance.iter_mut() {
+            if order.ui_blocking.is_some() {
+                if let Some(current) = order.current {
+                    order.current = None;
+                }
+                *interaction = Enabled;
+            } else {
+                let pos = Vec2::new(transform.translation.x, transform.translation.y);
+                let diff = pos - mouse.world_pos;
+                if diff.x <= sprite.size.x * 0.5
+                && diff.y <= sprite.size.y * 0.5 {
+                    if let Enabled = *interaction {
+                        *interaction = Hovered;
+                        info!("Hovered over {:?}", entity);
+                    };
+                } else if let Hovered = *interaction {
+                    *interaction = Enabled;
+                    info!("Un-hovered {:?}", entity);
+                }
+            }
+        }
     }
 }
 

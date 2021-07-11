@@ -112,7 +112,6 @@ fn polygon_interact_system(
     mut order: ResMut<InteractableOrder>,
     mouse: Res<MouseState>,
     mut er_cursor: EventReader<CursorMoved>,
-    ew_hover: EventWriter<InteractableHover>,
     mut q_polygon: Query<(Entity, &Polygon, &Transform, &mut ObjectInteraction)>,
 ) {
     use ObjectInteraction::*;
@@ -156,7 +155,7 @@ fn popup_system(
         if children_match_query(children, &q_buttons)
             || !children_match_query(children, &q_not_buttons)
         {
-            commands.entity(entity).insert(Despawning);
+            commands.entity(entity).despawn_recursive();
         }
     }
 }
@@ -205,6 +204,7 @@ fn button(
     }
 }
 
+// normal ui click handling
 fn interaction_with_handlers(
     mut commands: Commands,
     mouse: Res<MouseState>,
@@ -300,9 +300,8 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.init_resource::<MainStyle>()
             .insert_resource(InteractableOrder::default())
-            .add_event::<InteractableHover>()
             .add_startup_system(setup.system())
-            .add_startup_system(deleteme_ui_test.system())
+            // .add_startup_system(deleteme_ui_test.system())
             .add_system(polygon_interact_system.system())
             .add_system(button.system())
             .add_system(interaction_with_handlers.system())
@@ -310,12 +309,11 @@ impl Plugin for UiPlugin {
             .add_system(context_menu_spawn.system())
             .add_system(capture_interactions.system())
             .add_system(object_interaction_ordering.system())
-            // .add_system(interactable_zindex.system())
-            // .add_system(interactable_zindex_change.system())
-            // .add_system(interactable_mouse_inside.system())
-            .add_system(interactable_handling.system())
+            .add_system(object_interaction_handling.system())
+            .add_system(appearance_interact_system.system())
             .add_system(make_appearance_interactive.system())
             .add_system(spawn_debug_ui.system())
-            .add_system(save_load.exclusive_system());
+            .add_system(save_load.exclusive_system())
+            ;
     }
 }
