@@ -75,7 +75,7 @@ pub fn appearance_added(
         appearance.entity = Some(entity);
         commands.entity(entity)
             .insert_bundle(sprite_bundle)
-            .insert(ObjectInteraction::Enabled)
+            .insert(ObjectInteraction::Outside)
             ;
     }
 }
@@ -89,24 +89,15 @@ pub fn appearance_interact_system(
     use ObjectInteraction::*;
     for e in er_cursor.iter() {
         for (entity, sprite, transform, mut interaction) in q_appearance.iter_mut() {
-            if order.ui_blocking.is_some() {
-                if let Some(current) = order.current {
-                    order.current = None;
-                }
-                *interaction = Enabled;
+            let pos = Vec2::new(transform.translation.x, transform.translation.y);
+            let diff = pos - mouse.world_pos;
+            if order.ui_blocking.is_none()
+                && f32::abs(diff.x) <= sprite.size.x * 0.5
+                && f32::abs(diff.y) <= sprite.size.y * 0.5
+            {
+                *interaction = Inside;
             } else {
-                let pos = Vec2::new(transform.translation.x, transform.translation.y);
-                let diff = pos - mouse.world_pos;
-                if diff.x <= sprite.size.x * 0.5
-                && diff.y <= sprite.size.y * 0.5 {
-                    if let Enabled = *interaction {
-                        *interaction = Hovered;
-                        info!("Hovered over {:?}", entity);
-                    };
-                } else if let Hovered = *interaction {
-                    *interaction = Enabled;
-                    info!("Un-hovered {:?}", entity);
-                }
+                *interaction = Outside;
             }
         }
     }

@@ -8,103 +8,58 @@ use super::ClickHandlers;
 
 #[derive(Default)]
 pub struct InteractableOrder {
-    pub map: MultiTreeMap<i32, Entity>,
     pub ui_blocking: Option<Entity>,
     pub current: Option<(Entity, f32)>,
 }
 
-#[derive(PartialEq, Clone, Copy, Reflect)]
-pub enum InteractState {
-    Enabled,
-    InsideBounds,
-    Disabled,
-}
-
-#[derive(Reflect)]
-#[reflect(Component)]
-pub struct InteractableObject {
-    pub min_dist: f32, // only really look at things inside this distance. For efficiency
-    pub state: InteractState,
-    #[reflect(ignore)]
-    pub mouse_inside: Option<Box<dyn Fn(&Vec2, &MouseState) -> bool + Send + Sync>>,
-}
-
-pub struct InteractableHover {
-    pub entity: Entity,
-    pub zindex: i32,
-}
-
+#[derive(PartialEq)]
 pub enum ObjectInteraction {
-    Enabled,
-    Hovered,
-    Clicked,
+    Outside,
+    Inside,
     Disabled,
 }
 
-pub struct MouseInside;
-
-impl Default for InteractableObject {
+impl Default for ObjectInteraction {
     fn default() -> Self {
-        InteractableObject {
-            min_dist: 0.0,
-            state: InteractState::Enabled,
-            mouse_inside: None,
-        }
+        ObjectInteraction::Outside
     }
+}
+
+pub struct ObjectHovered {
+    pub entity: Entity,
+    pub z_index: f32,
 }
 
 pub fn object_interaction_ordering(
     mut order: ResMut<InteractableOrder>,
-    q_interaction_changed: Query<(Entity, &Transform, &ObjectInteraction), Changed<ObjectInteraction>>,
-    mut q_interaction: Query<&mut ObjectInteraction>,
+    q_interaction: Query<(Entity, &Transform, &ObjectInteraction)>,
 ) {
-    use ObjectInteraction::*;
     let mut max_z_index = f32::NEG_INFINITY;
-    if order.ui_blocking.is_some() {
-        if let Some(current) = order.current {
-            info!("Removed {:?} from current order due to blocking ui.", current.0);
-            order.current = None;
-        }
-        return;
-    }
-    q_interaction_changed
+    let old = order.current.map(|current| current.0);
+    order.current = q_interaction
         .iter()
+        .filter(|(_, _, interaction)| **interaction == ObjectInteraction::Inside)
         .fold(None, |acc, (entity, transform, interaction)| {
-            match *interaction {
-                Hovered => {
-                    let z_index = transform.translation.z;
-                    if z_index > max_z_index {
-                        max_z_index = z_index;
-                        return Some(entity);
-                    }
-                },
-                Enabled => {
-                    if let Some(current) = order.current {
-                        if entity == current.0 {
-                            info!("Removed {:?} from current order.", current.0);
-                            order.current = None;
-                        }
-                    }
-                },
-                _ => {}
+            if transform.translation.z > max_z_index {
+                max_z_index = transform.translation.z;
+                return Some((entity, max_z_index));
             }
-            None
-        })
-        .map(|max_entity| {
-            match order.current {
-                Some(current) => {
-                    if max_z_index > current.1 {
-                        info!("{:?} replaced {:?} as current in order.", max_entity, current.0);
-                        order.current = Some((max_entity, max_z_index));
-                    }
-                },
-                None => {
-                    info!("New current in order: {:?}.", max_entity);
-                    order.current = Some((max_entity, max_z_index));
-                }
-            }
-            Some(())
+            acc
         });
+    match (old, order.current) {
+        (Some(old), Some(current)) => {
+            if old != current.0 {
+                info!("Replaced {:?} with {:?} in interactables order.", old, current.0);
+            }
+        },
+        (None, Some(current)) => {
+            info!("New current in order: {:?}", current.0);
+        },
+        (Some(old), None) => {
+            info!("Removed {:?} from order; order current is now blank.", old);
+        },
+        _ => {}
+    }
 }
 
 pub fn deleteme_ui_test(
@@ -168,7 +123,7 @@ pub fn object_interaction_handling(
 
 pub fn make_appearance_interactive(
     mut commands: Commands,
-    q_appearance: Query<(Entity, &Appearance, &Transform, &Sprite), Without<InteractableObject>>,
+    q_appearance: Query<(Entity, &Appearance, &Transform, &Sprite)>,
 ) {
     for (entity, _, _, sprite) in q_appearance.iter() {
         let size = sprite.size;

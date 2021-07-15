@@ -42,7 +42,7 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
             Transform::from_xyz(0.0, 0.0, 0.0),
         ))
         .insert(Polygon { points, max_dim })
-        .insert(ObjectInteraction::Enabled)
+        .insert(ObjectInteraction::default())
         // .insert(InteractableObject {
         //     min_dist: max_dim / 2.0,
         //     mouse_inside: Some(Box::new(move |pos: &Vec2, mouse: &MouseState| {

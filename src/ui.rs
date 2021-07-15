@@ -109,32 +109,22 @@ fn setup(mut commands: Commands, materials: ResMut<Assets<ColorMaterial>>) {
 }
 
 fn polygon_interact_system(
-    mut order: ResMut<InteractableOrder>,
+    order: Res<InteractableOrder>,
     mouse: Res<MouseState>,
     mut er_cursor: EventReader<CursorMoved>,
     mut q_polygon: Query<(Entity, &Polygon, &Transform, &mut ObjectInteraction)>,
 ) {
-    use ObjectInteraction::*;
     for e in er_cursor.iter() {
         for (entity, polygon, transform, mut interaction) in q_polygon.iter_mut() {
-            if order.ui_blocking.is_some() {
-                if let Some(current) = order.current {
-                    info!("Removed {:?} from current order due to blocking ui.", current.0);
-                    order.current = None;
-                }
-                *interaction = Enabled;
+            let pos = Vec2::new(transform.translation.x, transform.translation.y);
+            let maybe_inside = pos.distance(mouse.world_pos) <= polygon.max_dim;
+            if order.ui_blocking.is_none()
+                && maybe_inside 
+                && point_inside_polygon(&mouse.world_pos, &polygon.points)
+            {
+                *interaction = ObjectInteraction::Inside;
             } else {
-                let pos = Vec2::new(transform.translation.x, transform.translation.y);
-                let maybe_inside = pos.distance(mouse.world_pos) <= polygon.max_dim;
-                if maybe_inside && point_inside_polygon(&mouse.world_pos, &polygon.points) {
-                    if let Enabled = *interaction {
-                        *interaction = Hovered;
-                        info!("Hovered over {:?}", entity);
-                    };
-                } else if let Hovered = *interaction {
-                    *interaction = Enabled;
-                    info!("Un-hovered {:?}", entity);
-                }
+                *interaction = ObjectInteraction::Outside;
             }
         }
     }
@@ -300,8 +290,9 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.init_resource::<MainStyle>()
             .insert_resource(InteractableOrder::default())
+            .add_event::<ObjectHovered>()
             .add_startup_system(setup.system())
-            // .add_startup_system(deleteme_ui_test.system())
+            .add_startup_system(deleteme_ui_test.system())
             .add_system(polygon_interact_system.system())
             .add_system(button.system())
             .add_system(interaction_with_handlers.system())
