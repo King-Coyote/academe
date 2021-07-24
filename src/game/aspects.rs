@@ -58,6 +58,10 @@ pub struct Appearance {
     pub filename: String,
 }
 
+pub struct Movement {
+    pub level: u32,
+}
+
 // this also adds the ability to interact with creatures etc
 pub fn appearance_added(
     mut commands: Commands,

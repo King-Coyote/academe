@@ -11,6 +11,7 @@ use game::*;
 use input::*;
 use space::*;
 use ui::*;
+use nav::*;
 
 #[macro_use]
 mod macros;
@@ -19,6 +20,7 @@ mod input;
 mod space;
 mod ui;
 mod utils;
+mod nav;
 
 // dfault stages look like this:
 // self.add_startup_stage(startup_stage::STARTUP)
@@ -49,6 +51,7 @@ fn main() {
         .add_plugin(SpacePlugin)
         .add_plugin(UiPlugin)
         .add_plugin(GamePlugin)
+        .add_plugin(NavPlugin)
         .add_startup_system(area_texture_test.system())
         .run();
 }

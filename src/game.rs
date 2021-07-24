@@ -1,4 +1,8 @@
-use crate::{input::MouseState, ui::*};
+use crate::{
+    input::MouseState,
+    ui::*,
+    nav::NavAgent,
+};
 use bevy::prelude::*;
 
 mod aspects;
@@ -38,6 +42,8 @@ pub fn spawn_standard_boi(pos: &Vec2, cmds: &mut Commands, mouse: &MouseState) {
             coordination: 10,
             endurance: 10,
         })
+        .insert(Movement{level: 1})
+        .insert(NavAgent{dest: Some(Vec2::ZERO)})
         .insert(Transform::from_translation(pos.extend(100.0)))
         .insert(ClickHandlers {
             right: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
