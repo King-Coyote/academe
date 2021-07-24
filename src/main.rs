@@ -21,6 +21,7 @@ mod space;
 mod ui;
 mod utils;
 mod nav;
+mod debug;
 
 // dfault stages look like this:
 // self.add_startup_stage(startup_stage::STARTUP)

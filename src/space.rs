@@ -1,4 +1,10 @@
-use crate::{game::*, input::*, ui::*, utils::geometry::*};
+use crate::{
+    game::*,
+    input::*,
+    ui::*,
+    utils::geometry::*,
+    nav::*,
+};
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use std::sync::Arc;
@@ -41,6 +47,7 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
             },
             Transform::from_xyz(0.0, 0.0, 0.0),
         ))
+        .insert(NavMesh::with_boundary(&*points))
         .insert(Polygon { points, max_dim })
         .insert(ObjectInteraction::default())
         // .insert(InteractableObject {

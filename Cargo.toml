@@ -9,3 +9,7 @@ edition = "2018"
 [dependencies]
 bevy = "0.5"
 bevy_prototype_lyon = "0.3.1"
+# remove the below when it builds without it - probably bevy 0.6
+notify = "=5.0.0-pre.2"
+pathfinding = "^2.0.0"
+spade = "^1.8.2"

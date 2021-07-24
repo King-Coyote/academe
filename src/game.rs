@@ -16,11 +16,7 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.register_type::<Body>()
-            .register_type::<Mind>()
-            .register_type::<Spirit>()
-            .register_type::<Appearance>()
-            .insert_resource(GameCommandQueue(vec![]))
+        app.insert_resource(GameCommandQueue(vec![]))
             .add_system(execute_game_commands.exclusive_system())
             .add_system(appearance_added.system())
             ;

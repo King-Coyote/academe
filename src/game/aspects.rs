@@ -26,8 +26,6 @@ use crate::{
 
 pub struct Level<T: Component>(u32, PhantomData<T>);
 
-#[derive(Default, Debug, Reflect)]
-#[reflect(Component)]
 pub struct Body {
     pub strength: u32,
     pub endurance: u32,
@@ -35,24 +33,19 @@ pub struct Body {
     // something to represent form
 }
 
-#[derive(Default, Debug, Reflect)]
-#[reflect(Component)]
 pub struct Mind {
     pub analysis: u32,
     pub memory: u32,
     pub wit: u32,
 }
 
-#[derive(Default, Debug, Reflect)]
-#[reflect(Component)]
 pub struct Spirit {
     pub charisma: u32,
     pub will: u32,
     pub insight: u32,
 }
 
-#[derive(Default, Debug, Reflect)]
-#[reflect(Component)]
+#[derive(Default)]
 pub struct Appearance {
     pub entity: Option<Entity>, // whomst does this look like; used for senses in ai
     pub filename: String,
