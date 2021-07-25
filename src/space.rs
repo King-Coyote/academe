@@ -33,8 +33,13 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
         points: (*points).clone(),
         closed: true,
     };
-
     let bg_color = materials.add(Color::BLACK.into());
+    
+    let navmesh = {
+        let mut builder = NavMeshBuilder::new();
+        builder.with_boundary(&*points);
+        builder.build().unwrap()
+    };
 
     commands
         .spawn()
@@ -47,7 +52,7 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
         //     },
         //     Transform::from_xyz(0.0, 0.0, 0.0),
         // ))
-        .insert(NavMesh::with_boundary(&*points).unwrap())
+        .insert(navmesh)
         .insert(Polygon { points, max_dim })
         .insert(ObjectInteraction::default())
         // .insert(InteractableObject {

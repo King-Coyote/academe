@@ -10,38 +10,72 @@ use bevy::prelude::*;
 type CoordNum = f32;
 type Point = [CoordNum; 2];
 
+pub struct NavMeshBuilder<'a> {
+    boundary: Option<&'a [Vec2]>,
+    holes: Vec<&'a [Vec2]>,
+}
+
+impl<'a> NavMeshBuilder<'a> {
+    pub fn new() -> Self {
+        NavMeshBuilder {
+            boundary: None,
+            holes: vec![],
+        }
+    }
+
+    pub fn with_boundary(&mut self, boundary: &'a [Vec2]) -> &mut Self {
+        self.boundary = Some(boundary);
+        self
+    }
+
+    pub fn with_hole(&mut self, hole: &'a [Vec2]) -> &mut Self {
+        self.holes.push(hole);
+        self
+    }
+
+    pub fn build(self) -> Option<NavMesh> {
+        let first_point = self.boundary?.get(0)?;
+        let boundary = self.boundary?;
+        let mut navmesh = NavMesh {
+            boundary: boundary.to_vec(),
+            holes: self.holes.iter().map(|v| v.to_vec()).collect(),
+            triangulation: ConstrainedDelaunayTriangulation::with_walk_locate(),
+            last_point: raw_from_vec2(*first_point),
+            mid_points: vec![],
+            outside_point: raw_from_vec2(get_outside_point(boundary)),
+        };
+        navmesh.add_boundary(&boundary);
+        Some(navmesh)
+    }
+}
+
 // needs to give navagents a path they can walk on
 // so it only needs to expose the medial axis?????
 pub struct NavMesh {
-    pub verts: Vec<Vec2>,
-    pub mid_points: Vec<Vec2>,
+    boundary: Vec<Vec2>,
+    holes: Vec<Vec<Vec2>>,
+    mid_points: Vec<Vec2>,
     last_point: Point,
     triangulation: ConstrainedDelaunayTriangulation<Point, FloatKernel, DelaunayWalkLocate>,
     outside_point: Point,
 }
 
 impl NavMesh {
-    pub fn with_boundary(boundary: &[Vec2]) -> Option<Self> {
-        let mut navmesh = NavMesh {
-            triangulation: ConstrainedDelaunayTriangulation::with_walk_locate(),
-            last_point: raw_from_vec2(*boundary.get(0)?),
-            verts: boundary.to_vec(),
-            mid_points: vec![],
-            outside_point: raw_from_vec2(get_outside_point(boundary)),
-        };
-        for vec in boundary {
-            navmesh.add_point(raw_from_vec2(*vec));
+    // adds some boundary, hole or otherwise. Only the triangulation cares about this
+    fn add_boundary(&mut self, vertices: &[Vec2]) {
+        let mut last_point: Option<Point> = None;
+        for vert in vertices {
+            let point = raw_from_vec2(*vert);
+            match last_point {
+                Some(last) => {
+                    self.triangulation.add_constraint_edge(last, point);
+                },
+                None => {
+                    self.triangulation.insert(point);
+                },
+            }
+            last_point = Some(point);
         }
-        Some(navmesh)
-    }
-
-    fn add_point(&mut self, point: Point) {
-        if self.triangulation.num_vertices() == 0 {
-            self.triangulation.insert(point);
-        } else {
-            self.triangulation.add_constraint_edge(self.last_point, point);
-        }
-        self.last_point = point;
     }
 
     pub fn edges(&self) -> EdgesIterator {
@@ -50,7 +84,7 @@ impl NavMesh {
 
     // returns an iterator over all triangles that are within the boundary of the navmesh
     pub fn interior_triangles(&self) -> TrianglesIterator {
-        TrianglesIterator::new(&self.verts, self.triangulation.triangles())
+        TrianglesIterator::new(&self.boundary, self.triangulation.triangles())
     }
 }
 
