@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 // a bunch of utility functions; can be split into submodules later
 
-struct Ray {
+pub struct Ray {
     o: Vec2,
     d: Vec2,
     l: f32,
@@ -21,7 +21,6 @@ impl Ray {
 }
 
 // check if a point is inside the polygon formed by points
-// actually this should count intersections
 pub fn point_inside_polygon(point: &Vec2, polygon: &[Vec2]) -> bool {
     let point_outside = get_outside_point(polygon);
     let out = Ray::from_points(point, &point_outside);
@@ -49,7 +48,7 @@ pub fn point_inside_sprite(point: &Vec2, sprite: &Sprite, transform: &Transform)
         && point.y <= transform.translation.y + halfy
 }
 
-fn do_lines_intersect(a: &Ray, b: &Ray) -> bool {
+pub fn do_lines_intersect(a: &Ray, b: &Ray) -> bool {
     let dx = b.o.x - a.o.x;
     let dy = b.o.y - a.o.y;
     let det = b.d.x * a.d.y - b.d.y * a.d.x;
@@ -58,7 +57,7 @@ fn do_lines_intersect(a: &Ray, b: &Ray) -> bool {
     u > 0. && v > 0. && v <= b.l
 }
 
-fn get_outside_point(points: &[Vec2]) -> Vec2 {
+pub fn get_outside_point(points: &[Vec2]) -> Vec2 {
     let mut max_x = f32::NEG_INFINITY;
     let mut furthest = &Vec2::ZERO;
     for p in points.iter() {

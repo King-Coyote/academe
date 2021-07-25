@@ -22,12 +22,33 @@ pub fn display_navmesh_system(
     q_deleteme: Query<&FuckYou>,
 ) {
     for (entity, navmesh) in q_navmesh.iter() {
-        let path = path_bundle(navmesh.edges());
-        commands.entity(entity)
-            .insert_bundle(path)
-            .insert(FuckYou)
-            ;
+        commands.entity(entity).with_children(|parent| {
+            for triangle in navmesh.interior_triangles() {
+                parent.spawn_bundle(triangle_bundle(&triangle));
+            }
+        })
+        ;
+        // let path = path_bundle(navmesh.edges());
+        // commands.entity(entity)
+        //     .insert_bundle(path)
+        //     .insert(FuckYou)
+        //     ;
     }
+}
+
+fn triangle_bundle(t: &[Vec2; 3]) -> ShapeBundle {
+    GeometryBuilder::build_as(
+        &shapes::Polygon {
+            points: t.to_vec(),
+            closed: true,
+        },
+        ShapeColors::outlined(Color::rgba(0.0, 0.3, 0.75, 0.25), Color::BLUE),
+        DrawMode::Outlined {
+            fill_options: FillOptions::default(),
+            outline_options: StrokeOptions::default().with_line_width(1.0),
+        },
+        Transform::from_xyz(0.0, 0.0, 1000.0),
+    )
 }
 
 fn path_bundle(iter: impl Iterator<Item=[Vec2; 2]>) -> ShapeBundle {
