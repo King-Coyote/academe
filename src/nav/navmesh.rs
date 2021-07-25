@@ -45,6 +45,9 @@ impl<'a> NavMeshBuilder<'a> {
             outside_point: raw_from_vec2(get_outside_point(boundary)),
         };
         navmesh.add_boundary(&boundary);
+        for hole in self.holes {
+            navmesh.add_boundary(hole);
+        }
         Some(navmesh)
     }
 }
@@ -84,7 +87,11 @@ impl NavMesh {
 
     // returns an iterator over all triangles that are within the boundary of the navmesh
     pub fn interior_triangles(&self) -> TrianglesIterator {
-        TrianglesIterator::new(&self.boundary, self.triangulation.triangles())
+        TrianglesIterator::new(
+            &self.boundary,
+            &self.holes,
+            self.triangulation.triangles()
+        )
     }
 }
 
@@ -115,17 +122,20 @@ impl<'a> Iterator for EdgesIterator<'a> {
 }
 
 pub struct TrianglesIterator<'a> {
-    vertices: &'a [Vec2],
+    boundary: &'a [Vec2],
+    holes: &'a [Vec<Vec2>],
     iter: Box<dyn Iterator<Item=FaceHandle<'a, Point, spade::delaunay::CdtEdge>> + 'a>,
 }
 
 impl<'a> TrianglesIterator<'a> {
     pub fn new(
-        vertices: &'a [Vec2],
+        boundary: &'a [Vec2],
+        holes: &'a [Vec<Vec2>],
         iter: impl Iterator<Item=FaceHandle<'a, Point, spade::delaunay::CdtEdge>> + 'a
     ) -> Self {
         TrianglesIterator {
-            vertices,
+            boundary,
+            holes,
             iter: Box::new(iter)
         }
     }
@@ -138,7 +148,10 @@ impl<'a> Iterator for TrianglesIterator<'a> {
         loop {
             let handle = self.iter.next()?;
             let vertices = handle.as_triangle();
-            if !point_inside_polygon(&get_centroid(&vertices), self.vertices) {
+            let centroid = get_centroid(&vertices);
+            if !point_inside_polygon(&centroid, self.boundary) 
+            || self.holes.iter().any(|hole| point_inside_polygon(&centroid, &hole))
+            {
                 continue;
             }
             return Some([

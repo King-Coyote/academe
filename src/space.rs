@@ -35,9 +35,17 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
     };
     let bg_color = materials.add(Color::BLACK.into());
     
+    let hole = vec![
+        Vec2::new(-500.0, -90.0),
+        Vec2::new(-300.0, -90.0),
+        Vec2::new(-300.0, -60.0),
+        Vec2::new(-500.0, -60.0),
+    ];
     let navmesh = {
         let mut builder = NavMeshBuilder::new();
-        builder.with_boundary(&*points);
+        builder
+            .with_boundary(&*points)
+            .with_hole(&hole);
         builder.build().unwrap()
     };
 
