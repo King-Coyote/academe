@@ -38,16 +38,16 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
 
     commands
         .spawn()
-        .insert_bundle(GeometryBuilder::build_as(
-            &shape,
-            ShapeColors::outlined(Color::rgba(0.0, 0.3, 0.75, 0.25), Color::BLUE),
-            DrawMode::Outlined {
-                fill_options: FillOptions::default(),
-                outline_options: StrokeOptions::default().with_line_width(1.0),
-            },
-            Transform::from_xyz(0.0, 0.0, 0.0),
-        ))
-        .insert(NavMesh::with_boundary(&*points))
+        // .insert_bundle(GeometryBuilder::build_as(
+        //     &shape,
+        //     ShapeColors::outlined(Color::rgba(0.0, 0.3, 0.75, 0.25), Color::BLUE),
+        //     DrawMode::Outlined {
+        //         fill_options: FillOptions::default(),
+        //         outline_options: StrokeOptions::default().with_line_width(1.0),
+        //     },
+        //     Transform::from_xyz(0.0, 0.0, 0.0),
+        // ))
+        .insert(NavMesh::with_boundary(&*points).unwrap())
         .insert(Polygon { points, max_dim })
         .insert(ObjectInteraction::default())
         // .insert(InteractableObject {

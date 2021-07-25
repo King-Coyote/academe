@@ -12,6 +12,7 @@ use input::*;
 use space::*;
 use ui::*;
 use nav::*;
+use debug::*;
 
 #[macro_use]
 mod macros;
@@ -53,6 +54,7 @@ fn main() {
         .add_plugin(UiPlugin)
         .add_plugin(GamePlugin)
         .add_plugin(NavPlugin)
+        .add_plugin(DebugPlugin)
         .add_startup_system(area_texture_test.system())
         .run();
 }

@@ -292,7 +292,7 @@ impl Plugin for UiPlugin {
             .insert_resource(InteractableOrder::default())
             .add_event::<ObjectHovered>()
             .add_startup_system(setup.system())
-            .add_startup_system(deleteme_ui_test.system())
+            // .add_startup_system(deleteme_ui_test.system())
             .add_system(polygon_interact_system.system())
             .add_system(button.system())
             .add_system(interaction_with_handlers.system())

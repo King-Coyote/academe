@@ -1,3 +1,5 @@
+use std::slice::Iter;
+
 use spade::PointN;
 use spade::{
     delaunay::*,
@@ -42,6 +44,10 @@ impl NavMesh {
 
     pub fn edges(&self) -> EdgesIterator {
         EdgesIterator::new(self.triangulation.edges())
+    }
+
+    pub fn verts(&self) -> Iter<'_, Vec2> {
+        self.verts.iter()
     }
 }
 
