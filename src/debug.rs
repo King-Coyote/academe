@@ -26,6 +26,9 @@ pub fn display_navmesh_system(
             for triangle in navmesh.interior_triangles() {
                 parent.spawn_bundle(triangle_bundle(&triangle));
             }
+            for midpoint in navmesh.medial_points() {
+                parent.spawn_bundle(vertex_bundle(midpoint));
+            }
         })
         ;
         // let path = path_bundle(navmesh.edges());
@@ -68,4 +71,16 @@ fn path_bundle(iter: impl Iterator<Item=[Vec2; 2]>) -> ShapeBundle {
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
         ..Default::default()
     }
+}
+
+fn vertex_bundle(point: Vec2) -> ShapeBundle {
+    GeometryBuilder::build_as(
+        &shapes::Circle {
+            radius: 5.0,
+            center: point
+        }, 
+        ShapeColors::new(Color::RED), 
+        DrawMode::Fill(FillOptions::default()), 
+        Transform::from_xyz(0.0, 0.0, 1000.0)
+    )
 }

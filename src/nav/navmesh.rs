@@ -85,6 +85,19 @@ impl NavMesh {
         EdgesIterator::new(self.triangulation.edges())
     }
 
+    pub fn medial_points(&self) -> impl Iterator<Item = Vec2> + '_ {
+        self.triangulation.edges()
+            .filter(move |e| {
+                !self.triangulation.is_constraint_edge(e.fix())
+            })
+            .map(|e| {
+                Vec2::new(
+                    (e.from()[0] + e.to()[0]) / 2.0,
+                    (e.from()[1] + e.to()[1]) / 2.0
+                )
+            })
+    }
+
     // returns an iterator over all triangles that are within the boundary of the navmesh
     pub fn interior_triangles(&self) -> TrianglesIterator {
         TrianglesIterator::new(
