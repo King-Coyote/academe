@@ -1,14 +1,18 @@
+use super::graph::*;
 use crate::{
     utils::geometry::*,
 };
 use spade::{
     delaunay::*,
+    kernels::*,
 };
-use spade::kernels::*;
 use bevy::prelude::*;
+use std::collections::HashSet;
 
 type CoordNum = f32;
 type Point = [CoordNum; 2];
+type EH<'a> = EdgeHandle<'a, Point, CdtEdge>;
+type Triangulation = ConstrainedDelaunayTriangulation<Point, FloatKernel, DelaunayWalkLocate>;
 
 pub struct NavMeshBuilder<'a> {
     boundary: Option<&'a [Vec2]>,
@@ -36,66 +40,61 @@ impl<'a> NavMeshBuilder<'a> {
     pub fn build(self) -> Option<NavMesh> {
         let first_point = self.boundary?.get(0)?;
         let boundary = self.boundary?;
+        let mut triangulation = ConstrainedDelaunayTriangulation::with_walk_locate();
+        add_triangulation_boundary(&mut triangulation, &boundary);
+        for hole in self.holes.iter() {
+            add_triangulation_boundary(&mut triangulation, hole);
+        }
+        let graph = build_medial_graph(&triangulation, &boundary, &self.holes);
         let mut navmesh = NavMesh {
             boundary: boundary.to_vec(),
             holes: self.holes.iter().map(|v| v.to_vec()).collect(),
-            triangulation: ConstrainedDelaunayTriangulation::with_walk_locate(),
+            medial_graph: graph,
+            triangulation: triangulation,
             last_point: raw_from_vec2(*first_point),
-            mid_points: vec![],
             outside_point: raw_from_vec2(get_outside_point(boundary)),
         };
-        navmesh.add_boundary(&boundary);
-        for hole in self.holes {
-            navmesh.add_boundary(hole);
-        }
         Some(navmesh)
     }
 }
 
-// needs to give navagents a path they can walk on
-// so it only needs to expose the medial axis?????
 pub struct NavMesh {
     boundary: Vec<Vec2>,
     holes: Vec<Vec<Vec2>>,
-    mid_points: Vec<Vec2>,
+    medial_graph: Graph<usize, Vec2>,
     last_point: Point,
-    triangulation: ConstrainedDelaunayTriangulation<Point, FloatKernel, DelaunayWalkLocate>,
+    triangulation: Triangulation,
     outside_point: Point,
 }
 
 impl NavMesh {
-    // adds some boundary, hole or otherwise. Only the triangulation cares about this
-    fn add_boundary(&mut self, vertices: &[Vec2]) {
-        let mut last_point: Option<Point> = None;
-        for vert in vertices {
-            let point = raw_from_vec2(*vert);
-            match last_point {
-                Some(last) => {
-                    self.triangulation.add_constraint_edge(last, point);
-                },
-                None => {
-                    self.triangulation.insert(point);
-                },
-            }
-            last_point = Some(point);
-        }
+    // // adds some boundary, hole or otherwise. Only the triangulation cares about this
+    // fn add_boundary(&mut self, vertices: &[Vec2]) {
+    //     let mut last_point: Option<Point> = None;
+    //     for vert in vertices {
+    //         let point = raw_from_vec2(*vert);
+    //         match last_point {
+    //             Some(last) => {
+    //                 self.triangulation.add_constraint_edge(last, point);
+    //             },
+    //             None => {
+    //                 self.triangulation.insert(point);
+    //             },
+    //         }
+    //         last_point = Some(point);
+    //     }
+    // }
+
+    pub fn medial_points(&self) -> impl Iterator<Item = &Vec2> {
+        self.medial_graph.nodes()
     }
 
     pub fn edges(&self) -> EdgesIterator {
         EdgesIterator::new(self.triangulation.edges())
     }
 
-    pub fn medial_points(&self) -> impl Iterator<Item = Vec2> + '_ {
-        self.triangulation.edges()
-            .filter(move |e| {
-                !self.triangulation.is_constraint_edge(e.fix())
-            })
-            .map(|e| {
-                Vec2::new(
-                    (e.from()[0] + e.to()[0]) / 2.0,
-                    (e.from()[1] + e.to()[1]) / 2.0
-                )
-            })
+    pub fn graph_iter(&self) -> impl Iterator<Item = &Vec2> {
+        self.medial_graph.iter()
     }
 
     // returns an iterator over all triangles that are within the boundary of the navmesh
@@ -190,4 +189,71 @@ fn get_centroid<T>(t: &[VertexHandle<Point, T>; 3]) -> Vec2 {
         (t[0][0] + t[1][0] + t[2][0]) / 3.,
         (t[0][1] + t[1][1] + t[2][1]) / 3.
     )
+}
+
+fn get_medial_point(e: &EH<'_>) -> Vec2 {
+    Vec2::new(
+        (e.from()[0] + e.to()[0]) / 2.0,
+        (e.from()[1] + e.to()[1]) / 2.0
+    )
+}
+
+fn add_triangulation_boundary(triangulation: &mut Triangulation, vertices: &[Vec2]) {
+    let mut last_point: Option<Point> = None;
+    for vert in vertices {
+        let point = raw_from_vec2(*vert);
+        match last_point {
+            Some(last) => {
+                triangulation.add_constraint_edge(last, point);
+            },
+            None => {
+                triangulation.insert(point);
+            },
+        }
+        last_point = Some(point);
+    }
+}
+
+fn build_medial_graph(triangulation: &Triangulation, boundary: &[Vec2], holes: &[&[Vec2]]) -> Graph<usize, Vec2> {
+    if triangulation.num_edges() == 0 {
+        panic!("Expected at least one edge in triangulation!");
+    }
+
+    let mut to_visit: Vec<usize> = vec![];
+    let mut visited: HashSet<usize> = HashSet::new();
+    let mut graph = Graph::default();
+    let is_valid = |e: &EH<'_>| {
+        let medial_point = get_medial_point(e);
+
+        !triangulation.is_constraint_edge(e.fix())
+        && point_inside_polygon(&medial_point, boundary)
+        && holes.iter().all(|h| !point_inside_polygon(&medial_point, h))
+    };
+
+    // let first_edge = triangulation.edges()
+    //     .find(|e| is_valid(e))
+    //     .unwrap();
+    // to_visit.push(first_edge.fix());
+    
+    for current_edge in triangulation.edges().filter(|e| is_valid(&e)) {
+        // let current = to_visit.pop().unwrap();
+        // let current_edge = triangulation.edge(current);
+        let node_index = graph.add_node(get_medial_point(&current_edge), current_edge.fix());
+
+        let neighbour_edges = current_edge.from().ccw_out_edges()
+            .chain(current_edge.to().ccw_out_edges());
+
+        let valid_neighbours = neighbour_edges
+            .filter(|e| is_valid(e))
+            .map(|eh| {
+                let point = get_medial_point(&eh);
+                graph.add_node(point, eh.fix())
+            })
+            .collect::<Vec<usize>>();
+        for other_index in valid_neighbours {
+            graph.add_edge_unchecked(node_index, other_index);
+        }
+    }
+    info!("Graph generated with {} nodes, {} edges", graph.num_nodes(), graph.num_edges());
+    graph
 }

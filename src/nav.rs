@@ -7,6 +7,7 @@ mod nav_agent;
 pub use nav_agent::*;
 mod navmesh;
 pub use navmesh::*;
+mod graph;
 
 const TIME_STEP: f32 = 1.0 / 60.0;
 

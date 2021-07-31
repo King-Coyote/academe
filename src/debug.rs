@@ -26,9 +26,19 @@ pub fn display_navmesh_system(
             for triangle in navmesh.interior_triangles() {
                 parent.spawn_bundle(triangle_bundle(&triangle));
             }
-            for midpoint in navmesh.medial_points() {
-                parent.spawn_bundle(vertex_bundle(midpoint));
+            // for midpoint in navmesh.medial_points() {
+            //     parent.spawn_bundle(vertex_bundle(*midpoint));
+            // }
+            let mut graph_iter = navmesh.graph_iter();
+            let mut path: Vec<[Vec2; 2]> = vec![];
+            while let Some(from) = graph_iter.next() {
+                parent.spawn_bundle(vertex_bundle(*from));
+                if let Some(to)= graph_iter.next() {
+                    path.push([*from, *to]);
+                }
             }
+            let path_bundle = path_bundle(&path);
+            parent.spawn_bundle(path_bundle);
         })
         ;
         // let path = path_bundle(navmesh.edges());
@@ -54,9 +64,9 @@ fn triangle_bundle(t: &[Vec2; 3]) -> ShapeBundle {
     )
 }
 
-fn path_bundle(iter: impl Iterator<Item=[Vec2; 2]>) -> ShapeBundle {
+fn path_bundle(points: &[[Vec2; 2]]) -> ShapeBundle {
     let mut path_builder = PathBuilder::new();
-    for edge in iter {
+    for edge in points {
         info!("Building path from {} to {}", edge[0], edge[1]);
         path_builder.move_to(edge[0]);
         path_builder.line_to(edge[1]);
@@ -67,7 +77,7 @@ fn path_bundle(iter: impl Iterator<Item=[Vec2; 2]>) -> ShapeBundle {
             fill_options: FillOptions::default(),
             outline_options: StrokeOptions::default().with_line_width(2.0),
         },
-        colors: ShapeColors::outlined(Color::rgba(0.0, 0.3, 0.75, 0.25), Color::BLUE),
+        colors: ShapeColors::outlined(Color::rgba(0.0, 0.3, 0.75, 0.25), Color::GREEN),
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
         ..Default::default()
     }
