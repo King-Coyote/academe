@@ -26,17 +26,10 @@ pub fn display_navmesh_system(
             for triangle in navmesh.interior_triangles() {
                 parent.spawn_bundle(triangle_bundle(&triangle));
             }
-            // for midpoint in navmesh.medial_points() {
-            //     parent.spawn_bundle(vertex_bundle(*midpoint));
-            // }
-            let mut graph_iter = navmesh.graph_iter();
-            let mut path: Vec<[Vec2; 2]> = vec![];
-            while let Some(from) = graph_iter.next() {
-                parent.spawn_bundle(vertex_bundle(*from));
-                if let Some(to)= graph_iter.next() {
-                    path.push([*from, *to]);
-                }
+            for node in navmesh.graph_nodes_iter() {
+                parent.spawn_bundle(vertex_bundle(*node));
             }
+            let path = navmesh.graph_edges();
             let path_bundle = path_bundle(&path);
             parent.spawn_bundle(path_bundle);
         })
@@ -64,12 +57,12 @@ fn triangle_bundle(t: &[Vec2; 3]) -> ShapeBundle {
     )
 }
 
-fn path_bundle(points: &[[Vec2; 2]]) -> ShapeBundle {
+fn path_bundle(points: &[(&Vec2, &Vec2)]) -> ShapeBundle {
     let mut path_builder = PathBuilder::new();
     for edge in points {
-        info!("Building path from {} to {}", edge[0], edge[1]);
-        path_builder.move_to(edge[0]);
-        path_builder.line_to(edge[1]);
+        info!("Building path from {} to {}", edge.0, edge.1);
+        path_builder.move_to(*edge.0);
+        path_builder.line_to(*edge.1);
     }
     ShapeBundle {
         path: path_builder.build(),

@@ -1,55 +1,33 @@
 use std::{
-    collections::{HashSet, HashMap},
-    hash::Hash,
+    collections::{HashMap},
 };
 
 type NodeIndex = usize;
 type EdgeIndex = usize;
 
-struct NodeData<T> {
-    data: T,
-    succ: Vec<NodeIndex>,
-}
-
 #[derive(Default)]
-pub struct Graph<I, T> {
-    nodes: Vec<NodeData<T>>,
-    ids: HashMap<I, NodeIndex>,
+pub struct Graph<T> {
+    nodes: Vec<T>,
+    edges: HashMap<NodeIndex, Vec<NodeIndex>>,
     num_edges: usize,
 }
 
-impl<I, T> Graph<I, T>
-    where I: Hash + Eq
-{
+impl<T> Graph<T> {
     pub fn get(&self, index: NodeIndex) -> &T {
-        &self.nodes.get(index).unwrap().data
+        &self.nodes.get(index).unwrap()
     }
 
-    pub fn add_node_unchecked(&mut self, data: T) -> NodeIndex {
+    pub fn add_node(&mut self, data: T) -> NodeIndex {
         let index = self.nodes.len();
-        self.nodes.push(NodeData{data, succ: vec![]});
+        self.nodes.push(data);
         index
     }
 
-    // uses an optional hashable ID to make sure nothing is added twice
-    pub fn add_node(&mut self, data: T, id: I) -> NodeIndex {
-        match self.ids.get(&id) {
-            Some(index) => {
-                // already exists, just give them the index
-                *index
-            },
-            None => {
-                let index = self.nodes.len();
-                self.nodes.push(NodeData{data, succ: vec![]});
-                self.ids.insert(id, index);
-                index
-            }
-        }
-    }
-
-    pub fn add_edge_unchecked(&mut self, from: NodeIndex, to: NodeIndex) {
-        let node: &mut NodeData<T> = self.nodes.get_mut(from).unwrap();
-        node.succ.push(to);
+    pub fn add_edge(&mut self, from: NodeIndex, to: NodeIndex) {
+        self.edges
+            .entry(from)
+            .or_insert_with(Vec::new)
+            .push(to);
         self.num_edges += 1;
     }
 
@@ -61,55 +39,22 @@ impl<I, T> Graph<I, T>
         self.num_edges
     }
 
-    // pub fn add_bidirection(&mut self, a: NodeIndex, b: NodeIndex) {
-    //     let first = self.add_edge(a, b);
-    //     let second = self.add_edge(b, a);
-    // }
-
-    // this is not ordered by edge
-    pub fn nodes(&self) -> impl Iterator<Item = &T> {
-        self.nodes.iter().map(|n| &n.data)
+    pub fn nodes_iter(&self) -> impl Iterator<Item = &T> {
+        self.nodes.iter()
     }
 
-    pub fn successors(&self, node: NodeIndex) -> impl Iterator<Item = &NodeIndex> {
-        self.nodes
-            .get(node)
-            .unwrap()
-            .succ
+    pub fn edges(&self) -> Vec<(&T, &T)> {
+        self.edges
             .iter()
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = &T> {
-        NodeIterator {
-            graph: &self,
-            visited: HashSet::new(),
-            to_visit: vec![0]
-        }
-    }
-}
-
-struct NodeIterator<'a, I, T> {
-    graph: &'a Graph<I, T>,
-    visited: HashSet<usize>,
-    to_visit: Vec<usize>,
-}
-
-impl<'a, I, T> Iterator for NodeIterator<'a, I, T> {
-    type Item = &'a T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self.to_visit.pop() {
-            Some(index) => {
-                let data = self.graph.nodes.get(index)?;
-                for succ in data.succ.iter() {
-                    if self.visited.get(succ).is_none() {
-                        self.to_visit.push(*succ);
+            .fold(vec![], |mut acc, (k, v)| {
+                let from = self.nodes.get(*k).unwrap();
+                if let Some(succ) = self.edges.get(k) {
+                    for to_inx in succ {
+                        let to = self.nodes.get(*to_inx).unwrap();
+                        acc.push((from, to));
                     }
                 }
-                self.visited.insert(index);
-                Some(&data.data)
-            },
-            None => None
-        }
+                acc
+            })
     }
 }
