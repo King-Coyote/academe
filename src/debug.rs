@@ -14,12 +14,9 @@ impl Plugin for DebugPlugin {
     }
 }
 
-pub struct FuckYou;
-
 pub fn display_navmesh_system(
     mut commands: Commands,
     q_navmesh: Query<(Entity, &NavMesh), Added<NavMesh>>,
-    q_deleteme: Query<&FuckYou>,
 ) {
     for (entity, navmesh) in q_navmesh.iter() {
         commands.entity(entity).with_children(|parent| {
@@ -34,11 +31,6 @@ pub fn display_navmesh_system(
             parent.spawn_bundle(path_bundle);
         })
         ;
-        // let path = path_bundle(navmesh.edges());
-        // commands.entity(entity)
-        //     .insert_bundle(path)
-        //     .insert(FuckYou)
-        //     ;
     }
 }
 

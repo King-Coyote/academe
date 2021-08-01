@@ -90,6 +90,12 @@ impl NavMesh {
             self.triangulation.triangles()
         )
     }
+
+    pub fn num_intersects_between(&self, a: &Vec2, b: &Vec2) -> u32 {
+        let n = 0;
+        
+        n
+    }
 }
 
 // look at this fuckin stupid shit that I have to do to make this iterable
