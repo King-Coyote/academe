@@ -1,29 +1,5 @@
 use bevy::prelude::*;
-
-// a bunch of utility functions; can be split into submodules later
-
-pub struct Ray {
-    o: Vec2,
-    d: Vec2,
-    l: f32,
-}
-
-pub struct Line {
-    start: Vec2,
-    end: Vec2,
-}
-
-impl Ray {
-    pub fn from_points(a: &Vec2, b: &Vec2) -> Self {
-        let diff = Vec2::new(b.x - a.x, b.y - a.y);
-        let length = diff.length();
-        Ray {
-            o: a.clone(),
-            d: diff.normalize(),
-            l: length,
-        }
-    }
-}
+use intersect2d::*;
 
 // check if a point is inside the polygon formed by points
 pub fn point_inside_polygon(point: &Vec2, polygon: &[Vec2]) -> bool {
@@ -34,19 +10,34 @@ pub fn point_inside_polygon(point: &Vec2, polygon: &[Vec2]) -> bool {
 
 pub fn num_intersections_between(a: &Vec2, b: &Vec2, boundary: &[Vec2]) -> u32 {
     let mut intersections = 0;
-    let line = Ray::from_points(b, a);
+    let line = [*a, *b];
     for e in boundary.iter().enumerate() {
         let mut next_index = e.0 + 1;
         if e.0 == boundary.len() - 1 {
             next_index = 0;
         }
         let next = boundary.get(next_index).unwrap();
-        if do_lines_intersect(&line, &Ray::from_points(e.1, next)) {
+        if let Some(pt) = lines_intersect(&line, &[*e.1, *next]) {
             intersections += 1;
         }
     }
     info!("num intersects is {}", intersections);
     intersections
+}
+
+pub fn any_intersections_between(a: &Vec2, b: &Vec2, boundary: &[Vec2]) -> bool {
+    let line = [*a, *b];
+    for e in boundary.iter().enumerate() {
+        let mut next_index = e.0 + 1;
+        if e.0 == boundary.len() - 1 {
+            next_index = 0;
+        }
+        let next = boundary.get(next_index).unwrap();
+        if let Some(pt) = lines_intersect(&line, &[*e.1, *next]) {
+            return true;
+        }
+    }
+    false
 }
 
 pub fn point_inside_sprite(point: &Vec2, sprite: &Sprite, transform: &Transform) -> bool {
@@ -59,78 +50,28 @@ pub fn point_inside_sprite(point: &Vec2, sprite: &Sprite, transform: &Transform)
         && point.y <= transform.translation.y + halfy
 }
 
-pub fn do_lines_intersect(a: &Ray, b: &Ray) -> bool {
-    let dx = b.o.x - a.o.x;
-    let dy = b.o.y - a.o.y;
-    let det = b.d.x * a.d.y - b.d.y * a.d.x;
-    if f32::abs(det) <= f32::EPSILON {
-        return false;
+pub fn lines_intersect(a: &[Vec2; 2], b: &[Vec2; 2]) -> Option<Vec2> {
+    let a: geo::Line::<f32> = destructure_vec2_line(a).into();
+    let b: geo::Line::<f32> = destructure_vec2_line(b).into();
+    if let Some(sect) = intersect(&a, &b) {
+        let pt = sect.single();
+        return Some(Vec2::new(
+            pt.x,
+            pt.y
+        ));
     }
-    let u = (dy * b.d.x - dx * b.d.y) / det;
-    let v = (dy * a.d.x - dx * a.d.y) / det;
-    u > 0. && v > 0. && v <= b.l
-}
-
-// doesn't seem to work rn
-pub fn do_lines_intersect_experiment(a: &Line, b: &Line) -> bool {
-    let ( x1, y1 ) = destructure_vec2(&a.start);
-    let ( x2, y2 ) = destructure_vec2(&a.end);
-    let ( x3, y3 ) = destructure_vec2(&b.start);
-    let ( x4, y4 ) = destructure_vec2(&b.end);
-
-    // First line coefficients where "a1 x  +  b1 y  +  c1  =  0"
-    let a1 = y2 - y1;
-    let b1 = x1 - x2;
-    let c1 = x2 * y1 - x1 * y2;
-
-    // Second line coefficients
-    let a2 = y4 - y3;
-    let b2 = x3 - x4;
-    let c2 = x4 * y3 - x3 * y4;
-
-    let denom = a1 * b2 - a2 * b1;
-
-    // Lines are colinear
-    if is_zero(denom) {
-        return false;
-    }
-
-    // Compute sign values
-    let r3 = a1 * x3 + b1 * y3 + c1;
-    let r4 = a1 * x4 + b1 * y4 + c1;
-
-    // Sign values for second line
-    let r1 = a2 * x1 + b2 * y1 + c2;
-    let r2 = a2 * x2 + b2 * y2 + c2;
-
-    // Flag denoting whether intersection point is on passed line segments. If this is false,
-    // the intersection occurs somewhere along the two mathematical, infinite lines instead.
-    //
-    // Check signs of r3 and r4.  If both point 3 and point 4 lie on same side of line 1, the
-    // line segments do not intersect.
-    //
-    // Check signs of r1 and r2.  If both point 1 and point 2 lie on same side of second line
-    // segment, the line segments do not intersect.
-    let is_on_segments = (!is_zero(r3) && !is_zero(r4) && same_signs(r3, r4))
-        || (!is_zero(r1) && !is_zero(r2) && same_signs(r1, r2));
-
-    // If we got here, line segments intersect. Compute intersection point using method similar
-    // to that described here: http://paulbourke.net/geometry/pointlineplane/#i2l
-
-    // The denom/2 is to get rounding instead of truncating. It is added or subtracted to the
-    // numerator, depending upon the sign of the numerator.
-    // let offset = if denom < 0 { -denom / 2 } else { denom / 2 };
-
-    // let num = b1 * c2 - b2 * c1;
-    // let x = if num < 0 { num - offset } else { num + offset } / denom;
-
-    // let num = a2 * c1 - a1 * c2;
-    // let y = if num < 0 { num - offset } else { num + offset } / denom;
-    is_on_segments
+    None
 }
 
 fn destructure_vec2(v: &Vec2) -> (f32, f32) {
     (v.x, v.y)
+}
+
+fn destructure_vec2_line(v: &[Vec2; 2]) -> [(f32, f32); 2] {
+    [
+        (v[0].x, v[0].y),
+        (v[1].x, v[1].y)
+    ]
 }
 
 fn same_signs(a: f32, b: f32) -> bool {

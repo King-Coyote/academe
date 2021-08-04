@@ -19,7 +19,7 @@ fn click_pathfind_debug_system(
     mut commands: Commands,
     mouse: Res<MouseState>,
     mut er_mouse: EventReader<MouseButtonInput>,
-    q_navmesh: Query<()>,
+    q_navmesh: Query<&NavMesh>,
 ) {
     for e in er_mouse.iter() {
         if e.state != ElementState::Released {
@@ -27,7 +27,11 @@ fn click_pathfind_debug_system(
         }
         let point = mouse.world_pos;
         info!("Clicked at: {}", point);
-        
+        for n in q_navmesh.iter() {
+            if n.points_have_los(&point, &Vec2::new(140.0, -184.0)) {
+                info!("LOS to 0,0");
+            }
+        }
     }
 }
 

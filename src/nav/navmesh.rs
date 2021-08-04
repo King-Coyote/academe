@@ -91,10 +91,9 @@ impl NavMesh {
         )
     }
 
-    pub fn num_intersects_between(&self, a: &Vec2, b: &Vec2) -> u32 {
-        let n = 0;
-        
-        n
+    pub fn points_have_los(&self, a: &Vec2, b: &Vec2) -> bool {
+        !any_intersections_between(a, b, &self.boundary)
+        && !self.holes.iter().any(|hole| any_intersections_between(a, b, hole))
     }
 }
 
