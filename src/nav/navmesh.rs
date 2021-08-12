@@ -10,6 +10,7 @@ use spade::{
 };
 use bevy::prelude::*;
 use std::collections::{HashMap};
+use pathfinding::directed::astar::astar;
 
 type CoordNum = f32;
 type Point = [CoordNum; 2];
@@ -95,6 +96,45 @@ impl NavMesh {
         !any_intersections_between(a, b, &self.boundary)
         && !self.holes.iter().any(|hole| any_intersections_between(a, b, hole))
     }
+
+    pub fn find_path(&self, a: &Vec2, b: &Vec2) -> Option<Vec<Vec2>> {
+        // for some point, get the closest node's index with LOS
+        let path: Vec<Vec2> = vec![*a];
+        let mut min_dist = f32::INFINITY;
+        let start = self.medial_graph.nodes
+            .iter()
+            .enumerate()
+            .fold(0, |closest, (index, node)| {
+                let dist = (*node - *a).length();
+                if dist < min_dist {
+                    min_dist = dist;
+                    return index
+                }
+                closest
+            });
+        // the closer the euclidean distance, the better
+        let heuristic = |n: &usize| {
+            let pt = self.medial_graph.get(*n).unwrap();
+            (*b - *pt).length().round() as i32
+        };
+        let success = |n: &usize| {
+            let pt = self.medial_graph.get(*n).unwrap();
+            self.points_have_los(pt, b)
+        };
+        astar(
+            &start,
+            |n| self.medial_graph.succ(*n).unwrap().iter().map(|s| (*s, 1)),
+            heuristic,
+            success
+        ).map(|path_indices| {
+            path_indices.0
+                .iter()
+                .map(|i| *self.medial_graph.get(*i).unwrap())
+                .collect()
+        })
+    }
+
+
 }
 
 // look at this fuckin stupid shit that I have to do to make this iterable

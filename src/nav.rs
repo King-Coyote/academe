@@ -3,7 +3,10 @@ use bevy::{
     prelude::*,
     input::{mouse::MouseButtonInput, ElementState,},
 };
-use crate::input::*;
+use crate::{
+    input::*,
+    debug::*,
+};
 
 mod nav_agent;
 pub use nav_agent::*;
@@ -19,7 +22,7 @@ fn click_pathfind_debug_system(
     mut commands: Commands,
     mouse: Res<MouseState>,
     mut er_mouse: EventReader<MouseButtonInput>,
-    q_navmesh: Query<&NavMesh>,
+    q_navmesh: Query<(Entity, &NavMesh)>,
 ) {
     for e in er_mouse.iter() {
         if e.state != ElementState::Released {
@@ -27,10 +30,13 @@ fn click_pathfind_debug_system(
         }
         let point = mouse.world_pos;
         info!("Clicked at: {}", point);
-        for n in q_navmesh.iter() {
-            if n.points_have_los(&point, &Vec2::new(140.0, -184.0)) {
-                info!("LOS to 0,0");
-            }
+        for (entity, navmesh) in q_navmesh.iter() {
+            commands.entity(entity).with_children(|parent| {
+                let path = navmesh.find_path(&point, &Vec2::new(330.0, -140.0)).unwrap();
+                for node in path.iter() {
+                    parent.spawn_bundle(vertex_bundle(*node, Color::ORANGE));
+                }
+            });
         }
     }
 }

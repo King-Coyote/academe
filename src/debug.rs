@@ -24,17 +24,17 @@ pub fn display_navmesh_system(
                 parent.spawn_bundle(triangle_bundle(&triangle));
             }
             for node in navmesh.graph_nodes_iter() {
-                parent.spawn_bundle(vertex_bundle(*node));
+                parent.spawn_bundle(vertex_bundle(*node, Color::RED));
             }
             let path = navmesh.graph_edges();
-            let path_bundle = path_bundle(&path);
+            let path_bundle = path_bundle(&path, Color::GREEN);
             parent.spawn_bundle(path_bundle);
         })
         ;
     }
 }
 
-fn triangle_bundle(t: &[Vec2; 3]) -> ShapeBundle {
+pub fn triangle_bundle(t: &[Vec2; 3]) -> ShapeBundle {
     GeometryBuilder::build_as(
         &shapes::Polygon {
             points: t.to_vec(),
@@ -49,7 +49,10 @@ fn triangle_bundle(t: &[Vec2; 3]) -> ShapeBundle {
     )
 }
 
-fn path_bundle(points: &[(&Vec2, &Vec2)]) -> ShapeBundle {
+pub fn path_bundle(
+    points: &[(&Vec2, &Vec2)],
+    color: Color,
+) -> ShapeBundle {
     let mut path_builder = PathBuilder::new();
     for edge in points {
         info!("Building path from {} to {}", edge.0, edge.1);
@@ -62,19 +65,19 @@ fn path_bundle(points: &[(&Vec2, &Vec2)]) -> ShapeBundle {
             fill_options: FillOptions::default(),
             outline_options: StrokeOptions::default().with_line_width(2.0),
         },
-        colors: ShapeColors::outlined(Color::rgba(0.0, 0.3, 0.75, 0.25), Color::GREEN),
+        colors: ShapeColors::outlined(Color::rgba(0.0, 0.3, 0.75, 0.25), color),
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
         ..Default::default()
     }
 }
 
-fn vertex_bundle(point: Vec2) -> ShapeBundle {
+pub fn vertex_bundle(point: Vec2, color: Color) -> ShapeBundle {
     GeometryBuilder::build_as(
         &shapes::Circle {
             radius: 5.0,
             center: point
         }, 
-        ShapeColors::new(Color::RED), 
+        ShapeColors::new(color), 
         DrawMode::Fill(FillOptions::default()), 
         Transform::from_xyz(0.0, 0.0, 1000.0)
     )

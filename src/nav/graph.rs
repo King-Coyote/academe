@@ -7,14 +7,14 @@ type EdgeIndex = usize;
 
 #[derive(Default)]
 pub struct Graph<T> {
-    nodes: Vec<T>,
-    edges: HashMap<NodeIndex, Vec<NodeIndex>>,
+    pub nodes: Vec<T>,
+    pub edges: HashMap<NodeIndex, Vec<NodeIndex>>,
     num_edges: usize,
 }
 
 impl<T> Graph<T> {
-    pub fn get(&self, index: NodeIndex) -> &T {
-        &self.nodes.get(index).unwrap()
+    pub fn get(&self, index: NodeIndex) -> Option<&T> {
+        self.nodes.get(index)
     }
 
     pub fn add_node(&mut self, data: T) -> NodeIndex {
@@ -41,6 +41,10 @@ impl<T> Graph<T> {
 
     pub fn nodes_iter(&self) -> impl Iterator<Item = &T> {
         self.nodes.iter()
+    }
+
+    pub fn succ(&self, node: NodeIndex) -> Option<&Vec<NodeIndex>> {
+        self.edges.get(&node)
     }
 
     pub fn edges(&self) -> Vec<(&T, &T)> {
