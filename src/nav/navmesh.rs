@@ -106,7 +106,7 @@ impl NavMesh {
             .enumerate()
             .fold(0, |closest, (index, node)| {
                 let dist = (*node - *a).length();
-                if dist < min_dist {
+                if dist < min_dist && self.points_have_los(a, node) {
                     min_dist = dist;
                     return index
                 }
@@ -127,10 +127,12 @@ impl NavMesh {
             heuristic,
             success
         ).map(|path_indices| {
-            path_indices.0
+            let mut path: Vec<Vec2> = path_indices.0
                 .iter()
                 .map(|i| *self.medial_graph.get(*i).unwrap())
-                .collect()
+                .collect();
+            path.push(*b);
+            path
         })
     }
 
