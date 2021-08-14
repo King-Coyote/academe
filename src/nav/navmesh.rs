@@ -99,7 +99,7 @@ impl NavMesh {
 
     pub fn find_path(&self, a: &Vec2, b: &Vec2) -> Option<Vec<Vec2>> {
         // for some point, get the closest node's index with LOS
-        let path: Vec<Vec2> = vec![*a];
+        let mut path: Vec<Vec2> = vec![*b];
         let mut min_dist = f32::INFINITY;
         let start = self.medial_graph.nodes
             .iter()
@@ -127,11 +127,12 @@ impl NavMesh {
             heuristic,
             success
         ).map(|path_indices| {
-            let mut path: Vec<Vec2> = path_indices.0
+            path.extend(path_indices.0
                 .iter()
+                .rev() // want this to have last point as index 0 (since we'll be popping from it)
                 .map(|i| *self.medial_graph.get(*i).unwrap())
-                .collect();
-            path.push(*b);
+            );
+            // path.push(*a);
             path
         })
     }

@@ -21,7 +21,6 @@ pub fn num_intersections_between(a: &Vec2, b: &Vec2, boundary: &[Vec2]) -> u32 {
             intersections += 1;
         }
     }
-    info!("num intersects is {}", intersections);
     intersections
 }
 

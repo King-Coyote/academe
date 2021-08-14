@@ -58,11 +58,12 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
         //         fill_options: FillOptions::default(),
         //         outline_options: StrokeOptions::default().with_line_width(1.0),
         //     },
-        //     Transform::from_xyz(0.0, 0.0, 0.0),
+        //     Transform::from_xyz(0.0, 0.0, 10.0),
         // ))
         .insert(navmesh)
         .insert(Polygon { points, max_dim })
         .insert(ObjectInteraction::default())
+        .insert(Transform::from_xyz(0.0, 0.0, 10.0))
         // .insert(InteractableObject {
         //     min_dist: max_dim / 2.0,
         //     mouse_inside: Some(Box::new(move |pos: &Vec2, mouse: &MouseState| {

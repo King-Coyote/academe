@@ -23,18 +23,21 @@ fn click_pathfind_debug_system(
     mouse: Res<MouseState>,
     mut er_mouse: EventReader<MouseButtonInput>,
     q_navmesh: Query<(Entity, &NavMesh)>,
+    mut q_navagent: Query<(Entity, &mut NavAgent,)>,
 ) {
     for e in er_mouse.iter() {
-        if e.state != ElementState::Released {
+        if e.state != ElementState::Released || e.button != MouseButton::Left {
             continue;
         }
         let point = mouse.world_pos;
-        info!("Clicked at: {}", point);
         for (entity, navmesh) in q_navmesh.iter() {
             commands.entity(entity).with_children(|parent| {
                 let path = navmesh.find_path(&point, &Vec2::new(330.0, -140.0)).unwrap();
                 for node in path.iter() {
                     parent.spawn_bundle(vertex_bundle(*node, Color::ORANGE));
+                }
+                if let Ok((_, mut agent)) = q_navagent.single_mut() {
+                    agent.path = path;
                 }
             });
         }
