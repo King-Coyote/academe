@@ -55,7 +55,6 @@ pub fn path_bundle(
 ) -> ShapeBundle {
     let mut path_builder = PathBuilder::new();
     for edge in points {
-        info!("Building path from {} to {}", edge.0, edge.1);
         path_builder.move_to(*edge.0);
         path_builder.line_to(*edge.1);
     }

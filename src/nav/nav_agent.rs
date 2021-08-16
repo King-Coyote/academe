@@ -27,16 +27,12 @@ pub fn navagent_system(
                 transform.translation.x = current.x;
                 transform.translation.y = current.y;
             } else {
-                info!("current pos is {}; interpolating towards pos {}", transform.translation, current);
                 let diff_n = diff.normalize();
                 transform.translation.x += diff_n.x * step;
                 transform.translation.y += diff_n.y * step;
             }
         } else {
             nav.current = nav.path.pop();
-            if let Some(current) = nav.current {
-                info!("new popped pos: {}", current);
-            }
         }
     }
 }
