@@ -1,7 +1,7 @@
 use std::collections::{VecDeque, HashMap,};
 use bevy_ecs::entity::Entity;
 
-pub trait Context {
+pub trait Context: Send + Sync + 'static {
     fn state(&self) -> &ContextState;
     fn state_mut(&mut self) -> &mut ContextState;
 

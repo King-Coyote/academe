@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use bevy::prelude::*;
 use bevy_htn::prelude::*;
 use rand::prelude::*;
@@ -13,10 +14,17 @@ impl Plugin for AiPlugin {
 
 #[derive(Default,)]
 pub struct EnemyContext {
+    pub name: String,
     state: ContextState,
     move_target: Vec2,
     current_pos: Vec2,
     move_timer_expired: bool,
+}
+
+#[derive(Default)]
+struct BehaviourMap {
+    pub behaviours: HashMap<String, Behaviour<EnemyContext>>,
+    // pub behaviours: HashMap<String, i32>,
 }
 
 impl Context for EnemyContext {
@@ -53,6 +61,18 @@ fn startup(
     let mut planner = Planner::default();
     let mut ctx = EnemyContext::default();
     planner.tick(&behaviour, &mut ctx);
+}
+
+fn ai_system(
+    assets: ResMut<Assets<ColorMaterial>>,
+    behaviour_map: Res<BehaviourMap>,
+    mut q_ai: Query<(&mut EnemyContext, &mut Planner<EnemyContext>)>,
+) {
+    for (mut ctx, mut planner) in q_ai.iter_mut() {
+        let durr = &behaviour_map.behaviours;
+        // let behaviour = behaviour_map.behaviours.get(&ctx.name).unwrap();
+        // planner.tick(behaviour, &mut *ctx);
+    }
 }
 
 const MAX_MOVE_DISTANCE: f32 = 300.0;

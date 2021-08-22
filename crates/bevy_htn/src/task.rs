@@ -10,7 +10,8 @@ pub enum TaskType {
 }
 
 pub struct Task<C> 
-    where C: Context
+where 
+    C: Context
 {
     pub(super) name: String,
     pub(super) index: usize,
@@ -84,15 +85,17 @@ impl<C: Context> Task<C> {
 
 
 struct TaskDecomposition<'s, C> 
-    where C: Context
+where
+    C: Context
 {
     ctx: &'s mut C,
     behaviour: &'s Behaviour<C>,
     calling_task: usize,
 }
 
-impl<'s, C> TaskDecomposition<'s, C> where
-C: Context
+impl<'s, C> TaskDecomposition<'s, C> 
+where
+    C: Context
 {
     pub fn new(calling: usize, ctx: &'s mut C, behaviour: &'s Behaviour<C>) -> Self {
         TaskDecomposition::<C> {

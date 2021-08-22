@@ -3,7 +3,8 @@ use crate::task::*;
 use std::marker::PhantomData;
 
 pub struct Behaviour<C>
-    where C: Context
+where 
+    C: Context
 {   
     tasks: Vec<Task<C>>,
     pub name: String,
