@@ -24,7 +24,6 @@ pub fn click_pathfind_system(
     mouse: Res<MouseState>,
     mut er_mouse: EventReader<MouseButtonInput>,
     q_navmesh: Query<&NavMesh>,
-    // mut q_navagent: Query<(Entity, &mut NavAgent,)>,
     mut q_player: Query<(&mut NavAgent, &Transform), With<Player>>,
 ) {
     for e in er_mouse.iter() {

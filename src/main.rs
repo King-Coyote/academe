@@ -24,6 +24,7 @@ mod ui;
 mod utils;
 mod nav;
 mod debug;
+mod ai_demo;
 
 fn area_texture_test(
     mut commands: Commands,

@@ -806,6 +806,7 @@ dependencies = [
  "intersect2d",
  "notify",
  "pathfinding",
+ "rand 0.8.4",
  "spade",
 ]
 
