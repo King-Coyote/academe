@@ -100,6 +100,9 @@ impl NavMesh {
     pub fn find_path(&self, a: Vec2, b: Vec2) -> Option<Vec<Vec2>> {
         // for some point, get the closest node's index with LOS
         let mut path: Vec<Vec2> = vec![b];
+        if self.points_have_los(&a, &b) {
+            return Some(path);
+        }
         let mut min_dist = f32::INFINITY;
         let start = self.medial_graph.nodes
             .iter()
