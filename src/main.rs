@@ -13,6 +13,8 @@ use space::*;
 use ui::*;
 use nav::*;
 use debug::*;
+use bevy_htn::prelude::*;
+use ai_demo::AiPlugin;
 
 #[macro_use]
 mod macros;
@@ -23,6 +25,7 @@ mod ui;
 mod utils;
 mod nav;
 mod debug;
+mod ai_demo;
 
 fn area_texture_test(
     mut commands: Commands,
