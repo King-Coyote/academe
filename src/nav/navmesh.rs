@@ -97,16 +97,16 @@ impl NavMesh {
         && !self.holes.iter().any(|hole| any_intersections_between(a, b, hole))
     }
 
-    pub fn find_path(&self, a: &Vec2, b: &Vec2) -> Option<Vec<Vec2>> {
+    pub fn find_path(&self, a: Vec2, b: Vec2) -> Option<Vec<Vec2>> {
         // for some point, get the closest node's index with LOS
-        let mut path: Vec<Vec2> = vec![*b];
+        let mut path: Vec<Vec2> = vec![b];
         let mut min_dist = f32::INFINITY;
         let start = self.medial_graph.nodes
             .iter()
             .enumerate()
             .fold(0, |closest, (index, node)| {
-                let dist = (*node - *a).length();
-                if dist < min_dist && self.points_have_los(a, node) {
+                let dist = (*node - a).length();
+                if dist < min_dist && self.points_have_los(&a, node) {
                     min_dist = dist;
                     return index
                 }
@@ -115,11 +115,11 @@ impl NavMesh {
         // the closer the euclidean distance, the better
         let heuristic = |n: &usize| {
             let pt = self.medial_graph.get(*n).unwrap();
-            (*b - *pt).length().round() as i32
+            (b - *pt).length().round() as i32
         };
         let success = |n: &usize| {
             let pt = self.medial_graph.get(*n).unwrap();
-            self.points_have_los(pt, b)
+            self.points_have_los(pt, &b)
         };
         astar(
             &start,

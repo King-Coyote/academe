@@ -1,5 +1,16 @@
-use bevy::prelude::*;
-use crate::game::*;
+use bevy::{
+    prelude::*,
+    input::{
+        ElementState,
+        mouse::{MouseButtonInput, MouseButton},
+    },
+};
+use crate::{
+    game::*,
+    input::*,
+    nav::*,
+    debug::*,
+};
 
 const SPEED_MULT: f32 = 5.0;
 
@@ -7,6 +18,26 @@ const SPEED_MULT: f32 = 5.0;
 pub struct NavAgent {
     pub current: Option<Vec2>,
     pub path: Vec<Vec2>,
+}
+
+pub fn click_pathfind_system(
+    mouse: Res<MouseState>,
+    mut er_mouse: EventReader<MouseButtonInput>,
+    q_navmesh: Query<&NavMesh>,
+    // mut q_navagent: Query<(Entity, &mut NavAgent,)>,
+    mut q_player: Query<(&mut NavAgent, &Transform), With<Player>>,
+) {
+    for e in er_mouse.iter() {
+        if e.state != ElementState::Released || e.button != MouseButton::Left {
+            continue;
+        }
+        let (mut player_agent, player_trans) = q_player.single_mut().expect("There should be exactly 1 player!");
+        let navmesh = q_navmesh.single().expect("Only allowing 1 navmesh rn");
+        let player_pos = player_trans.translation.truncate();
+        if let Some(path) = navmesh.find_path(player_pos, mouse.world_pos) {
+            player_agent.path = path;
+        }
+    }
 }
 
 pub fn navagent_system(

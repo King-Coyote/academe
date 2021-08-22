@@ -51,41 +51,27 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
 
     commands
         .spawn()
-        // .insert_bundle(GeometryBuilder::build_as(
-        //     &shape,
-        //     ShapeColors::outlined(Color::rgba(0.0, 0.3, 0.75, 0.25), Color::BLUE),
-        //     DrawMode::Outlined {
-        //         fill_options: FillOptions::default(),
-        //         outline_options: StrokeOptions::default().with_line_width(1.0),
-        //     },
-        //     Transform::from_xyz(0.0, 0.0, 10.0),
-        // ))
         .insert(navmesh)
         .insert(Polygon { points, max_dim })
         .insert(ObjectInteraction::default())
         .insert(Transform::from_xyz(0.0, 0.0, 10.0))
-        // .insert(InteractableObject {
-        //     min_dist: max_dim / 2.0,
-        //     mouse_inside: Some(Box::new(move |pos: &Vec2, mouse: &MouseState| {
-        //         point_inside_polygon(&mouse.world_pos, &*closure_points)
-        //     })),
-        //     ..Default::default()
-        // })
         .insert(ClickHandlers {
             right: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
                 let world_pos = mouse.world_pos;
                 let ui_pos = mouse.ui_pos;
                 cmds.spawn().insert(ContextMenuSpawn {
                     pos: ui_pos,
-                    items: vec![ContextMenuItem {
-                        label: "Spawn test".to_string(),
-                        handlers: Some(ClickHandlers {
-                            left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
-                                spawn_standard_boi(&world_pos, cmds, mouse);
-                            })),
-                            ..Default::default()
-                        }),
-                    }],
+                    items: vec![
+                        ContextMenuItem {
+                            label: "Spawn Enemy".to_string(),
+                            handlers: Some(ClickHandlers {
+                                left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
+                                    spawn_standard_boi(world_pos, cmds, true);
+                                })),
+                                ..Default::default()
+                            }),
+                        },
+                    ],
                 });
             })),
             ..Default::default()

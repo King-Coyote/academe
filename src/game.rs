@@ -25,12 +25,26 @@ impl Plugin for GamePlugin {
 
 // UTILITY FNS
 
-pub fn spawn_standard_boi(pos: &Vec2, cmds: &mut Commands, mouse: &MouseState) {
+pub struct Enemy;
+pub struct Player;
+
+pub fn spawn_standard_boi(
+    pos: Vec2,
+    cmds: &mut Commands,
+    is_enemy: bool,
+) {
     let mut entity = cmds.spawn();
     let spawned = entity.id();
-    entity
+    let filename = {
+        if is_enemy {
+            "textures/sprites/enemy.png".to_string()
+        } else {
+            "textures/sprites/player.png".to_string()
+        }
+    };
+    let entity = entity
         .insert(Appearance {
-            filename: "textures/sprites/circle_lmao.png".to_string(),
+            filename,
             ..Default::default()
         })
         .insert(Body {
@@ -39,6 +53,7 @@ pub fn spawn_standard_boi(pos: &Vec2, cmds: &mut Commands, mouse: &MouseState) {
             endurance: 10,
         })
         .insert(Movement{level: 1})
+        .insert(Enemy)
         .insert(NavAgent::default())
         .insert(Transform::from_translation(pos.extend(100.0)))
         .insert(ClickHandlers {
@@ -58,4 +73,9 @@ pub fn spawn_standard_boi(pos: &Vec2, cmds: &mut Commands, mouse: &MouseState) {
             })),
             ..Default::default()
         });
+    if is_enemy {
+        entity.insert(Enemy);
+    } else {
+        entity.insert(Player);
+    }
 }
