@@ -1,5 +1,5 @@
 use std::collections::{VecDeque, HashMap,};
-use bevy_ecs::Entity;
+use bevy_ecs::entity::Entity;
 
 pub trait Context {
     fn state(&self) -> &ContextState;
