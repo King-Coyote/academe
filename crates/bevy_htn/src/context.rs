@@ -17,7 +17,6 @@ pub trait Context: Send + Sync + 'static {
     fn test_value(&self, key: &str, value: &Variant) -> Option<bool>;
 }
 
-#[derive(Default,)]
 pub struct ContextState {
     pub(crate) exec_state: ExecutionState,
     pub(crate) record: Record,
@@ -27,6 +26,21 @@ pub struct ContextState {
     pub dirty: bool,
     vars: HashMap<String, Variant>,
     transactions: Vec<Vec<String>>,
+}
+
+impl Default for ContextState {
+    fn default() -> Self {
+        ContextState {
+            exec_state: ExecutionState::default(),
+            record: Record::default(),
+            last_record: Record::default(),
+            partial_queue: VecDeque::default(),
+            paused: bool::default(),
+            dirty: true,
+            vars: HashMap::default(),
+            transactions: vec![],
+        }
+    }
 }
 
 impl ContextState {

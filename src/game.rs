@@ -1,9 +1,13 @@
+use std::default;
+
 use crate::{
     input::MouseState,
     ui::*,
     nav::NavAgent,
+    ai_demo::EnemyContext,
 };
 use bevy::prelude::*;
+use bevy_htn::prelude::*;
 
 mod aspects;
 pub use aspects::*;
@@ -74,7 +78,17 @@ pub fn spawn_standard_boi(
             ..Default::default()
         });
     if is_enemy {
-        entity.insert(Enemy);
+        entity.insert(Enemy)
+            .insert(EnemyContext {
+                name: "BeEnemy".to_string(),
+                state: ContextState::default(),
+                move_target: None,
+                current_pos: pos,
+                wants_new_location: true,
+                current_time: 0.0,
+            })
+            .insert(Planner::<EnemyContext>::default())
+            ;
     } else {
         entity.insert(Player);
     }

@@ -13,6 +13,7 @@ use space::*;
 use ui::*;
 use nav::*;
 use debug::*;
+use ai_demo::*;
 use bevy_htn::prelude::*;
 
 #[macro_use]
@@ -48,6 +49,7 @@ fn main() {
         .add_plugin(GamePlugin)
         .add_plugin(NavPlugin)
         .add_plugin(DebugPlugin)
+        .add_plugin(AiPlugin)
         .add_startup_system(area_texture_test.system())
         .run();
 }
