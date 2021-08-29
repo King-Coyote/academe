@@ -48,10 +48,8 @@ pub fn navagent_system(
             let dist = diff.length();
             let step = movement.level as f32 * SPEED_MULT; // * delta t
             if dist < f32::EPSILON {
-                info!("Destination reached.");
                 nav.current = None;
             } else if step > dist {
-                info!("Step > dist: just going straight to the location.");
                 // just move it to destination
                 nav.current = None;
                 transform.translation.x = current.x;

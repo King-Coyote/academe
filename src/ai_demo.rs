@@ -56,7 +56,6 @@ fn startup(
             .do_action("Choose new location", |ctx: &mut EnemyContext| -> TaskStatus {
                 if let Some(target) = ctx.move_target {
                     if target.abs_diff_eq(ctx.current_pos, f32::EPSILON) {
-                        info!("current time is {}!", ctx.current_time);
                         ctx.wants_new_location = true;
                         ctx.current_time = 0.0;
                         return TaskStatus::Success;

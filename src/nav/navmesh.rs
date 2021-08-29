@@ -135,7 +135,24 @@ impl NavMesh {
                 .rev() // want this to have last point as index 0 (since we'll be popping from it)
                 .map(|i| *self.medial_graph.get(*i).unwrap())
             );
-            // path.push(*a);
+            // let durr = path.iter().enumerate().rev().find(|e| e.1
+            let mut succ_had_los = false;
+            loop {
+                if path.len() < 2 {
+                    break;
+                }
+                let this_has_los = match succ_had_los {
+                    true => true,
+                    false => self.points_have_los(&a, path.last().unwrap())
+                };
+                let successor = path.get(path.len() - 2).unwrap();
+                succ_had_los = self.points_have_los(&a, &successor);
+                if succ_had_los && this_has_los {
+                    path.pop();
+                } else {
+                    break;
+                }
+            }
             path
         })
     }
