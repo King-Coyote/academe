@@ -160,11 +160,13 @@ impl<'s, C: Context> BehaviourBuilder<'s, C> {
         }
     }
 
+    /// Only have to do ONE of these tasks for it to be a success
     pub fn selector(&mut self, name: &str) -> &mut Self {
         self.create_task(name, TaskType::Selector);
         self
     }
 
+    /// ALL tasks in this sequence must be successful to consider it a success
     pub fn sequence(&mut self, name: &str) -> &mut Self {
         self.create_task(name, TaskType::Sequence);
         self
@@ -174,6 +176,12 @@ impl<'s, C: Context> BehaviourBuilder<'s, C> {
         self.create_task(name, TaskType::Primitive);
         self
     }
+
+    pub fn task_macro(&mut self, task_macro: impl TaskMacro<C>) -> &mut Self {
+        task_macro.build(self);
+        self
+    }
+
     pub fn condition<K: Condition<C> + 'static>(&mut self, name: &str, condition: K) -> &mut Self {
         self.tasks[self.current_task.unwrap()]
             .conditions.push(Box::new(condition));

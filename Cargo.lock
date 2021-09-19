@@ -249,6 +249,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c6b14f8ba7c373fdf7bd27547bb95f2849b2569bf02bbf3d19ca54e9d692de4f"
 dependencies = [
+ "bevy_dylib",
  "bevy_internal",
  "syn",
 ]
@@ -293,7 +294,7 @@ dependencies = [
  "js-sys",
  "ndk-glue 0.2.1",
  "notify",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "rand 0.8.4",
  "ron",
  "serde",
@@ -315,7 +316,7 @@ dependencies = [
  "bevy_ecs",
  "bevy_reflect",
  "bevy_utils",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "rodio",
 ]
 
@@ -358,7 +359,16 @@ dependencies = [
  "bevy_ecs",
  "bevy_log",
  "bevy_utils",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
+]
+
+[[package]]
+name = "bevy_dylib"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "efa62c7c03470969539a07337bf8c5694c0b952678fd081d68b6331842134b85"
+dependencies = [
+ "bevy_internal",
 ]
 
 [[package]]
@@ -386,7 +396,7 @@ dependencies = [
  "downcast-rs",
  "fixedbitset 0.4.0",
  "fxhash",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "rand 0.8.4",
  "serde",
  "thiserror",
@@ -557,7 +567,7 @@ dependencies = [
  "downcast-rs",
  "erased-serde",
  "glam 0.13.1",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "serde",
  "smallvec 1.6.1",
  "thiserror",
@@ -600,7 +610,7 @@ dependencies = [
  "hexasphere",
  "image",
  "once_cell",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "serde",
  "shaderc",
  "smallvec 1.6.1",
@@ -621,7 +631,7 @@ dependencies = [
  "bevy_reflect",
  "bevy_transform",
  "bevy_utils",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "ron",
  "serde",
  "thiserror",
@@ -760,7 +770,7 @@ dependencies = [
  "crossbeam-channel 0.5.1",
  "crossbeam-utils 0.8.5",
  "futures-lite",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "wgpu",
 ]
 
@@ -876,9 +886,9 @@ checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 
 [[package]]
 name = "bytes"
-version = "1.0.1"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b700ce4376041dcd0a327fd0097c41095743c4c8af8887265942faf1100bd040"
+checksum = "c4872d67bab6358e59559027aa3b9157c53d9358c51423c17554809a8858e0f8"
 
 [[package]]
 name = "cache-padded"
@@ -969,9 +979,9 @@ checksum = "b0113a8ae379a061c89a71d57a809439f5ce550b6a76063ab5ba2b1cb180971f"
 
 [[package]]
 name = "clang-sys"
-version = "1.2.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "853eda514c284c2287f4bf20ae614f8781f40a81d32ecda6e91449304dfe077c"
+checksum = "81cf2cc85830eae84823884db23c5306442a6c3d5bfd3beb2f2a2c829faa1816"
 dependencies = [
  "glob",
  "libc",
@@ -1035,9 +1045,9 @@ checksum = "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b"
 
 [[package]]
 name = "combine"
-version = "4.6.0"
+version = "4.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2d47c1b11006b87e492b53b313bb699ce60e16613c4dddaa91f8f7c220ab2fa"
+checksum = "a909e4d93292cd8e9c42e189f61681eff9d67b6541f96b8a1a737f23737bd001"
 dependencies = [
  "bytes",
  "memchr",
@@ -1203,7 +1213,7 @@ dependencies = [
  "ndk-glue 0.3.0",
  "nix",
  "oboe",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "stdweb 0.1.3",
  "thiserror",
  "web-sys",
@@ -1647,7 +1657,7 @@ dependencies = [
  "gfx-hal",
  "libloading 0.6.7",
  "log",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "range-alloc",
  "raw-window-handle",
  "smallvec 1.6.1",
@@ -1670,7 +1680,7 @@ dependencies = [
  "gfx-auxil",
  "gfx-hal",
  "log",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "range-alloc",
  "raw-window-handle",
  "smallvec 1.6.1",
@@ -1706,7 +1716,7 @@ dependencies = [
  "libloading 0.6.7",
  "log",
  "naga",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "raw-window-handle",
  "spirv_cross",
  "wasm-bindgen",
@@ -1731,7 +1741,7 @@ dependencies = [
  "metal",
  "naga",
  "objc",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "range-alloc",
  "raw-window-handle",
  "spirv_cross",
@@ -1753,7 +1763,7 @@ dependencies = [
  "log",
  "naga",
  "objc",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "raw-window-handle",
  "smallvec 1.6.1",
  "winapi 0.3.9",
@@ -2209,9 +2219,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.100"
+version = "0.2.101"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1fa8cddc8fbbee11227ef194b5317ed014b8acbf15139bd716a18ad3fe99ec5"
+checksum = "3cb00336871be5ed2c8ed44b60ae9959dc5b9f08539422ed43f09e34ecaeba21"
 
 [[package]]
 name = "libloading"
@@ -2257,9 +2267,9 @@ dependencies = [
 
 [[package]]
 name = "lock_api"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0382880606dff6d15c9476c416d18690b72742aa7b605bb6dd6ec9030fbf07eb"
+checksum = "712a4d093c9976e24e7dbca41db895dabcbac38eb5f4045393d17a95bdfb1109"
 dependencies = [
  "scopeguard",
 ]
@@ -2882,13 +2892,13 @@ dependencies = [
 
 [[package]]
 name = "parking_lot"
-version = "0.11.1"
+version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d7744ac029df22dca6284efe4e898991d28e3085c706c972bcd7da4a27a15eb"
+checksum = "7d17b78036a60663b797adeaee46f5c9dfebb86948d1255007a1d6be0271ff99"
 dependencies = [
  "instant",
  "lock_api",
- "parking_lot_core 0.8.3",
+ "parking_lot_core 0.8.5",
 ]
 
 [[package]]
@@ -2905,9 +2915,9 @@ dependencies = [
 
 [[package]]
 name = "parking_lot_core"
-version = "0.8.3"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa7a782938e745763fe6907fc6ba86946d72f49fe7e21de074e08128a99fb018"
+checksum = "d76e8e1493bcac0d2766c42737f34458f1c8c50c0d23bcb24ea953affb273216"
 dependencies = [
  "cfg-if 1.0.0",
  "instant",
@@ -3371,18 +3381,18 @@ checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
 name = "serde"
-version = "1.0.128"
+version = "1.0.130"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1056a0db1978e9dbf0f6e4fca677f6f9143dc1c19de346f22cac23e422196834"
+checksum = "f12d06de37cf59146fbdecab66aa99f9fe4f78722e3607577a5375d66bd0c913"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.128"
+version = "1.0.130"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13af2fbb8b60a8950d6c72a56d2095c28870367cc8e10c55e9745bac4995a2c4"
+checksum = "d7bc1a1ab1961464eae040d96713baa5a724a8152c1222492465b54322ec508b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3391,9 +3401,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.66"
+version = "1.0.67"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "336b10da19a12ad094b59d870ebde26a45402e5b470add4b5fd03c5048a32127"
+checksum = "a7f9e390c27c3c0ce8bc5d725f6e4d30a29d26659494aa4b17535f7522c5c950"
 dependencies = [
  "itoa",
  "ryu",
@@ -3694,18 +3704,18 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.26"
+version = "1.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93119e4feac1cbe6c798c34d3a53ea0026b0b1de6a120deef895137c0529bfe2"
+checksum = "283d5230e63df9608ac7d9691adc1dfb6e701225436eb64d0b9a7f0a5a04f6ec"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.26"
+version = "1.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "060d69a0afe7796bf42e9e2ff91f5ee691fb15c53d38b4b62a9a53eb23164745"
+checksum = "fa3884228611f5cd3608e2d409bf7dce832e4eb3135e3f11addbd7e41bd68e71"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3976,7 +3986,7 @@ dependencies = [
  "arrayvec",
  "js-sys",
  "naga",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "raw-window-handle",
  "smallvec 1.6.1",
  "syn",
@@ -4009,7 +4019,7 @@ dependencies = [
  "gpu-alloc",
  "gpu-descriptor",
  "naga",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "raw-window-handle",
  "smallvec 1.6.1",
  "thiserror",
@@ -4091,7 +4101,7 @@ dependencies = [
  "ndk-glue 0.2.1",
  "ndk-sys",
  "objc",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "percent-encoding",
  "raw-window-handle",
  "wasm-bindgen",

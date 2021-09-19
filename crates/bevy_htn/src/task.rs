@@ -239,3 +239,11 @@ pub enum DecompositionStatus {
 impl Default for DecompositionStatus {
     fn default() -> Self {DecompositionStatus::Rejected}
 }
+
+/// adds a block of behaviour to a behaviourbuilder
+pub trait TaskMacro<T>
+where
+    T: Context
+{
+    fn build(&self, builder: &mut BehaviourBuilder<T>);
+}

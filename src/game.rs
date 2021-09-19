@@ -4,7 +4,7 @@ use crate::{
     input::MouseState,
     ui::*,
     nav::NavAgent,
-    ai_demo::EnemyContext,
+    ai::{ActorStore, EnemyContext},
 };
 use bevy::prelude::*;
 use bevy_htn::prelude::*;
@@ -82,10 +82,12 @@ pub fn spawn_standard_boi(
             .insert(EnemyContext {
                 name: "BeEnemy".to_string(),
                 state: ContextState::default(),
-                move_target: None,
-                current_pos: pos,
-                wants_new_location: true,
-                current_time: 0.0,
+                actor_store: ActorStore {
+                    move_target: None,
+                    current_pos: pos,
+                    wants_new_location: true,
+                    current_time: 0.0,
+                }
             })
             .insert(Planner::<EnemyContext>::default())
             ;

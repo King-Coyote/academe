@@ -2,7 +2,16 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 use bevy_htn::prelude::*;
 use rand::prelude::*;
-use crate::{NavAgent, NavMesh};
+use crate::{
+    NavAgent, NavMesh,
+    game::Player,
+};
+
+mod actors;
+mod factions;
+
+pub use actors::*;
+pub use factions::*;
 
 pub struct AiPlugin;
 
@@ -21,10 +30,17 @@ impl Plugin for AiPlugin {
 pub struct EnemyContext {
     pub name: String,
     pub state: ContextState,
-    pub move_target: Option<Vec2>,
-    pub current_pos: Vec2,
-    pub wants_new_location: bool,
-    pub current_time: f32,
+    pub actor_store: ActorStore,
+}
+
+impl ActorContext for EnemyContext {
+    fn get_store(&self) -> &ActorStore {
+        &self.actor_store
+    }
+
+    fn get_store_mut(&mut self) -> &mut ActorStore {
+        &mut self.actor_store
+    }
 }
 
 #[derive(Default)]
@@ -47,26 +63,12 @@ fn startup(
     mut behaviour_map: ResMut<BehaviourMap>,
     mut commands: Commands,
 ) {
-    info!("Setting up enemy behaviour!");
-    let mut builder: BehaviourBuilder<EnemyContext> = BehaviourBuilder::new("Herbivore");
+    let mut builder: BehaviourBuilder<EnemyContext> = BehaviourBuilder::new("Enemy");
     builder
-    .selector("BeEnemy")
-        .primitive("MoveRandomly")
-            .condition("The timer has expired", |ctx: &EnemyContext| ctx.current_time > MOVE_TIMEOUT )
-            .do_action("Choose new location", |ctx: &mut EnemyContext| -> TaskStatus {
-                if let Some(target) = ctx.move_target {
-                    if target.abs_diff_eq(ctx.current_pos, f32::EPSILON) {
-                        ctx.wants_new_location = true;
-                        ctx.current_time = 0.0;
-                        return TaskStatus::Success;
-                    }
-                }
-                ctx.wants_new_location = false;
-                TaskStatus::Continue
-            })
+        .selector("BeEnemy")
+            .task_macro(MoveRandomly)
         .end()
-    .end()
-    ;
+        ;
     let behaviour = builder.build();
     behaviour.print();
     let mut planner = Planner::default();
@@ -84,15 +86,16 @@ fn ai_system(
     for (mut ctx, mut planner, mut nav) in q_ai.iter_mut() {
         let behaviour = behaviour_map.behaviours.get(&ctx.name).unwrap();
         planner.tick(behaviour, &mut *ctx);
-        if ctx.wants_new_location {
+        let store = ctx.get_store_mut();
+        if store.wants_new_location {
             let navmesh = q_navmesh.single().expect("There should be exactly 1 navmesh");
-            let curr = ctx.current_pos;
+            let curr = store.current_pos;
             loop {
                 let dest = random_nearby_location(curr);
                 if let Some(path) = navmesh.find_path(curr, dest) {
-                    ctx.move_target = Some(dest);
+                    store.move_target = Some(dest);
                     nav.path = path;
-                    ctx.wants_new_location = false;
+                    store.wants_new_location = false;
                     break;
                 }
             }
@@ -104,14 +107,17 @@ fn senses_system(
     time: Res<Time>,
     mut q_context: Query<(Entity, &mut EnemyContext, &Transform)>,
 ) {
-    for (entity, mut context, transform) in q_context.iter_mut() {
-        context.current_time += time.delta_seconds();
-        context.current_pos = transform.translation.truncate();
+    for (entity, mut ctx, transform) in q_context.iter_mut() {
+        let store = ctx.get_store_mut();
+        store.current_time += time.delta_seconds();
+        store.current_pos = transform.translation.truncate();
     }
 }
 
 const MAX_MOVE_DISTANCE: f32 = 700.0;
 const MOVE_TIMEOUT: f32 = 4.0;
+const SIGHT_RADIUS: f32 = 400.0;
+const FLEE_DISTANCE: f32 = 400.0;
 
 fn random_nearby_location(p: Vec2) -> Vec2 {
     let mut rng = rand::thread_rng();
@@ -122,4 +128,9 @@ fn random_nearby_location(p: Vec2) -> Vec2 {
         p.x + dx,
         p.y + dy
     )
+}
+
+fn point_away_from(current: Vec2, away_from: Vec2) -> Vec2 {
+    let diff = (current - away_from).normalize();
+    current + (diff * FLEE_DISTANCE)
 }
