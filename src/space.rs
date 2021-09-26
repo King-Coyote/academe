@@ -14,7 +14,7 @@ pub struct SpacePlugin;
 
 fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
     //outdoors
-    let points = Arc::new(vec![
+    let points = vec![
         Vec2::new(-884.20544, -75.55908),
         Vec2::new(-752.34406, -10.681641),
         Vec2::new(-389.2116, -201.02673),
@@ -24,33 +24,26 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
         Vec2::new(27.454956, 356.94482),
         Vec2::new(886.8773, -99.542725),
         Vec2::new(-24.293274, -530.56366),
-    ]);
+    ];
     // //indoors
-    // let points = Arc::new(vec![
+    // let points = vec![
     //     Vec2::new(-288.22113, -1.0939026),
     //     Vec2::new(-72.20764, 99.17911),
     //     Vec2::new(293.77295, -94.57794),
     //     Vec2::new(77.69818, -196.9029),
-    // ]);
+    // ];
     let closure_points = points.clone();
     let max_dim = max_polygon_width(&points);
     let shape = shapes::Polygon {
-        points: (*points).clone(),
+        points: points.clone(),
         closed: true,
     };
     let bg_color = materials.add(Color::BLACK.into());
-    
-    let hole = vec![
-        Vec2::new(-500.0, -90.0),
-        Vec2::new(-300.0, -90.0),
-        Vec2::new(-300.0, -60.0),
-        Vec2::new(-500.0, -60.0),
-    ];
     let navmesh = {
         let mut builder = NavMeshBuilder::new();
         builder
-            .with_boundary(&*points)
-            .with_hole(&hole);
+            .with_boundary(&*points);
+            // .with_hole(&hole);
         builder.build().unwrap()
     };
 

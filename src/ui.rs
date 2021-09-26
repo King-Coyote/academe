@@ -20,8 +20,10 @@ mod debug;
 pub use debug::*;
 
 // systems relating to showing UI elements, views on objects, etc
+#[derive(Reflect, Default)]
+#[reflect(Component)]
 pub struct Polygon {
-    pub points: Arc<Vec<Vec2>>,
+    pub points: Vec<Vec2>,
     pub max_dim: f32,
 }
 
@@ -290,6 +292,7 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.init_resource::<MainStyle>()
             .insert_resource(InteractableOrder::default())
+            .register_type::<Polygon>()
             .add_event::<ObjectHovered>()
             .add_startup_system(setup.system())
             // .add_startup_system(deleteme_ui_test.system())

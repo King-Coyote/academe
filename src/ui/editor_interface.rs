@@ -18,10 +18,10 @@ pub fn save_load(
     // save
     if keys.pressed(KeyCode::LControl) && keys.just_released(KeyCode::S) {
         info!("Saving scene to {}", SAVE_PATH);
-        let scene = DynamicScene::from_world(world, &registry);
+        let scene = DynamicScene::from_world(world, registry);
         let ron = scene.serialize_ron(registry).unwrap();
         info!("Serialized scene to {}", ron);
-        write_scene(&SAVE_PATH, &ron.as_bytes()).unwrap();
+        write_scene(&SAVE_PATH, ron.as_bytes()).unwrap();
     }
     // load the scene ya filthy animal
     if keys.pressed(KeyCode::LControl) && keys.just_released(KeyCode::L) {
