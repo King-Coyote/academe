@@ -30,11 +30,11 @@ pub fn click_pathfind_system(
         if e.state != ElementState::Released || e.button != MouseButton::Left {
             continue;
         }
-        let (mut player_agent, player_trans) = q_player.single_mut().expect("There should be exactly 1 player!");
-        let navmesh = q_navmesh.single().expect("Only allowing 1 navmesh rn");
-        let player_pos = player_trans.translation.truncate();
-        if let Some(path) = navmesh.find_path(player_pos, mouse.world_pos) {
-            player_agent.path = path;
+        if let (Ok((mut player_agent, player_trans)), Ok(navmesh)) = (q_player.single_mut(), q_navmesh.single()) {
+            let player_pos = player_trans.translation.truncate();
+            if let Some(path) = navmesh.find_path(player_pos, mouse.world_pos) {
+                player_agent.path = path;
+            }
         }
     }
 }

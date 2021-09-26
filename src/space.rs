@@ -13,20 +13,25 @@ use std::sync::Arc;
 pub struct SpacePlugin;
 
 fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
+    //outdoors
     let points = Arc::new(vec![
-        Vec2::new(-711.90466, -97.48465),
-        Vec2::new(-244.30817, 137.44873),
-        Vec2::new(42.09662, -4.9219666),
-        Vec2::new(331.9917, 133.8147),
-        Vec2::new(528.577, 36.042236),
-        Vec2::new(192.21948, -133.64969),
-        Vec2::new(330.4182, -201.00244),
-        Vec2::new(369.19006, -186.15796),
-        Vec2::new(270.9057, -138.5155),
-        Vec2::new(568.0725, 13.116638),
-        Vec2::new(796.41724, -98.02606),
-        Vec2::new(42.268982, -475.73297),
+        Vec2::new(-884.20544, -75.55908),
+        Vec2::new(-752.34406, -10.681641),
+        Vec2::new(-389.2116, -201.02673),
+        Vec2::new(-173.82013, -99.71777),
+        Vec2::new(-173.34747, 40.61139),
+        Vec2::new(-394.4218, 159.14343),
+        Vec2::new(27.454956, 356.94482),
+        Vec2::new(886.8773, -99.542725),
+        Vec2::new(-24.293274, -530.56366),
     ]);
+    // //indoors
+    // let points = Arc::new(vec![
+    //     Vec2::new(-288.22113, -1.0939026),
+    //     Vec2::new(-72.20764, 99.17911),
+    //     Vec2::new(293.77295, -94.57794),
+    //     Vec2::new(77.69818, -196.9029),
+    // ]);
     let closure_points = points.clone();
     let max_dim = max_polygon_width(&points);
     let shape = shapes::Polygon {
@@ -81,6 +86,7 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
 impl Plugin for SpacePlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_plugin(ShapePlugin)
-            .add_startup_system(setup.system());
+            .add_startup_system(setup.system())
+            ;
     }
 }

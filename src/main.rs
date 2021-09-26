@@ -6,7 +6,7 @@
 )]
 #![feature(exact_size_is_empty)]
 
-use bevy::prelude::*;
+use bevy::{input::{ElementState, mouse::MouseButtonInput}, prelude::*};
 use game::*;
 use input::*;
 use space::*;
@@ -32,13 +32,24 @@ fn area_texture_test(
     mut materials: ResMut<Assets<ColorMaterial>>,
     assets: Res<AssetServer>,
 ) {
-    let tex_handle: Handle<Texture> = assets.load("textures/render.png");
+    let tex_handle: Handle<Texture> = assets.load("textures/outdoors.png");
     commands.spawn_bundle(SpriteBundle {
         material: materials.add(tex_handle.into()),
         ..Default::default()
     });
     spawn_standard_boi(Vec2::new(0.0, 0.0), &mut commands, false);
 }
+
+// fn click_debug(
+//     mouse: Res<MouseState>,
+//     mut er_mouseinput: EventReader<MouseButtonInput>,
+// ) {
+//     for e in er_mouseinput.iter() {
+//         if e.button == MouseButton::Left && e.state == ElementState::Released {
+//             println!("Clicked at: {}", mouse.world_pos);
+//         }
+//     }
+// }
 
 fn main() {
     App::build()
@@ -51,5 +62,6 @@ fn main() {
         .add_plugin(DebugPlugin)
         .add_plugin(AiPlugin)
         .add_startup_system(area_texture_test.system())
+        // .add_system(click_debug.system())
         .run();
 }

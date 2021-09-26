@@ -25,7 +25,7 @@ pub fn save_load(
     }
     // load the scene ya filthy animal
     if keys.pressed(KeyCode::LControl) && keys.just_released(KeyCode::L) {
-        info!("Loading scene from ");
+        info!("Loading scene from {}", SAVE_PATH);
     }
 }
 
