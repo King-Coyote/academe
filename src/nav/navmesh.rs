@@ -54,20 +54,20 @@ impl<'a> NavMeshBuilder<'a> {
             holes: self.holes.iter().map(|v| v.to_vec()).collect(),
             medial_graph: graph,
             triangulation: triangulation,
-            last_point: raw_from_vec2(*first_point),
-            outside_point: raw_from_vec2(get_outside_point(boundary)),
         };
         Some(navmesh)
     }
 }
 
+#[derive(Reflect, Default)]
+#[reflect(Component)]
 pub struct NavMesh {
     boundary: Vec<Vec2>,
     holes: Vec<Vec<Vec2>>,
+    #[reflect(ignore)]
     medial_graph: Graph<Vec2>,
-    last_point: Point,
+    #[reflect(ignore)]
     triangulation: Triangulation,
-    outside_point: Point,
 }
 
 impl NavMesh {

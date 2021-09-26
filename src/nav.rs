@@ -15,12 +15,14 @@ pub struct NavPlugin;
 
 impl Plugin for NavPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_system_set(
-            SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
-                .with_system(navagent_system.system())
-        )
-        .add_system(click_pathfind_system.system())
-        ;
+        app
+            .register_type::<NavMesh>()
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
+                    .with_system(navagent_system.system())
+            )
+            .add_system(click_pathfind_system.system())
+            ;
     }
 }
