@@ -11,53 +11,55 @@ use spade::{
 use bevy::prelude::*;
 use std::collections::{HashMap};
 use pathfinding::directed::astar::astar;
+use serde::{Deserialize, Serialize};
+
 
 type CoordNum = f32;
 type Point = [CoordNum; 2];
 type EH<'a> = EdgeHandle<'a, Point, CdtEdge>;
 type Triangulation = ConstrainedDelaunayTriangulation<Point, FloatKernel, DelaunayWalkLocate>;
 
-pub struct NavMeshBuilder<'a> {
-    boundary: Option<&'a [Vec2]>,
-    holes: Vec<&'a [Vec2]>,
-}
+// pub struct NavMeshBuilder<'a> {
+//     boundary: Option<&'a [Vec2]>,
+//     holes: Vec<&'a [Vec2]>,
+// }
 
-impl<'a> NavMeshBuilder<'a> {
-    pub fn new() -> Self {
-        NavMeshBuilder {
-            boundary: None,
-            holes: vec![],
-        }
-    }
+// impl<'a> NavMeshBuilder<'a> {
+//     pub fn new() -> Self {
+//         NavMeshBuilder {
+//             boundary: None,
+//             holes: vec![],
+//         }
+//     }
 
-    pub fn with_boundary(&mut self, boundary: &'a [Vec2]) -> &mut Self {
-        self.boundary = Some(boundary);
-        self
-    }
+//     pub fn with_boundary(&mut self, boundary: &'a [Vec2]) -> &mut Self {
+//         self.boundary = Some(boundary);
+//         self
+//     }
 
-    pub fn with_hole(&mut self, hole: &'a [Vec2]) -> &mut Self {
-        self.holes.push(hole);
-        self
-    }
+//     pub fn with_hole(&mut self, hole: &'a [Vec2]) -> &mut Self {
+//         self.holes.push(hole);
+//         self
+//     }
 
-    pub fn build(self) -> Option<NavMesh> {
-        let first_point = self.boundary?.get(0)?;
-        let boundary = self.boundary?;
-        let mut triangulation = ConstrainedDelaunayTriangulation::with_walk_locate();
-        add_triangulation_boundary(&mut triangulation, &boundary);
-        for hole in self.holes.iter() {
-            add_triangulation_boundary(&mut triangulation, hole);
-        }
-        let graph = build_medial_graph(&triangulation, &boundary, &self.holes);
-        let mut navmesh = NavMesh {
-            boundary: boundary.to_vec(),
-            holes: self.holes.iter().map(|v| v.to_vec()).collect(),
-            medial_graph: graph,
-            triangulation: triangulation,
-        };
-        Some(navmesh)
-    }
-}
+//     pub fn build(self) -> Option<NavMesh> {
+//         let first_point = self.boundary?.get(0)?;
+//         let boundary = self.boundary?;
+//         let mut triangulation = ConstrainedDelaunayTriangulation::with_walk_locate();
+//         add_triangulation_boundary(&mut triangulation, &boundary);
+//         for hole in self.holes.iter() {
+//             add_triangulation_boundary(&mut triangulation, hole);
+//         }
+//         let graph = build_medial_graph(&triangulation, &boundary, &self.holes);
+//         let mut navmesh = NavMesh {
+//             boundary: boundary.to_vec(),
+//             holes: self.holes.iter().map(|v| v.to_vec()).collect(),
+//             medial_graph: graph,
+//             triangulation: triangulation,
+//         };
+//         Some(navmesh)
+//     }
+// }
 
 #[derive(Reflect, Default)]
 #[reflect(Component)]
@@ -71,6 +73,33 @@ pub struct NavMesh {
 }
 
 impl NavMesh {
+    /// consumes boundary and hole vectors
+    pub fn new(boundary: Vec<Vec2>, holes: Vec<Vec<Vec2>>) -> Option<Self> {
+        let mut triangulation = ConstrainedDelaunayTriangulation::with_walk_locate();
+        add_triangulation_boundary(&mut triangulation, &boundary);
+        for hole in holes.iter() {
+            add_triangulation_boundary(&mut triangulation, hole);
+        }
+        let medial_graph = build_medial_graph(&triangulation, &boundary, &holes);
+        let mut navmesh = NavMesh {
+            boundary,
+            holes,
+            medial_graph,
+            triangulation,
+        };
+        Some(navmesh)
+    }
+
+    pub fn build(&mut self) {
+        let mut triangulation = ConstrainedDelaunayTriangulation::with_walk_locate();
+        add_triangulation_boundary(&mut triangulation, &self.boundary);
+        for hole in self.holes.iter() {
+            add_triangulation_boundary(&mut triangulation, hole);
+        }
+        self.medial_graph = build_medial_graph(&triangulation, &self.boundary, &self.holes);
+        self.triangulation = triangulation;
+    }
+
     pub fn edges(&self) -> EdgesIterator {
         EdgesIterator::new(self.triangulation.edges())
     }
@@ -267,7 +296,7 @@ fn add_triangulation_boundary(triangulation: &mut Triangulation, vertices: &[Vec
     }
 }
 
-fn build_medial_graph(triangulation: &Triangulation, boundary: &[Vec2], holes: &[&[Vec2]]) -> Graph<Vec2> {
+fn build_medial_graph(triangulation: &Triangulation, boundary: &[Vec2], holes: &[Vec<Vec2>]) -> Graph<Vec2> {
     let mut visited: HashMap<(u32, u32), usize> = HashMap::new();
     let mut graph: Graph<Vec2> = Graph::default();
 

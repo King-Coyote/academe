@@ -6,7 +6,11 @@
 )]
 #![feature(exact_size_is_empty)]
 
-use bevy::{input::{ElementState, mouse::MouseButtonInput}, prelude::*};
+use bevy::{
+    asset::AssetServerSettings,
+    input::{ElementState, mouse::MouseButtonInput},
+    prelude::*
+};
 use game::*;
 use input::*;
 use space::*;
@@ -53,6 +57,9 @@ fn area_texture_test(
 
 fn main() {
     App::build()
+        .insert_resource(AssetServerSettings {
+            asset_folder: "/home/alex/projects/bevyacad/assets".to_string(),
+        })
         .add_plugins(DefaultPlugins)
         .add_plugin(InputPlugin)
         .add_plugin(SpacePlugin)

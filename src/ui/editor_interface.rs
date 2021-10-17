@@ -6,7 +6,7 @@ use std::{
     path::Path,
 };
 
-const SAVE_PATH: &str = "/home/alex/projects/bevyacad/assets/scenes/editor_test.scn";
+const SAVE_PATH: &str = "/home/alex/projects/bevyacad/assets/scenes/editor_test.scn.ron";
 
 pub fn save_load(
     world: &mut World,
@@ -26,6 +26,16 @@ pub fn save_load(
     // load the scene ya filthy animal
     if keys.pressed(KeyCode::LControl) && keys.just_released(KeyCode::L) {
         info!("Loading scene from {}", SAVE_PATH);
+        let scene_handle: Handle<DynamicScene> = {
+            let asset_server = world.get_resource::<AssetServer>().unwrap();
+            asset_server.load(SAVE_PATH)
+        };
+        // SceneSpawner can "spawn" scenes. "Spawning" a scene creates a new instance of the scene in
+        // the World with new entity ids. This guarantees that it will not overwrite existing
+        // entities
+        let mut scene_spawner = world.get_resource_mut::<SceneSpawner>().unwrap();
+        scene_spawner.spawn_dynamic(scene_handle);
+        scene_spawner.is_changed();
     }
 }
 

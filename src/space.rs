@@ -39,13 +39,14 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
         closed: true,
     };
     let bg_color = materials.add(Color::BLACK.into());
-    let navmesh = {
-        let mut builder = NavMeshBuilder::new();
-        builder
-            .with_boundary(&*points);
-            // .with_hole(&hole);
-        builder.build().unwrap()
-    };
+    let navmesh = NavMesh::new(points.clone(), vec![]).unwrap();
+    // let navmesh = {
+    //     let mut builder = NavMeshBuilder::new();
+    //     builder
+    //         .with_boundary(&*points);
+    //         // .with_hole(&hole);
+    //     builder.build().unwrap()
+    // };
 
     commands
         .spawn()
