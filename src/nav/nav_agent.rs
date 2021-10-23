@@ -9,7 +9,6 @@ use crate::{
     game::*,
     input::*,
     nav::*,
-    debug::*,
 };
 
 const SPEED_MULT: f32 = 5.0;

@@ -11,8 +11,6 @@ use spade::{
 use bevy::prelude::*;
 use std::collections::{HashMap};
 use pathfinding::directed::astar::astar;
-use serde::{Deserialize, Serialize};
-
 
 type CoordNum = f32;
 type Point = [CoordNum; 2];
@@ -81,7 +79,7 @@ impl NavMesh {
             add_triangulation_boundary(&mut triangulation, hole);
         }
         let medial_graph = build_medial_graph(&triangulation, &boundary, &holes);
-        let mut navmesh = NavMesh {
+        let navmesh = NavMesh {
             boundary,
             holes,
             medial_graph,

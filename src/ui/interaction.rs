@@ -1,4 +1,4 @@
-use crate::{game::*, input::*, utils::data_struct::*};
+use crate::{game::*, input::*};
 use bevy::{
     input::{mouse::MouseButtonInput, ElementState},
     prelude::*,
@@ -122,7 +122,7 @@ pub fn object_interaction_handling(
 }
 
 pub fn make_appearance_interactive(
-    mut commands: Commands,
+    commands: Commands,
     q_appearance: Query<(Entity, &Appearance, &Transform, &Sprite)>,
 ) {
     for (entity, _, _, sprite) in q_appearance.iter() {

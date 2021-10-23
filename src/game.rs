@@ -1,5 +1,3 @@
-use std::default;
-
 use crate::{
     input::MouseState,
     ui::*,
@@ -13,8 +11,6 @@ mod aspects;
 pub use aspects::*;
 mod commands;
 pub use commands::*;
-mod objects;
-pub use objects::*;
 
 pub struct GamePlugin;
 
@@ -67,9 +63,9 @@ pub fn spawn_standard_boi(
                     items: vec![ContextMenuItem {
                         label: "Test".to_owned(),
                         handlers: Some(ClickHandlers {
-                            left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
-                                cmds.entity(spawned).insert(Despawning);
-                            })),
+                            // left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
+                            //     cmds.entity(spawned).insert(Despawning);
+                            // })),
                             ..Default::default()
                         }),
                     }],

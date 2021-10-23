@@ -10,7 +10,6 @@ use bevy::{
     input::mouse::{MouseButtonInput},
     prelude::*,
 };
-use std::{sync::Arc};
 
 mod interaction;
 pub use interaction::*;

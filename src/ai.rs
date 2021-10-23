@@ -4,7 +4,6 @@ use bevy_htn::prelude::*;
 use rand::prelude::*;
 use crate::{
     NavAgent, NavMesh,
-    game::Player,
 };
 
 mod actors;
@@ -61,7 +60,6 @@ impl Context for EnemyContext {
 
 fn startup(
     mut behaviour_map: ResMut<BehaviourMap>,
-    mut commands: Commands,
 ) {
     let mut builder: BehaviourBuilder<EnemyContext> = BehaviourBuilder::new("Enemy");
     builder

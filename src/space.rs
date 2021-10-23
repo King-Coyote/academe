@@ -7,7 +7,6 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
-use std::sync::Arc;
 
 // curently for rendering spaces and allowing them to be interacted with.
 pub struct SpacePlugin;
