@@ -32,25 +32,18 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
     //     Vec2::new(77.69818, -196.9029),
     // ];
     let closure_points = points.clone();
-    let max_dim = max_polygon_width(&points);
     let shape = shapes::Polygon {
         points: points.clone(),
         closed: true,
     };
     let bg_color = materials.add(Color::BLACK.into());
     let navmesh = NavMesh::new(points.clone(), vec![]).unwrap();
-    // let navmesh = {
-    //     let mut builder = NavMeshBuilder::new();
-    //     builder
-    //         .with_boundary(&*points);
-    //         // .with_hole(&hole);
-    //     builder.build().unwrap()
-    // };
 
+    // SPAWN THE BIG OL NAVMESH
     commands
         .spawn()
         .insert(navmesh)
-        .insert(Polygon { points, max_dim })
+        .insert(Polygon::new(points))
         .insert(ObjectInteraction::default())
         .insert(Transform::from_xyz(0.0, 0.0, 10.0))
         .insert(ClickHandlers {
@@ -74,6 +67,16 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
             })),
             ..Default::default()
         });
+
+    // SPAWN THE DOOR's POLYGON
+    let door_points = vec![
+        Vec2::new(-299.24472, -104.481445),
+        Vec2::new(-263.55817, -85.88843),
+        Vec2::new(-261.51773, -142.07367),
+        Vec2::new(-300.70947, -159.18121),
+    ];
+    // commands.spawn()
+    //     insert(Polygon {points, })
 }
 
 impl Plugin for SpacePlugin {

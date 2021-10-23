@@ -1,3 +1,6 @@
 /target
 /crates/bevy_htn/target
 /crates/bevy_htn/src/fluidhtn_tests/*.cs
+/assets
+/crates/navigation
+/docs

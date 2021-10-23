@@ -3,7 +3,7 @@ use crate::{
     input::MouseState,
     utils::{
         entities::children_match_query,
-        geometry::point_inside_polygon,
+        geometry::{point_inside_polygon, max_polygon_width},
     },
 };
 use bevy::{
@@ -24,6 +24,15 @@ pub use debug::*;
 pub struct Polygon {
     pub points: Vec<Vec2>,
     pub max_dim: f32,
+}
+
+impl Polygon {
+    pub fn new(points: Vec<Vec2>) -> Self {
+        Polygon {
+            max_dim: max_polygon_width(&points),
+            points
+        }
+    }
 }
 
 pub struct ContextMenuItem {
