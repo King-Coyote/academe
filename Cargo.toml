@@ -10,7 +10,7 @@ opt-level = 0
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.5.0", features = ["dynamic"] }
+bevy = { version = "0.5.0", features = [] }
 bevy_htn = { path = "crates/bevy_htn", version = "^0.1.0"}
 bevy_prototype_lyon = "0.3.1"
 # remove the below when it builds without it - probably bevy 0.6

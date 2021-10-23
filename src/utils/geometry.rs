@@ -127,3 +127,13 @@ pub fn max_polygon_width(points: &[Vec2]) -> f32 {
     }
     width
 }
+
+pub fn polygon_centroid(points: &[Vec2]) -> Vec2 {
+    let sum_x: f32 = points.iter().fold(0.0, |sum, v| sum + v.x);
+    let sum_y: f32 = points.iter().fold(0.0, |sum, v| sum + v.y);
+    let n = points.len() as f32;
+    Vec2::new(
+        sum_x / n,
+        sum_y / n
+    )
+}

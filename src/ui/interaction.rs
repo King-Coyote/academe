@@ -62,25 +62,6 @@ pub fn object_interaction_ordering(
     }
 }
 
-pub fn deleteme_ui_test(
-    mut commands: Commands,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
-    commands.spawn_bundle(ButtonBundle {
-        style: Style {
-            size: Size::new(Val::Px(300.0), Val::Px(300.0)),
-            margin: Rect::all(Val::Auto),
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-            ..Default::default()
-        },
-        transform: Transform::from_translation(Vec3::ZERO),
-        material: materials.add(Color::GRAY.into()),
-        ..Default::default()
-    })
-    ;
-}
-
 pub fn object_interaction_handling(
     mut commands: Commands,
     mouse: Res<MouseState>,

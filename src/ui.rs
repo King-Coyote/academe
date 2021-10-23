@@ -3,7 +3,7 @@ use crate::{
     input::MouseState,
     utils::{
         entities::children_match_query,
-        geometry::{point_inside_polygon, max_polygon_width},
+        geometry::{point_inside_polygon, max_polygon_width, polygon_centroid},
     },
 };
 use bevy::{
@@ -22,6 +22,7 @@ pub use debug::*;
 #[derive(Reflect, Default)]
 #[reflect(Component)]
 pub struct Polygon {
+    pub centroid: Vec2,
     pub points: Vec<Vec2>,
     pub max_dim: f32,
 }
@@ -29,6 +30,7 @@ pub struct Polygon {
 impl Polygon {
     pub fn new(points: Vec<Vec2>) -> Self {
         Polygon {
+            centroid: polygon_centroid(&points),
             max_dim: max_polygon_width(&points),
             points
         }
@@ -122,12 +124,11 @@ fn polygon_interact_system(
     order: Res<InteractableOrder>,
     mouse: Res<MouseState>,
     mut er_cursor: EventReader<CursorMoved>,
-    mut q_polygon: Query<(Entity, &Polygon, &Transform, &mut ObjectInteraction)>,
+    mut q_polygon: Query<(Entity, &Polygon, &mut ObjectInteraction)>,
 ) {
     for e in er_cursor.iter() {
-        for (entity, polygon, transform, mut interaction) in q_polygon.iter_mut() {
-            let pos = Vec2::new(transform.translation.x, transform.translation.y);
-            let maybe_inside = pos.distance(mouse.world_pos) <= polygon.max_dim;
+        for (entity, polygon, mut interaction) in q_polygon.iter_mut() {
+            let maybe_inside = polygon.centroid.distance(mouse.world_pos) <= polygon.max_dim;
             if order.ui_blocking.is_none()
                 && maybe_inside 
                 && point_inside_polygon(&mouse.world_pos, &polygon.points)

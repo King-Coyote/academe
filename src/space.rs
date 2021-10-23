@@ -75,8 +75,11 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
         Vec2::new(-261.51773, -142.07367),
         Vec2::new(-300.70947, -159.18121),
     ];
-    // commands.spawn()
-    //     insert(Polygon {points, })
+    commands.spawn()
+        .insert(Polygon::new(door_points))
+        .insert(ObjectInteraction::default())
+        .insert(Transform::from_xyz(0.0, 0.0, 11.0))
+        ;
 }
 
 impl Plugin for SpacePlugin {
