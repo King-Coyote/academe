@@ -34,21 +34,23 @@ pub struct ObjectHovered {
     pub z_index: f32,
 }
 
+pub struct Highlighted(pub bool);
+
 pub fn object_interaction_ordering(
     mut order: ResMut<InteractableOrder>,
-    q_interaction: Query<(Entity, &Transform, &ObjectInteraction, Option<&Children>)>,
-    mut q_interaction_children: Query<(&Parent, &mut Visible)>
+    mut q_interaction: Query<(Entity, &Transform, &ObjectInteraction, Option<&mut Highlighted>)>,
+    // mut q_interaction_children: Query<(&Parent, &mut Visible)>
 ) {
     let mut max_z_index = f32::NEG_INFINITY;
     let old = order.current.map(|current| current.0);
-    let mut current_children: Option<&Children> = None;
+    let mut current_highlight: Option<Mut<Highlighted>> = None;
     order.current = q_interaction
-        .iter()
-        .filter(|(_, _, interaction, children)| **interaction == ObjectInteraction::Inside)
-        .fold(None, |acc, (entity, transform, interaction, children)| {
+        .iter_mut()
+        .filter(|(_, _, interaction, _)| **interaction == ObjectInteraction::Inside)
+        .fold(None, |acc, (entity, transform, interaction, highlighted)| {
             if transform.translation.z > max_z_index {
                 max_z_index = transform.translation.z;
-                current_children = children;
+                current_highlight = highlighted;
                 return Some((entity, max_z_index));
             }
             acc
@@ -57,36 +59,49 @@ pub fn object_interaction_ordering(
         (Some(old), Some(current)) => {
             if old != current.0 {
                 info!("Replaced {:?} with {:?} in interactables order.", old, current.0);
-                let (_, _, _, current_children) = q_interaction.get(current.0).unwrap();
-                let (_, _, _, old_children) = q_interaction.get(old).unwrap();
-                set_child_visibility(current_children, &mut q_interaction_children, true);
-                set_child_visibility(old_children, &mut q_interaction_children, false);       
+                set_highlight(old, &mut q_interaction, false);
+                set_highlight(current.0, &mut q_interaction, true);
             }
         },
         (None, Some(current)) => {
             info!("New current in order: {:?}", current.0);
-            let (_, _, _, children) = q_interaction.get(current.0).unwrap();
-            set_child_visibility(children, &mut q_interaction_children, true);
+            set_highlight(current.0, &mut q_interaction, true);
         },
         (Some(old), None) => {
             info!("Removed {:?} from order; order current is now blank.", old);
-            let (_, _, _, children) = q_interaction.get(old).unwrap();
-            set_child_visibility(children, &mut q_interaction_children, false);
+            set_highlight(old, &mut q_interaction, false);
         },
         _ => {}
     }
 }
 
-fn set_child_visibility(children: Option<&Children>, query: &mut Query<(&Parent, &mut Visible)>, is_visible: bool) {
-    if let Some(children) = children {
-        for entity in children.iter() {
-            if let Ok((_, mut visible)) = query.get_mut(*entity) {
-                info!("removing visibility for: {:?}", entity);
-                visible.is_visible = is_visible;
-                visible.is_transparent = !is_visible;
-            }
+fn set_highlight(e: Entity, q: &mut Query<(Entity, &Transform, &ObjectInteraction, Option<&mut Highlighted>)>, val: bool) -> Option<()> {
+    let (_, _, _, old_highlight) = q.get_mut(e).ok()?;
+    *old_highlight? = Highlighted(val);
+    Some(())
+}
+
+pub fn highlight_system(
+    mut q_highlighted: Query<(&Highlighted, Option<&Children>, Option<&mut Visible>), (Without<Parent>, Changed<Highlighted>)>,
+    mut q_visible_children: Query<(&Parent, &mut Visible)>
+) {
+    for (highlight, maybe_children, maybe_visible) in q_highlighted.iter_mut() {
+        let is_visible = highlight.0;
+        if let Some(mut visible) = maybe_visible {
+            visible.is_visible = is_visible;
+            visible.is_transparent = !is_visible;
         }
+        set_children_visibility(maybe_children, &mut q_visible_children, is_visible);
     }
+}
+
+fn set_children_visibility(children: Option<&Children>, q: &mut Query<(&Parent, &mut Visible)>, is_visible: bool) -> Option<()> {
+    for child in children?.iter() {
+        let (_, mut visible) = q.get_mut(*child).ok()?;
+        visible.is_visible = is_visible;
+        visible.is_transparent = !is_visible;
+    }
+    Some(())
 }
 
 pub fn object_interaction_handling(

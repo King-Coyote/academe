@@ -329,6 +329,7 @@ impl Plugin for UiPlugin {
             .add_system(capture_interactions.system())
             .add_system(object_interaction_ordering.system())
             .add_system(object_interaction_handling.system())
+            .add_system(highlight_system.system())
             .add_system(appearance_interact_system.system())
             .add_system(make_appearance_interactive.system())
             .add_system(spawn_debug_ui.system())

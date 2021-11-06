@@ -90,14 +90,19 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
         },
         Transform::from_xyz(0.0, 0.0, 1000.0),
     );
-    highlighted.visible.is_visible = false;
-    highlighted.visible.is_transparent = true;
     commands.spawn()
         .insert(Polygon::new(door_points))
         .insert(ObjectInteraction::default())
         .insert(Transform::from_xyz(0.0, 0.0, 11.0))
+        .insert(Highlighted(false))
         .with_children(|parent| {
             parent.spawn_bundle(highlighted);
+        })
+        .insert(ClickHandlers {
+            left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
+                info!("Clicked the door polygon!");
+            })),
+            ..Default::default()
         })
         ;
 }
