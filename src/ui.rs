@@ -25,6 +25,7 @@ pub struct Polygon {
     pub centroid: Vec2,
     pub points: Vec<Vec2>,
     pub max_dim: f32,
+    pub visible: bool,
 }
 
 impl Polygon {
@@ -32,7 +33,8 @@ impl Polygon {
         Polygon {
             centroid: polygon_centroid(&points),
             max_dim: max_polygon_width(&points),
-            points
+            points,
+            visible: false
         }
     }
 }
@@ -125,6 +127,8 @@ fn polygon_interact_system(
     mouse: Res<MouseState>,
     mut er_cursor: EventReader<CursorMoved>,
     mut q_polygon: Query<(Entity, &Polygon, &mut ObjectInteraction)>,
+    q_polygon_vis: Query<(&Polygon, &Children), Changed<Polygon>>,
+    mut q_polygon_children: Query<(&Parent, &mut Visible)>,
 ) {
     for e in er_cursor.iter() {
         for (entity, polygon, mut interaction) in q_polygon.iter_mut() {
@@ -139,6 +143,19 @@ fn polygon_interact_system(
             }
         }
     }
+    for (parent, children) in q_polygon_vis.iter() {
+        let is_visible = parent.visible;
+        for entity in children.iter() {
+            if let Ok((_, mut visible)) = q_polygon_children.get_mut(*entity) {
+                visible.is_visible = is_visible;
+                visible.is_transparent = !is_visible;
+            }
+        }
+    }
+}
+
+fn set_polygon_child_visibility(children: &Children, query: &mut Query<(&Parent, &mut Visible)>, is_visible: bool) {
+
 }
 
 fn popup_system(
@@ -304,7 +321,6 @@ impl Plugin for UiPlugin {
             .register_type::<Polygon>()
             .add_event::<ObjectHovered>()
             .add_startup_system(setup.system())
-            // .add_startup_system(deleteme_ui_test.system())
             .add_system(polygon_interact_system.system())
             .add_system(button.system())
             .add_system(interaction_with_handlers.system())

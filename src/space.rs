@@ -6,7 +6,10 @@ use crate::{
     nav::*,
 };
 use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::*;
+use bevy_prototype_lyon::{
+    prelude::*,
+    entity::ShapeBundle,
+};
 
 // curently for rendering spaces and allowing them to be interacted with.
 pub struct SpacePlugin;
@@ -70,15 +73,32 @@ fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
 
     // SPAWN THE DOOR's POLYGON
     let door_points = vec![
-        Vec2::new(-299.24472, -104.481445),
+        Vec2::new(-301.0, -105.0),
         Vec2::new(-263.55817, -85.88843),
-        Vec2::new(-261.51773, -142.07367),
+        Vec2::new(-262.0, -142.07367),
         Vec2::new(-300.70947, -159.18121),
     ];
+    let mut highlighted = GeometryBuilder::build_as(
+        &shapes::Polygon {
+            points: door_points.clone(),
+            closed: true,
+        },
+        ShapeColors::outlined(Color::rgba(0.8, 0.1, 0.9, 0.25), Color::BLUE),
+        DrawMode::Outlined {
+            fill_options: FillOptions::default(),
+            outline_options: StrokeOptions::default().with_line_width(1.0),
+        },
+        Transform::from_xyz(0.0, 0.0, 1000.0),
+    );
+    highlighted.visible.is_visible = false;
+    highlighted.visible.is_transparent = true;
     commands.spawn()
         .insert(Polygon::new(door_points))
         .insert(ObjectInteraction::default())
         .insert(Transform::from_xyz(0.0, 0.0, 11.0))
+        .with_children(|parent| {
+            parent.spawn_bundle(highlighted);
+        })
         ;
 }
 

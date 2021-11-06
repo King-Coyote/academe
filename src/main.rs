@@ -36,30 +36,32 @@ fn area_texture_test(
     mut materials: ResMut<Assets<ColorMaterial>>,
     assets: Res<AssetServer>,
 ) {
-    let tex_handle: Handle<Texture> = assets.load("textures/outdoors.png");
-    commands.spawn_bundle(SpriteBundle {
-        material: materials.add(tex_handle.into()),
-        ..Default::default()
-    });
+    // let tex_handle: Handle<Texture> = assets.load("textures/outdoors.png");
+    // commands.spawn_bundle(SpriteBundle {
+    //     transform: Transform::from_xyz(0.0, 0.0, 0.0),
+    //     material: materials.add(tex_handle.into()),
+    //     ..Default::default()
+    // });
     spawn_standard_boi(Vec2::new(0.0, 0.0), &mut commands, false);
 }
 
-fn click_debug(
-    mouse: Res<MouseState>,
-    mut er_mouseinput: EventReader<MouseButtonInput>,
-) {
-    for e in er_mouseinput.iter() {
-        if e.button == MouseButton::Left && e.state == ElementState::Released {
-            println!("Clicked at: {}", mouse.world_pos);
-        }
-    }
-}
+// fn click_debug(
+//     mouse: Res<MouseState>,
+//     mut er_mouseinput: EventReader<MouseButtonInput>,
+// ) {
+//     for e in er_mouseinput.iter() {
+//         if e.button == MouseButton::Left && e.state == ElementState::Released {
+//             println!("Clicked at: {}", mouse.world_pos);
+//         }
+//     }
+// }
 
 fn main() {
     App::build()
         .insert_resource(AssetServerSettings {
             asset_folder: "/home/alex/projects/bevyacad/assets".to_string(),
         })
+        .add_startup_system(area_texture_test.system())
         .add_plugins(DefaultPlugins)
         .add_plugin(InputPlugin)
         .add_plugin(SpacePlugin)
@@ -68,7 +70,6 @@ fn main() {
         .add_plugin(NavPlugin)
         .add_plugin(DebugPlugin)
         .add_plugin(AiPlugin)
-        .add_startup_system(area_texture_test.system())
-        .add_system(click_debug.system())
+        // .add_system(click_debug.system())
         .run();
 }
