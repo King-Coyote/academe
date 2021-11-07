@@ -1,14 +1,15 @@
 use crate::{
     game::*,
     input::*,
-    utils::entities::do_for_children,
+    utils::{
+        entities::do_for_children,
+        geometry::*,
+    },
 };
 use bevy::{
     input::{mouse::MouseButtonInput, ElementState},
     prelude::*,
 };
-
-use super::ClickHandlers;
 
 #[derive(Default)]
 pub struct InteractableOrder {
@@ -29,12 +30,34 @@ impl Default for ObjectInteraction {
     }
 }
 
-pub struct ObjectHovered {
-    pub entity: Entity,
-    pub z_index: f32,
+#[derive(Default)]
+pub struct ClickHandlers {
+    pub left: Option<Box<dyn Fn(&mut Commands, &MouseState) + Send + Sync>>,
+    pub right: Option<Box<dyn Fn(&mut Commands, &MouseState) + Send + Sync>>,
+    pub middle: Option<Box<dyn Fn(&mut Commands, &MouseState) + Send + Sync>>,
 }
 
 pub struct Highlighted(pub bool);
+
+#[derive(Reflect, Default)]
+#[reflect(Component)]
+pub struct Polygon {
+    pub centroid: Vec2,
+    pub points: Vec<Vec2>,
+    pub max_dim: f32,
+    pub visible: bool,
+}
+
+impl Polygon {
+    pub fn new(points: Vec<Vec2>) -> Self {
+        Polygon {
+            centroid: polygon_centroid(&points),
+            max_dim: max_polygon_width(&points),
+            points,
+            visible: false
+        }
+    }
+}
 
 pub fn object_interaction_ordering(
     mut order: ResMut<InteractableOrder>,
@@ -144,29 +167,89 @@ pub fn object_interaction_handling(
     }
 }
 
-pub fn make_appearance_interactive(
-    commands: Commands,
-    q_appearance: Query<(Entity, &Appearance, &Transform, &Sprite)>,
+pub fn polygon_interact_system(
+    order: Res<InteractableOrder>,
+    mouse: Res<MouseState>,
+    mut er_cursor: EventReader<CursorMoved>,
+    mut q_polygon: Query<(Entity, &Polygon, &mut ObjectInteraction)>,
+    q_polygon_vis: Query<(&Polygon, &Children), Changed<Polygon>>,
+    mut q_polygon_children: Query<(&Parent, &mut Visible)>,
 ) {
-    for (entity, _, _, sprite) in q_appearance.iter() {
-        let size = sprite.size;
-        // wait until it has a size...
-        if size.x < f32::EPSILON && size.y < f32::EPSILON {
-            continue;
+    for e in er_cursor.iter() {
+        for (entity, polygon, mut interaction) in q_polygon.iter_mut() {
+            let maybe_inside = polygon.centroid.distance(mouse.world_pos) <= polygon.max_dim;
+            if order.ui_blocking.is_none()
+                && maybe_inside 
+                && point_inside_polygon(&mouse.world_pos, &polygon.points)
+            {
+                *interaction = ObjectInteraction::Inside;
+            } else {
+                *interaction = ObjectInteraction::Outside;
+            }
         }
-        let max_dim: f32;
-        if size.y > size.x {
-            max_dim = size.y / 2.0;
-        } else {
-            max_dim = size.x / 2.0;
+    }
+    for (parent, children) in q_polygon_vis.iter() {
+        let is_visible = parent.visible;
+        for entity in children.iter() {
+            if let Ok((_, mut visible)) = q_polygon_children.get_mut(*entity) {
+                visible.is_visible = is_visible;
+                visible.is_transparent = !is_visible;
+            }
         }
-        // commands.entity(entity).insert(ObjectInteraction {
-        //     min_dist: max_dim,
-        //     mouse_inside: Some(Box::new(move |pos: &Vec2, mouse: &MouseState| -> bool {
-        //         let diff = *pos - mouse.world_pos;
-        //         diff.x <= size.x / 2.0 && diff.y <= size.y / 2.0
-        //     })),
-        //     ..Default::default()
-        // });
+    }
+}
+
+pub fn capture_interactions(
+    mut order: ResMut<InteractableOrder>,
+    mut er_mousebutton: EventReader<MouseButtonInput>,
+    mut er_mousemove: EventReader<CursorMoved>,
+    q_interaction: Query<(Entity, &Interaction)>,
+) {
+    use Interaction::*;
+    if er_mousebutton.iter().next().is_none() && er_mousemove.iter().next().is_none() {
+        return;
+    }
+    for (entity, interact) in q_interaction.iter() {
+        match *interact {
+            Clicked | Hovered => {
+                order.ui_blocking = Some(entity);
+                return;
+            }
+            _ => {}
+        };
+    }
+    order.ui_blocking = Option::None;
+}
+
+// normal ui click handling
+pub fn interaction_with_handlers(
+    mut commands: Commands,
+    mouse: Res<MouseState>,
+    mouse_input: Res<Input<MouseButton>>,
+    q_buttons: Query<(&Interaction, &ClickHandlers), Changed<Interaction>>,
+) {
+    for (interaction, handlers) in q_buttons.iter() {
+        if let Interaction::Hovered = interaction {
+            for button in mouse_input.get_just_released() {
+                match button {
+                    MouseButton::Left => {
+                        if let Some(handler) = handlers.left.as_ref() {
+                            (handler)(&mut commands, &*mouse);
+                        }
+                    }
+                    MouseButton::Right => {
+                        if let Some(handler) = handlers.right.as_ref() {
+                            (handler)(&mut commands, &*mouse);
+                        }
+                    }
+                    MouseButton::Middle => {
+                        if let Some(handler) = handlers.middle.as_ref() {
+                            (handler)(&mut commands, &*mouse);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
     }
 }
