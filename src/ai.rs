@@ -92,7 +92,7 @@ fn ai_system(
                 let dest = random_nearby_location(curr);
                 if let Some(path) = navmesh.find_path(curr, dest) {
                     store.move_target = Some(dest);
-                    nav.path = path;
+                    nav.path = Some(path);
                     store.wants_new_location = false;
                     break;
                 }

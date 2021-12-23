@@ -16,25 +16,23 @@ const SPEED_MULT: f32 = 5.0;
 #[derive(Default)]
 pub struct NavAgent {
     pub current: Option<Vec2>,
-    pub path: Vec<Vec2>,
+    pub path: Option<Vec<Vec2>>,
 }
 
 pub fn click_pathfind_system(
     mouse: Res<MouseState>,
     mut er_mouse: EventReader<MouseButtonInput>,
-    q_navmesh: Query<&NavMesh>,
-    mut q_player: Query<(&mut NavAgent, &Transform), With<Player>>,
+    q_navmesh: Query<(&Area, &NavMesh)>,
+    mut q_player: Query<(&mut NavAgent, &Parent, &Transform), With<Player>>,
 ) {
     for e in er_mouse.iter() {
         if e.state != ElementState::Released || e.button != MouseButton::Left {
             continue;
         }
-        if let (Ok((mut player_agent, player_trans)), Ok(navmesh)) = (q_player.single_mut(), q_navmesh.single()) {
-            let player_pos = player_trans.translation.truncate();
-            if let Some(path) = navmesh.find_path(player_pos, mouse.world_pos) {
-                player_agent.path = path;
-            }
-        }
+        let (mut player_agent, parent, player_trans) = q_player.single_mut().unwrap();
+        let (_, navmesh) = q_navmesh.get(parent.0).unwrap();
+        let player_pos = player_trans.translation.truncate();
+        player_agent.path = navmesh.find_path(player_pos, mouse.world_pos);
     }
 }
 
@@ -58,8 +56,8 @@ pub fn navagent_system(
                 transform.translation.x += diff_n.x * step;
                 transform.translation.y += diff_n.y * step;
             }
-        } else {
-            nav.current = nav.path.pop();
+        } else if let Some(path) = &mut nav.path {
+            nav.current = path.pop();
         }
     }
 }

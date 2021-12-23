@@ -11,6 +11,8 @@ mod aspects;
 pub use aspects::*;
 mod commands;
 pub use commands::*;
+mod area;
+pub use area::*;
 
 pub struct GamePlugin;
 
