@@ -2,12 +2,12 @@ use crate::{
     game::*,
     input::*,
     utils::{
-        entities::do_for_children,
+        // entities::do_for_children,
         geometry::*,
     },
 };
 use bevy::{
-    input::{mouse::MouseButtonInput, ElementState},
+    input::{mouse::MouseButtonInput},
     prelude::*,
 };
 
@@ -17,7 +17,7 @@ pub struct InteractableOrder {
     pub current: Option<(Entity, f32)>,
 }
 
-#[derive(PartialEq)]
+#[derive(Component, PartialEq)]
 pub enum ObjectInteraction {
     Outside,
     Inside,
@@ -30,16 +30,17 @@ impl Default for ObjectInteraction {
     }
 }
 
-#[derive(Default)]
+#[derive(Component, Default)]
 pub struct ClickHandlers {
     pub left: Option<Box<dyn Fn(&mut Commands, &MouseState) + Send + Sync>>,
     pub right: Option<Box<dyn Fn(&mut Commands, &MouseState) + Send + Sync>>,
     pub middle: Option<Box<dyn Fn(&mut Commands, &MouseState) + Send + Sync>>,
 }
 
+#[derive(Component)]
 pub struct Highlighted(pub bool);
 
-#[derive(Reflect, Default)]
+#[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Polygon {
     pub centroid: Vec2,
@@ -104,28 +105,30 @@ fn set_highlight(e: Entity, q: &mut Query<(Entity, &Transform, &ObjectInteractio
     Some(())
 }
 
-pub fn highlight_system(
-    mut q_highlighted: Query<(&Highlighted, Option<&Children>, Option<&mut Visible>), (Without<Parent>, Changed<Highlighted>)>,
-    mut q_visible_children: Query<(&Parent, &mut Visible)>
-) {
-    for (highlight, maybe_children, maybe_visible) in q_highlighted.iter_mut() {
-        let is_visible = highlight.0;
-        if let Some(mut visible) = maybe_visible {
-            visible.is_visible = is_visible;
-            visible.is_transparent = !is_visible;
-        }
-        set_children_visibility(maybe_children, &mut q_visible_children, is_visible);
-    }
-}
+// TODO what do about visibility??
 
-fn set_children_visibility(children: Option<&Children>, q: &mut Query<(&Parent, &mut Visible)>, is_visible: bool) -> Option<()> {
-    for child in children?.iter() {
-        let (_, mut visible) = q.get_mut(*child).ok()?;
-        visible.is_visible = is_visible;
-        visible.is_transparent = !is_visible;
-    }
-    Some(())
-}
+// pub fn highlight_system(
+//     mut q_highlighted: Query<(&Highlighted, Option<&Children>, Option<&mut Visible>), (Without<Parent>, Changed<Highlighted>)>,
+//     mut q_visible_children: Query<(&Parent, &mut Visible)>
+// ) {
+//     for (highlight, maybe_children, maybe_visible) in q_highlighted.iter_mut() {
+//         let is_visible = highlight.0;
+//         if let Some(mut visible) = maybe_visible {
+//             visible.is_visible = is_visible;
+//             visible.is_transparent = !is_visible;
+//         }
+//         set_children_visibility(maybe_children, &mut q_visible_children, is_visible);
+//     }
+// }
+
+// fn set_children_visibility(children: Option<&Children>, q: &mut Query<(&Parent, &mut Visible)>, is_visible: bool) -> Option<()> {
+//     for child in children?.iter() {
+//         let (_, mut visible) = q.get_mut(*child).ok()?;
+//         visible.is_visible = is_visible;
+//         visible.is_transparent = !is_visible;
+//     }
+//     Some(())
+// }
 
 pub fn object_interaction_handling(
     mut commands: Commands,
@@ -147,9 +150,10 @@ pub fn object_interaction_handling(
     }
     let (interactable, handlers) = maybe_query.unwrap();
     for e in er_mouseinput.iter() {
-        if let ElementState::Pressed = e.state {
-            continue;
-        }
+        // TODO UPDATE fix this
+        // if let ElementState::Pressed = e.state {
+        //     continue;
+        // }
         match e.button {
             MouseButton::Left => {
                 if let Some(handler) = handlers.left.as_ref() {
@@ -173,30 +177,30 @@ pub fn polygon_interact_system(
     mut er_cursor: EventReader<CursorMoved>,
     mut q_polygon: Query<(Entity, &Polygon, &mut ObjectInteraction)>,
     q_polygon_vis: Query<(&Polygon, &Children), Changed<Polygon>>,
-    mut q_polygon_children: Query<(&Parent, &mut Visible)>,
+    mut q_polygon_children: Query<(&Parent)>, // TODO these used to have visibility on them, what do now?
 ) {
-    for e in er_cursor.iter() {
-        for (entity, polygon, mut interaction) in q_polygon.iter_mut() {
-            let maybe_inside = polygon.centroid.distance(mouse.world_pos) <= polygon.max_dim;
-            if order.ui_blocking.is_none()
-                && maybe_inside 
-                && point_inside_polygon(&mouse.world_pos, &polygon.points)
-            {
-                *interaction = ObjectInteraction::Inside;
-            } else {
-                *interaction = ObjectInteraction::Outside;
-            }
-        }
-    }
-    for (parent, children) in q_polygon_vis.iter() {
-        let is_visible = parent.visible;
-        for entity in children.iter() {
-            if let Ok((_, mut visible)) = q_polygon_children.get_mut(*entity) {
-                visible.is_visible = is_visible;
-                visible.is_transparent = !is_visible;
-            }
-        }
-    }
+    // for e in er_cursor.iter() {
+    //     for (entity, polygon, mut interaction) in q_polygon.iter_mut() {
+    //         let maybe_inside = polygon.centroid.distance(mouse.world_pos) <= polygon.max_dim;
+    //         if order.ui_blocking.is_none()
+    //             && maybe_inside 
+    //             && point_inside_polygon(&mouse.world_pos, &polygon.points)
+    //         {
+    //             *interaction = ObjectInteraction::Inside;
+    //         } else {
+    //             *interaction = ObjectInteraction::Outside;
+    //         }
+    //     }
+    // }
+    // for (parent, children) in q_polygon_vis.iter() {
+    //     let is_visible = parent.visible;
+    //     for entity in children.iter() {
+    //         if let Ok((_, mut visible)) = q_polygon_children.get_mut(*entity) {
+    //             visible.is_visible = is_visible;
+    //             visible.is_transparent = !is_visible;
+    //         }
+    //     }
+    // }
 }
 
 pub fn capture_interactions(

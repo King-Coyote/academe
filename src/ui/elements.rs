@@ -12,6 +12,7 @@ pub struct ContextMenuItem {
     pub handlers: Option<ClickHandlers>,
 }
 
+#[derive(Component)]
 pub struct ContextMenuSpawn {
     pub pos: Vec2,
     pub items: Vec<ContextMenuItem>,
@@ -75,6 +76,7 @@ impl FromWorld for PanelStyle {
 }
 
 // anything with this guy that is a ui element will be closed if clicked outside
+#[derive(Component)]
 pub struct Popup;
 
 pub fn popup_system(
@@ -125,54 +127,55 @@ pub fn context_menu_spawn(
     style: Res<MainStyle>,
     mut q_cmspawn: Query<(Entity, &mut ContextMenuSpawn), Added<ContextMenuSpawn>>,
 ) {
-    for (entity, mut cm) in q_cmspawn.iter_mut() {
-        let mut entity_cmds = commands.entity(entity);
-        entity_cmds.remove::<ContextMenuSpawn>();
-        entity_cmds
-            .insert_bundle(NodeBundle {
-                style: Style {
-                    display: Display::Flex,
-                    position_type: PositionType::Absolute,
-                    flex_direction: FlexDirection::Column,
-                    position: Rect {
-                        left: Val::Px(cm.pos.x),
-                        top: Val::Px(cm.pos.y),
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                material: materials.add(Color::BLACK.into()),
-                ..Default::default()
-            })
-            .with_children(|parent| {
-                for item in cm.items.iter_mut() {
-                    parent
-                        .spawn_bundle(ButtonBundle {
-                            style: Style {
-                                min_size: Size::new(Val::Px(75.0), Val::Px(26.0)),
-                                justify_content: JustifyContent::Center,
-                                align_items: AlignItems::Center,
-                                margin: Rect::all(Val::Px(2.0)),
-                                padding: Rect::all(Val::Px(3.0)),
-                                ..Default::default()
-                            },
-                            material: style.button.color_normal.clone(),
-                            ..Default::default()
-                        })
-                        .with_children(|parent| {
-                            parent.spawn_bundle(TextBundle {
-                                text: Text::with_section(
-                                    item.label.clone(),
-                                    style.text.clone(),
-                                    Default::default(),
-                                ),
-                                focus_policy: bevy::ui::FocusPolicy::Pass,
-                                ..Default::default()
-                            });
-                        })
-                        .insert(item.handlers.take().unwrap());
-                }
-            })
-            .insert(Popup);
-    }
+    // TODO UPDATE redo this (type Rect not found?)
+    // for (entity, mut cm) in q_cmspawn.iter_mut() {
+    //     let mut entity_cmds = commands.entity(entity);
+    //     entity_cmds.remove::<ContextMenuSpawn>();
+    //     entity_cmds
+    //         .insert_bundle(NodeBundle {
+    //             style: Style {
+    //                 display: Display::Flex,
+    //                 position_type: PositionType::Absolute,
+    //                 flex_direction: FlexDirection::Column,
+    //                 position: Rect {
+    //                     left: Val::Px(cm.pos.x),
+    //                     top: Val::Px(cm.pos.y),
+    //                     ..Default::default()
+    //                 },
+    //                 ..Default::default()
+    //             },
+    //             color: Color::BLACK,
+    //             ..Default::default()
+    //         })
+    //         .with_children(|parent| {
+    //             for item in cm.items.iter_mut() {
+    //                 parent
+    //                     .spawn_bundle(ButtonBundle {
+    //                         style: Style {
+    //                             min_size: Size::new(Val::Px(75.0), Val::Px(26.0)),
+    //                             justify_content: JustifyContent::Center,
+    //                             align_items: AlignItems::Center,
+    //                             margin: Rect::all(Val::Px(2.0)),
+    //                             padding: Rect::all(Val::Px(3.0)),
+    //                             ..Default::default()
+    //                         },
+    //                         color: style.button.color_normal,
+    //                         ..Default::default()
+    //                     })
+    //                     .with_children(|parent| {
+    //                         parent.spawn_bundle(TextBundle {
+    //                             text: Text::with_section(
+    //                                 item.label.clone(),
+    //                                 style.text.clone(),
+    //                                 Default::default(),
+    //                             ),
+    //                             focus_policy: bevy::ui::FocusPolicy::Pass,
+    //                             ..Default::default()
+    //                         });
+    //                     })
+    //                     .insert(item.handlers.take().unwrap());
+    //             }
+    //         })
+    //         .insert(Popup);
+    // }
 }

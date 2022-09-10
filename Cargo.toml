@@ -1,8 +1,8 @@
 [package]
-name = "bevyacad"
+name = "academe"
 version = "0.1.0"
 authors = ["King-Coyote <alex.hartstone@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [profile.dev]
 opt-level = 0
@@ -10,13 +10,12 @@ opt-level = 0
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.5.0", features = [] }
+bevy = { version = "0.8.1", features = [] }
 bevy_htn = { path = "crates/bevy_htn", version = "^0.1.0"}
-bevy_prototype_lyon = "0.3.1"
-# remove the below when it builds without it - probably bevy 0.6
-notify = "=5.0.0-pre.2"
+bevy_prototype_lyon = "~0.6.0"
 pathfinding = "^2.0.0"
-spade = "^1.8.2"
-intersect2d = "0.4.1"
-geo = "0.18"
-rand = "0.8.4"
+spade = "^1.8"
+intersect2d = "~0.4.2"
+geo = "~0.23"
+rand = "~0.8.5"
+leafwing-input-manager = "0.5.2"

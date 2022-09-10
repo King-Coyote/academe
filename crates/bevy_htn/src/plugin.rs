@@ -4,9 +4,9 @@ use crate::prelude::*;
 pub struct AiPlugin;
 
 impl Plugin for AiPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app
-        .add_startup_system(startup.system());
+        .add_startup_system(startup);
     }
 }
 

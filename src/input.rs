@@ -1,11 +1,12 @@
 use bevy::{
     prelude::*,
-    render::camera::{OrthographicProjection},
 };
-
-pub struct MainCamera;
+use leafwing_input_manager::prelude::*;
 
 pub struct InputPlugin;
+
+#[derive(Component)]
+pub struct MainCamera;
 
 #[derive(Clone, Default)]
 pub struct MouseState {
@@ -15,10 +16,27 @@ pub struct MouseState {
     pub projected_pos: Vec2,
 }
 
+#[derive(Actionlike, Clone, Debug, Copy, PartialEq, Eq)]
+pub enum CameraMovement {
+    PanUp,
+    PanDown,
+    PanLeft,
+    PanRight,
+}
+
 fn setup(mut commands: Commands) {
     commands
         .spawn()
-        .insert_bundle(OrthographicCameraBundle::new_2d())
+        .insert_bundle(Camera2dBundle::default())
+        .insert_bundle(InputManagerBundle::<CameraMovement> {
+            input_map: InputMap::default()
+                .insert(KeyCode::W, CameraMovement::PanUp)
+                .insert(KeyCode::S, CameraMovement::PanDown)
+                .insert(KeyCode::A, CameraMovement::PanLeft)
+                .insert(KeyCode::D, CameraMovement::PanRight)
+                .build(),
+            action_state: ActionState::default(),
+        })
         .insert(MainCamera);
 
     commands.insert_resource(MouseState {
@@ -42,7 +60,7 @@ fn mouse_state(
     for e in evr_cursor.iter() {
         // apply the camera transform
         let window = windows.get_primary().unwrap();
-        let world_pos = get_world_pos(&e.position, camera_transform, &window);
+        let world_pos = get_world_pos(&e.position, camera_transform, window);
         mouse_state.screen_pos = e.position;
         mouse_state.ui_pos = Vec2::new(e.position.x, window.height() as f32 - e.position.y);
         mouse_state.world_pos = Vec2::new(world_pos.x, world_pos.y);
@@ -51,45 +69,37 @@ fn mouse_state(
 }
 
 fn camera_control_system(
-    windows: Res<Windows>,
-    mouse: Res<MouseState>,
-    input_mouse: Res<Input<MouseButton>>,
-    input_keys: Res<Input<KeyCode>>,
-    mut query: Query<(&mut Transform, &mut OrthographicProjection), With<MainCamera>>,
+    mut query: Query<(&mut Transform, &ActionState<CameraMovement>), With<Camera2d>>,
 ) {
-    let (mut cam_position, _) = query.iter_mut().next().unwrap();
-    let window = windows.get_primary().unwrap();
+    let (mut cam_transform, action_state) = query.single_mut();
     let pan_speed = 7.0;
 
     let mut movement = Vec2::ZERO;
-    if input_keys.pressed(KeyCode::LControl)
-        || input_keys.pressed(KeyCode::LShift)
-        || input_keys.pressed(KeyCode::LAlt)
-    {
-        return;
-    }
-    if input_keys.pressed(KeyCode::W) {
+    if action_state.pressed(CameraMovement::PanUp) {
         movement.y += pan_speed;
     }
-    if input_keys.pressed(KeyCode::A) {
+    if action_state.pressed(CameraMovement::PanLeft) {
         movement.x -= pan_speed;
     }
-    if input_keys.pressed(KeyCode::S) {
+    if action_state.pressed(CameraMovement::PanDown) {
         movement.y -= pan_speed;
     }
-    if input_keys.pressed(KeyCode::D) {
+    if action_state.pressed(CameraMovement::PanRight) {
         movement.x += pan_speed;
     }
 
-    cam_position.translation += movement.extend(0.0);
+    cam_transform.translation += movement.extend(0.0);
 }
 
 impl Plugin for InputPlugin {
-    fn build(&self, app: &mut AppBuilder) {
-        app.add_startup_system(setup.system())
-            .add_system(mouse_state.system())
-            // .add_system(click_world_system.system())
-            .add_system(camera_control_system.system());
+    // this is where we set up our plugin
+    fn build(&self, app: &mut App) {
+        app.add_startup_system(setup)
+            .add_plugin(InputManagerPlugin::<CameraMovement>::default())
+            .add_system(mouse_state)
+            // .add_system(click_world_system)
+            .add_system(camera_control_system)
+            ;
     }
 }
 

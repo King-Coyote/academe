@@ -1,7 +1,7 @@
 use bevy::{
     prelude::*,
     input::{
-        ElementState,
+        // ElementState,
         mouse::{MouseButtonInput, MouseButton},
     },
 };
@@ -13,7 +13,7 @@ use crate::{
 
 const SPEED_MULT: f32 = 5.0;
 
-#[derive(Default)]
+#[derive(Component, Default)]
 pub struct NavAgent {
     pub current: Option<Vec2>,
     pub path: Option<Vec<Vec2>>,
@@ -25,15 +25,16 @@ pub fn click_pathfind_system(
     q_navmesh: Query<(&Area, &NavMesh)>,
     mut q_player: Query<(&mut NavAgent, &Parent, &Transform), With<Player>>,
 ) {
-    for e in er_mouse.iter() {
-        if e.state != ElementState::Released || e.button != MouseButton::Left {
-            continue;
-        }
-        let (mut player_agent, parent, player_trans) = q_player.single_mut().unwrap();
-        let (_, navmesh) = q_navmesh.get(parent.0).unwrap();
-        let player_pos = player_trans.translation.truncate();
-        player_agent.path = navmesh.find_path(player_pos, mouse.world_pos);
-    }
+    // TODO UPDATE fix this
+    // for e in er_mouse.iter() {
+    //     // if e.state != ElementState::Released || e.button != MouseButton::Left {
+    //     //     continue;
+    //     // }
+    //     let (mut player_agent, parent, player_trans) = q_player.single_mut().unwrap();
+    //     let (_, navmesh) = q_navmesh.get(parent.0).unwrap();
+    //     let player_pos = player_trans.translation.truncate();
+    //     player_agent.path = navmesh.find_path(player_pos, mouse.world_pos);
+    // }
 }
 
 pub fn navagent_system(

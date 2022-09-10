@@ -14,12 +14,12 @@ use crate::main_cam::*;
 pub struct NavigationPlugin;
 
 impl Plugin for NavigationPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app
-        .add_startup_system(startup.system())
-        .add_system(add_navpoint_system.system())
+        .add_startup_system(startup)
+        .add_system(add_navpoint_system)
         .add_stage_after(stage::UPDATE, "changes", SystemStage::parallel())
-        .add_system_to_stage("changes", changed_navmesh_system.system())
+        .add_system_to_stage("changes", changed_navmesh_system)
         ;
     }
 }

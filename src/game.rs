@@ -9,27 +9,24 @@ use bevy_htn::prelude::*;
 
 mod aspects;
 pub use aspects::*;
-mod commands;
-pub use commands::*;
 mod area;
 pub use area::*;
+
+#[derive(Component)]
+pub struct Enemy;
+#[derive(Component)]
+pub struct Player;
 
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
-    fn build(&self, app: &mut AppBuilder) {
-        app.insert_resource(GameCommandQueue(vec![]))
-            .add_system(execute_game_commands.exclusive_system())
-            .add_system(appearance_added.system())
+    fn build(&self, app: &mut App) {
+        app.add_system(appearance_added)
             ;
     }
 }
 
 // UTILITY FNS
-
-pub struct Enemy;
-pub struct Player;
-
 pub fn spawn_standard_boi(
     pos: Vec2,
     cmds: &mut Commands,
@@ -87,7 +84,8 @@ pub fn spawn_standard_boi(
                     current_time: 0.0,
                 }
             })
-            .insert(Planner::<EnemyContext>::default())
+            // TODO UPDATE
+            // .insert(Planner::<EnemyContext>::default())
             ;
     } else {
         entity.insert(Player);

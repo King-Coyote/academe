@@ -59,7 +59,7 @@ type Triangulation = ConstrainedDelaunayTriangulation<Point, FloatKernel, Delaun
 //     }
 // }
 
-#[derive(Reflect, Default)]
+#[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct NavMesh {
     boundary: Vec<Vec2>,

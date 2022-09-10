@@ -8,7 +8,6 @@
 
 use bevy::{
     asset::AssetServerSettings,
-    input::{ElementState, mouse::MouseButtonInput},
     prelude::*
 };
 use game::*;
@@ -57,11 +56,12 @@ fn area_texture_test(
 // }
 
 fn main() {
-    App::build()
+    App::new()
         .insert_resource(AssetServerSettings {
             asset_folder: "/home/alex/projects/bevyacad/assets".to_string(),
+            ..default()
         })
-        .add_startup_system(area_texture_test.system())
+        .add_startup_system(area_texture_test)
         .add_plugins(DefaultPlugins)
         .add_plugin(InputPlugin)
         .add_plugin(SpacePlugin)
@@ -70,6 +70,6 @@ fn main() {
         .add_plugin(NavPlugin)
         .add_plugin(DebugPlugin)
         .add_plugin(AiPlugin)
-        // .add_system(click_debug.system())
+        // .add_system(click_debug)
         .run();
 }

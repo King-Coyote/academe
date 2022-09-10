@@ -5,8 +5,10 @@ use crate::{
     nav::*,
 };
 
+#[derive(Component)]
 pub struct Area;
 
+#[derive(Component)]
 pub struct Loaded;
 
 // pub fn area_system(

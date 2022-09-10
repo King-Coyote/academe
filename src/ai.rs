@@ -15,17 +15,18 @@ pub use factions::*;
 pub struct AiPlugin;
 
 impl Plugin for AiPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app
         .insert_resource(BehaviourMap::default())
-        .add_startup_system(startup.system())
-        .add_system(ai_system.system())
-        .add_system(senses_system.system())
+        .add_startup_system(startup)
+        // TODO UPDATE
+        // .add_system(ai_system)
+        .add_system(senses_system)
         ;
     }
 }
 
-#[derive(Default,)]
+#[derive(Component, Default,)]
 pub struct EnemyContext {
     pub name: String,
     pub state: ContextState,
@@ -75,31 +76,32 @@ fn startup(
     behaviour_map.behaviours.insert("BeEnemy".to_string(), behaviour);
 }
 
-fn ai_system(
-    assets: ResMut<Assets<ColorMaterial>>,
-    behaviour_map: Res<BehaviourMap>,
-    q_navmesh: Query<&NavMesh>,
-    mut q_ai: Query<(&mut EnemyContext, &mut Planner<EnemyContext>, &mut NavAgent)>,
-) {
-    for (mut ctx, mut planner, mut nav) in q_ai.iter_mut() {
-        let behaviour = behaviour_map.behaviours.get(&ctx.name).unwrap();
-        planner.tick(behaviour, &mut *ctx);
-        let store = ctx.get_store_mut();
-        if store.wants_new_location {
-            let navmesh = q_navmesh.single().expect("There should be exactly 1 navmesh");
-            let curr = store.current_pos;
-            loop {
-                let dest = random_nearby_location(curr);
-                if let Some(path) = navmesh.find_path(curr, dest) {
-                    store.move_target = Some(dest);
-                    nav.path = Some(path);
-                    store.wants_new_location = false;
-                    break;
-                }
-            }
-        }
-    }
-}
+// TODO UPDATE
+// fn ai_system(
+//     assets: ResMut<Assets<ColorMaterial>>,
+//     behaviour_map: Res<BehaviourMap>,
+//     q_navmesh: Query<&NavMesh>,
+//     mut q_ai: Query<(&mut EnemyContext, &mut Planner<EnemyContext>, &mut NavAgent)>,
+// ) {
+//     for (mut ctx, mut planner, mut nav) in q_ai.iter_mut() {
+//         let behaviour = behaviour_map.behaviours.get(&ctx.name).unwrap();
+//         planner.tick(behaviour, &mut *ctx);
+//         let store = ctx.get_store_mut();
+//         if store.wants_new_location {
+//             let navmesh = q_navmesh.single().expect("There should be exactly 1 navmesh");
+//             let curr = store.current_pos;
+//             loop {
+//                 let dest = random_nearby_location(curr);
+//                 if let Some(path) = navmesh.find_path(curr, dest) {
+//                     store.move_target = Some(dest);
+//                     nav.path = Some(path);
+//                     store.wants_new_location = false;
+//                     break;
+//                 }
+//             }
+//         }
+//     }
+// }
 
 fn senses_system(
     time: Res<Time>,
