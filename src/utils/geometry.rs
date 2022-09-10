@@ -40,15 +40,13 @@ pub fn any_intersections_between(a: &Vec2, b: &Vec2, boundary: &[Vec2]) -> bool 
 }
 
 pub fn point_inside_sprite(point: &Vec2, sprite: &Sprite, transform: &Transform) -> bool {
-    // TODO UPDATE
-    false
-    // let halfx = sprite.size.x * 0.5;
-    // let halfy = sprite.size.y * 0.5;
+    let halfx = sprite.custom_size.expect("No custom size - how u gonna deal with this?").x * 0.5;
+    let halfy = sprite.custom_size.expect("No custom size - how u gonna deal with this?").y * 0.5;
 
-    // point.x > transform.translation.x - halfx
-    //     && point.x <= transform.translation.x + halfx
-    //     && point.y > transform.translation.y - halfy
-    //     && point.y <= transform.translation.y + halfy
+    point.x > transform.translation.x - halfx
+        && point.x <= transform.translation.x + halfx
+        && point.y > transform.translation.y - halfy
+        && point.y <= transform.translation.y + halfy
 }
 
 pub fn lines_intersect(a: &[Vec2; 2], b: &[Vec2; 2]) -> Option<Vec2> {
