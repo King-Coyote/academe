@@ -18,6 +18,7 @@ use nav::*;
 use debug::*;
 use ai::*;
 use bevy_htn::prelude::*;
+use bevy_prototype_lyon::prelude::*;
 
 #[macro_use]
 mod macros;
@@ -53,6 +54,33 @@ fn click_debug(
     }
 }
 
+fn spawn_test_rhombus(
+    mut commands: Commands,
+) {
+    let points = vec![
+        Vec2::new(0.0, 0.0),
+        Vec2::new(100.0, 0.0),
+        Vec2::new(75.0, 100.0),
+        Vec2::new(-25.0, 100.0),
+    ];
+    let polygon_shape = GeometryBuilder::build_as(
+        &shapes::Polygon {
+            points: points.clone(),
+            closed: true,
+        },
+        DrawMode::Outlined {
+            fill_mode: FillMode::color(Color::CYAN),
+            outline_mode: StrokeMode::new(Color::BLUE, 2.0),
+        },
+        Transform::default(),
+    );
+    commands.spawn()
+        .insert(Polygon::new(points))
+        .insert(Transform::from_xyz(0.0, 0.0, 10.0))
+        .insert_bundle(polygon_shape)
+        ;
+}
+
 fn main() {
     App::new()
         .insert_resource(AssetServerSettings {
@@ -68,6 +96,7 @@ fn main() {
         .add_plugin(NavPlugin)
         .add_plugin(DebugPlugin)
         .add_plugin(AiPlugin)
-        .add_system(click_debug)
+        // .add_system(click_debug)
+        .add_system(spawn_test_rhombus)
         .run();
 }
