@@ -17,7 +17,7 @@ pub struct InteractableOrder {
     pub current: Option<(Entity, f32)>,
 }
 
-#[derive(Component, PartialEq)]
+#[derive(Component, PartialEq, Eq)]
 pub enum ObjectInteraction {
     Outside,
     Inside,

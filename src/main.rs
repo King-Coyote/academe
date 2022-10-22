@@ -44,16 +44,14 @@ fn area_texture_test(
     spawn_standard_boi(Vec2::new(0.0, 0.0), &mut commands, false);
 }
 
-// fn click_debug(
-//     mouse: Res<MouseState>,
-//     mut er_mouseinput: EventReader<MouseButtonInput>,
-// ) {
-//     for e in er_mouseinput.iter() {
-//         if e.button == MouseButton::Left && e.state == ElementState::Released {
-//             println!("Clicked at: {}", mouse.world_pos);
-//         }
-//     }
-// }
+fn click_debug(
+    mouse: Res<MouseState>,
+    mouse_button: Res<Input<MouseButton>>,
+) {
+    if mouse_button.just_released(MouseButton::Left) {
+        println!("Clicked at: {}", mouse.world_pos);
+    }
+}
 
 fn main() {
     App::new()
@@ -70,6 +68,6 @@ fn main() {
         .add_plugin(NavPlugin)
         .add_plugin(DebugPlugin)
         .add_plugin(AiPlugin)
-        // .add_system(click_debug)
+        .add_system(click_debug)
         .run();
 }
