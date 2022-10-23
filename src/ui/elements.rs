@@ -151,7 +151,7 @@ pub fn context_menu_spawn(
                 ..Default::default()
             })
             .with_children(|parent| {
-                for item in cm.items.iter_mut() {
+                for item in cm.items.iter_mut().rev() {
                     parent
                         .spawn_bundle(ButtonBundle {
                             style: Style {

@@ -1,23 +1,4 @@
 #[macro_export]
-macro_rules! context_menu_deprec {
-    (
-        $({
-            label: $label:expr,
-            commands: $commands:expr,
-            closing: $closing:ident
-        }),*
-    ) => {
-        ContextMenu(vec![
-            $(ContextMenuItem {
-                label: $label.to_string(),
-                commands: $commands,
-                closing: $closing,
-            },)*
-        ])
-    };
-}
-
-#[macro_export]
 macro_rules! context_menu {
     (
         $commands:ident,
