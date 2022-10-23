@@ -134,7 +134,8 @@ pub fn object_interaction_handling(
     mut commands: Commands,
     mouse: Res<MouseState>,
     order: Res<InteractableOrder>,
-    mut er_mouseinput: EventReader<MouseButtonInput>,
+    mouse_button: Res<Input<MouseButton>>,
+    // mut er_mouseinput: EventReader<MouseButtonInput>,
     q_interact: Query<(&ObjectInteraction, &ClickHandlers)>,
 ) {
     if order.current.is_none() {
@@ -145,29 +146,16 @@ pub fn object_interaction_handling(
         .as_ref()
         .and_then(|current| q_interact.get(current.0).ok());
     // this interactable doesn't have any click handlers for some reason
-    if maybe_query.is_none() {
-        return;
-    }
-    let (interactable, handlers) = maybe_query.unwrap();
-    for e in er_mouseinput.iter() {
-        // TODO UPDATE fix this
-        // if let ElementState::Pressed = e.state {
-        //     continue;
-        // }
-        match e.button {
-            MouseButton::Left => {
-                if let Some(handler) = handlers.left.as_ref() {
-                    (handler)(&mut commands, &*mouse);
-                }
+    if let Some((interactable, handlers)) = maybe_query {
+        if mouse_button.just_released(MouseButton::Left) {
+            if let Some(handler) = handlers.left.as_ref() {
+                (handler)(&mut commands, &mouse);
             }
-            MouseButton::Right => {
-                if let Some(handler) = handlers.right.as_ref() {
-                    (handler)(&mut commands, &*mouse);
-                }
+        } else if mouse_button.just_released(MouseButton::Right) {
+            if let Some(handler) = handlers.right.as_ref() {
+                (handler)(&mut commands, &mouse);
             }
-            MouseButton::Middle => {}
-            _ => {}
-        };
+        }
     }
 }
 
@@ -176,22 +164,23 @@ pub fn polygon_interact_system(
     mouse: Res<MouseState>,
     mut er_cursor: EventReader<CursorMoved>,
     mut q_polygon: Query<(Entity, &Polygon, &mut ObjectInteraction)>,
-    q_polygon_vis: Query<(&Polygon, &Children), Changed<Polygon>>,
-    mut q_polygon_children: Query<(&Parent)>, // TODO these used to have visibility on them, what do now?
+    // q_polygon_vis: Query<(&Polygon, &Children), Changed<Polygon>>,
+    // mut q_polygon_children: Query<(&Parent)>,
 ) {
-    // for e in er_cursor.iter() {
-    //     for (entity, polygon, mut interaction) in q_polygon.iter_mut() {
-    //         let maybe_inside = polygon.centroid.distance(mouse.world_pos) <= polygon.max_dim;
-    //         if order.ui_blocking.is_none()
-    //             && maybe_inside 
-    //             && point_inside_polygon(&mouse.world_pos, &polygon.points)
-    //         {
-    //             *interaction = ObjectInteraction::Inside;
-    //         } else {
-    //             *interaction = ObjectInteraction::Outside;
-    //         }
-    //     }
-    // }
+    for e in er_cursor.iter() {
+        for (entity, polygon, mut interaction) in q_polygon.iter_mut() {
+            let maybe_inside = polygon.centroid.distance(mouse.world_pos) <= polygon.max_dim;
+            if order.ui_blocking.is_none()
+                && maybe_inside 
+                && point_inside_polygon(&mouse.world_pos, &polygon.points)
+            {
+                *interaction = ObjectInteraction::Inside;
+            } else {
+                *interaction = ObjectInteraction::Outside;
+            }
+        }
+    }
+     // TODO these used to have visibility on them, what do now?
     // for (parent, children) in q_polygon_vis.iter() {
     //     let is_visible = parent.visible;
     //     for entity in children.iter() {

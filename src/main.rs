@@ -77,6 +77,13 @@ fn spawn_test_rhombus(
     commands.spawn()
         .insert(Polygon::new(points))
         .insert(Transform::from_xyz(0.0, 0.0, 10.0))
+        .insert(ObjectInteraction::default())
+        .insert(ClickHandlers {
+            left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
+                info!("Clicked the polygon!");
+            })),
+            ..Default::default()
+        })
         .insert_bundle(polygon_shape)
         ;
 }
