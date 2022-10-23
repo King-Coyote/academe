@@ -56,6 +56,7 @@ fn click_debug(
 
 fn spawn_test_rhombus(
     mut commands: Commands,
+    mouse: Res<MouseState>,
 ) {
     let points = vec![
         Vec2::new(0.0, 0.0),
@@ -82,6 +83,30 @@ fn spawn_test_rhombus(
             left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
                 info!("Clicked the polygon!");
             })),
+            right: context_menu_handler!({
+                label: "Hello friend",
+                action: {
+                    info!("Clicked item in CM");
+                }
+            }),
+            // right: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
+            //     let world_pos = mouse.world_pos;
+            //     let ui_pos = mouse.ui_pos;
+            //     cmds.spawn().insert(ContextMenuSpawn {
+            //         pos: ui_pos,
+            //         items: vec![
+            //             ContextMenuItem {
+            //                 label: "Hello friend".to_string(),
+            //                 handlers: Some(ClickHandlers {
+            //                     left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
+            //                         info!("Clicked item in CM")
+            //                     })),
+            //                     ..Default::default()
+            //                 }),
+            //             },
+            //         ],
+            //     });
+            // })),
             ..Default::default()
         })
         .insert_bundle(polygon_shape)
@@ -91,10 +116,10 @@ fn spawn_test_rhombus(
 fn main() {
     App::new()
         .insert_resource(AssetServerSettings {
-            asset_folder: "/home/alex/projects/bevyacad/assets".to_string(),
+            asset_folder: "/home/alex/projects/academe/assets".to_string(),
             ..default()
         })
-        .add_startup_system(area_texture_test)
+        // .add_startup_system(area_texture_test)
         .add_plugins(DefaultPlugins)
         .add_plugin(InputPlugin)
         .add_plugin(SpacePlugin)

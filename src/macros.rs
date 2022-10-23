@@ -1,5 +1,5 @@
 #[macro_export]
-macro_rules! context_menu {
+macro_rules! context_menu_deprec {
     (
         $({
             label: $label:expr,
@@ -14,6 +14,32 @@ macro_rules! context_menu {
                 closing: $closing,
             },)*
         ])
+    };
+}
+
+#[macro_export]
+macro_rules! context_menu_handler {
+    (
+        $({
+            label: $label:expr,
+            action: $action:block
+        }),*
+    ) => {
+        Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
+            let world_pos = mouse.world_pos;
+            let ui_pos = mouse.ui_pos;
+            cmds.spawn().insert(ContextMenuSpawn {
+                pos: ui_pos,
+                items: vec![
+                    $(ContextMenuItem {
+                        label: $label.to_string(),
+                        handlers: Some(ClickHandlers {
+                            left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| $action)),
+                            ..Default::default()
+                        }),
+                    },)*
+                ]});
+        }))
     };
 }
 

@@ -7,13 +7,13 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'bevyacad'",
+            "name": "Debug executable 'academe'",
             "cargo": {
                 "args": [
                     "build",
                 ],
                 "filter": {
-                    "name": "bevyacad",
+                    "name": "academe",
                     "kind": "bin"
                 }
             },
@@ -38,16 +38,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'bevyacad'",
+            "name": "Debug unit tests in executable 'academe'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=bevyacad",
-                    "--package=bevyacad"
+                    "--bin=academe",
+                    "--package=academe"
                 ],
                 "filter": {
-                    "name": "bevyacad",
+                    "name": "academe",
                     "kind": "bin"
                 }
             },

@@ -153,6 +153,7 @@ pub fn object_interaction_handling(
             }
         } else if mouse_button.just_released(MouseButton::Right) {
             if let Some(handler) = handlers.right.as_ref() {
+                info!("starting right click handler");
                 (handler)(&mut commands, &mouse);
             }
         }
@@ -227,17 +228,17 @@ pub fn interaction_with_handlers(
                 match button {
                     MouseButton::Left => {
                         if let Some(handler) = handlers.left.as_ref() {
-                            (handler)(&mut commands, &*mouse);
+                            (handler)(&mut commands, &mouse);
                         }
                     }
                     MouseButton::Right => {
                         if let Some(handler) = handlers.right.as_ref() {
-                            (handler)(&mut commands, &*mouse);
+                            (handler)(&mut commands, &mouse);
                         }
                     }
                     MouseButton::Middle => {
                         if let Some(handler) = handlers.middle.as_ref() {
-                            (handler)(&mut commands, &*mouse);
+                            (handler)(&mut commands, &mouse);
                         }
                     }
                     _ => {}
