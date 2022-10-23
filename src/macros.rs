@@ -17,30 +17,71 @@ macro_rules! context_menu_deprec {
     };
 }
 
+// #[macro_export]
+// macro_rules! context_menu_handler {
+//     (
+//         $({
+//             label: $label:expr,
+//             commands: $commands:expr,
+//             action: $action:block
+//         }),*
+//     ) => {
+//         Some(Box::new(move |$commands: &mut Commands, mouse: &MouseState| {
+//             let world_pos = mouse.world_pos;
+//             let ui_pos = mouse.ui_pos;
+//             cmds_outer.spawn().insert(ContextMenuSpawn {
+//                 pos: ui_pos,
+//                 items: vec![
+//                     $(ContextMenuItem {
+//                         label: $label.to_string(),
+//                         handlers: Some(ClickHandlers {
+//                             left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| $action)),
+//                             ..Default::default()
+//                         }),
+//                     },)*
+//                 ]});
+//         }))
+//     };
+// }
+
 #[macro_export]
-macro_rules! context_menu_handler {
+macro_rules! context_menu_handlers {
     (
+        $commands:ident,
+        $mouse:ident,
+        $items:expr
+    ) => {
+        Some(Box::new(move |$commands: &mut Commands, $mouse: &MouseState| {
+            let world_pos = $mouse.world_pos;
+            let ui_pos = $mouse.ui_pos;
+            $commands.spawn().insert(ContextMenuSpawn {
+                pos: ui_pos,
+                items: $items,
+            });
+        }))
+    }
+}
+
+#[macro_export]
+macro_rules! context_menu_handler_items {
+    (
+        $commands:ident,
+        $mouse:ident,
         $({
             label: $label:expr,
             action: $action:block
         }),*
     ) => {
-        Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
-            let world_pos = mouse.world_pos;
-            let ui_pos = mouse.ui_pos;
-            cmds.spawn().insert(ContextMenuSpawn {
-                pos: ui_pos,
-                items: vec![
-                    $(ContextMenuItem {
-                        label: $label.to_string(),
-                        handlers: Some(ClickHandlers {
-                            left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| $action)),
-                            ..Default::default()
-                        }),
-                    },)*
-                ]});
-        }))
-    };
+        vec![
+            $(ContextMenuItem {
+                label: $label.to_string(),
+                handlers: Some(ClickHandlers {
+                    left: Some(Box::new(move |$commands: &mut Commands, $mouse: &MouseState| $action)),
+                    ..Default::default()
+                }),
+            },)*
+        ]
+    }
 }
 
 #[macro_export]
