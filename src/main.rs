@@ -83,29 +83,21 @@ fn spawn_test_rhombus(
             left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
                 info!("Clicked the polygon!");
             })),
-            // right: context_menu_handler!({
-            //     label: "Hello friend",
-            //     action: info!("Clicked item in CM")
-            // }),
-            right: context_menu_handlers!(cmds, mouse, context_menu_handler_items!(cmds, mouse, {
-                label: "Hello friend",
-                action: {
-                    info!("Clicked item in CM");
+            right: context_menu!(cmds, mouse,
+                {
+                    label: "Hello friend",
+                    action: {
+                        info!("Clicked item in CM");
+                        cmds.spawn();
+                    }
+                },
+                {
+                    label: "Hello foe",
+                    action: {
+                        info!("Clicked second item in CM");
+                    }
                 }
-            })),
-            // right: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
-            //     let world_pos = mouse.world_pos;
-            //     let ui_pos = mouse.ui_pos;
-            //     cmds.spawn().insert(ContextMenuSpawn {
-            //         pos: ui_pos,
-            //         items: context_menu_items!(cmds, mouse, {
-            //             label: "Hello friend",
-            //             action: {
-            //                 info!("Clicked item in CM");
-            //             }
-            //         }),
-            //     });
-            // })),
+            ),
             ..Default::default()
         })
         .insert_bundle(polygon_shape)
