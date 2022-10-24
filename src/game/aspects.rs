@@ -63,24 +63,23 @@ pub struct Movement {
 // this also adds the ability to interact with creatures etc
 pub fn appearance_added(
     mut commands: Commands,
-    assets: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    asset_server: Res<AssetServer>,
+    // mut materials: ResMut<Assets<ColorMaterial>>,
     mut q_appearance: Query<(Entity, &mut Appearance, &Transform), Added<Appearance>>,
 ) {
-    // TODO UPDATE
-    // for (entity, mut appearance, transform) in q_appearance.iter_mut() {
-    //     let handle = assets.load::<Texture, _>(appearance.filename.as_str());
-    //     let sprite_bundle = SpriteBundle {
-    //         texture: materials.add(handle.into()),
-    //         transform: *transform,
-    //         ..Default::default()
-    //     };
-    //     appearance.entity = Some(entity);
-    //     commands.entity(entity)
-    //         .insert_bundle(sprite_bundle)
-    //         .insert(ObjectInteraction::Outside)
-    //         ;
-    // }
+    for (entity, mut appearance, transform) in q_appearance.iter_mut() {
+        // let handle = assets.load::<Texture, _>(appearance.filename.as_str());
+        let sprite_bundle = SpriteBundle {
+            texture: asset_server.load(appearance.filename.as_str()),
+            transform: *transform,
+            ..Default::default()
+        };
+        appearance.entity = Some(entity);
+        commands.entity(entity)
+            .insert_bundle(sprite_bundle)
+            .insert(ObjectInteraction::Outside)
+            ;
+    }
 }
 
 pub fn appearance_interact_system(

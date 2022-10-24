@@ -19,9 +19,9 @@ pub struct ContextMenuSpawn {
 }
 
 pub struct MainStyle {
-    panel: PanelStyle,
-    button: ButtonStyle,
-    text: TextStyle,
+    pub panel: PanelStyle,
+    pub button: ButtonStyle,
+    pub text: TextStyle,
 }
 
 impl FromWorld for MainStyle {

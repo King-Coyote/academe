@@ -1,5 +1,5 @@
 #[macro_export]
-macro_rules! context_menu {
+macro_rules! context_menu_handler {
     (
         $commands:ident,
         $mouse:ident,
@@ -24,6 +24,31 @@ macro_rules! context_menu {
                 ]
             });
         }))
+    }
+}
+
+#[macro_export]
+macro_rules! context_menu {
+    (
+        $commands:ident,
+        $mouse:ident,
+        $({
+            label: $label:expr,
+            action: $action:block
+        }),*
+    ) => {
+        ContextMenuSpawn {
+            pos: $mouse.ui_pos,
+            items: vec![
+                $(ContextMenuItem {
+                    label: $label.to_string(),
+                    handlers: Some(ClickHandlers {
+                        left: Some(Box::new(move |$commands: &mut Commands, $mouse: &MouseState| $action)),
+                        ..Default::default()
+                    }),
+                },)*
+            ]
+        };
     }
 }
 

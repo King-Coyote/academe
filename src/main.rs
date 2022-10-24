@@ -31,26 +31,35 @@ mod nav;
 mod debug;
 mod ai;
 
-fn area_texture_test(
-    mut commands: Commands,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    assets: Res<AssetServer>,
-) {
-    // let tex_handle: Handle<Texture> = assets.load("textures/outdoors.png");
-    // commands.spawn_bundle(SpriteBundle {
-    //     transform: Transform::from_xyz(0.0, 0.0, 0.0),
-    //     material: materials.add(tex_handle.into()),
-    //     ..Default::default()
-    // });
-    spawn_standard_boi(Vec2::new(0.0, 0.0), &mut commands, false);
-}
-
 fn click_debug(
     mouse: Res<MouseState>,
     mouse_button: Res<Input<MouseButton>>,
 ) {
     if mouse_button.just_released(MouseButton::Left) {
         println!("Clicked at: {}", mouse.world_pos);
+    }
+}
+
+fn right_click_nothing(
+    mut commands: Commands,
+    mouse: Res<MouseState>,
+    style: Res<MainStyle>,
+    mouse_button: Res<Input<MouseButton>>,
+    order: Res<InteractableOrder>,
+) {
+    let right_clicked_on_nothing = mouse_button.just_released(MouseButton::Right)
+        && order.ui_blocking.is_none()
+        && order.current.is_none();
+    if right_clicked_on_nothing {
+        let text_style = style.text.clone();
+        commands.spawn()
+            .insert(context_menu!(commands, mouse, {
+                label: "Spawn student",
+                action: {
+                    spawn_standard_boi(mouse.world_pos, mouse, text_style.clone(), commands, false);
+                }
+            }))
+            ;
     }
 }
 
@@ -85,7 +94,7 @@ fn spawn_test_rhombus(
             left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
                 info!("Clicked the polygon!");
             })),
-            right: context_menu!(commands, mouse,
+            right: context_menu_handler!(commands, mouse,
                 {
                     label: "Delete",
                     action: {
@@ -121,6 +130,7 @@ fn main() {
         .add_plugin(DebugPlugin)
         .add_plugin(AiPlugin)
         // .add_system(click_debug)
-        .add_startup_system(spawn_test_rhombus)
+        // .add_startup_system(spawn_test_rhombus)
+        .add_system(right_click_nothing)
         .run();
 }

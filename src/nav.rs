@@ -22,7 +22,6 @@ impl Plugin for NavPlugin {
                     .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
                     .with_system(navagent_system)
             )
-            .add_system(click_pathfind_system)
             ;
     }
 }
