@@ -38,13 +38,6 @@ fn setup(mut commands: Commands) {
             action_state: ActionState::default(),
         })
         .insert(MainCamera);
-
-    commands.insert_resource(MouseState {
-        screen_pos: Vec2::ZERO,
-        ui_pos: Vec2::ZERO,
-        world_pos: Vec2::ZERO,
-        projected_pos: Vec2::ZERO,
-    });
 }
 
 fn mouse_state(
@@ -96,6 +89,7 @@ impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(setup)
             .add_plugin(InputManagerPlugin::<CameraMovement>::default())
+            .init_resource::<MouseState>()
             .add_system(mouse_state)
             // .add_system(click_world_system)
             .add_system(camera_control_system)

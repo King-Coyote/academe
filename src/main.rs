@@ -8,7 +8,7 @@
 
 use bevy::{
     asset::AssetServerSettings,
-    prelude::*
+    prelude::*, ecs::entity
 };
 use game::*;
 use input::*;
@@ -75,7 +75,9 @@ fn spawn_test_rhombus(
         },
         Transform::default(),
     );
-    commands.spawn()
+    let mut entity_builder = commands.spawn();
+    let entity = entity_builder.id();
+    entity_builder
         .insert(Polygon::new(points))
         .insert(Transform::from_xyz(0.0, 0.0, 10.0))
         .insert(ObjectInteraction::default())
@@ -83,12 +85,11 @@ fn spawn_test_rhombus(
             left: Some(Box::new(move |cmds: &mut Commands, mouse: &MouseState| {
                 info!("Clicked the polygon!");
             })),
-            right: context_menu!(cmds, mouse,
+            right: context_menu!(commands, mouse,
                 {
-                    label: "Hello friend",
+                    label: "Delete",
                     action: {
-                        info!("Clicked item in CM");
-                        cmds.spawn();
+                        commands.entity(entity).despawn_recursive();
                     }
                 },
                 {
@@ -120,6 +121,6 @@ fn main() {
         .add_plugin(DebugPlugin)
         .add_plugin(AiPlugin)
         // .add_system(click_debug)
-        .add_system(spawn_test_rhombus)
+        .add_startup_system(spawn_test_rhombus)
         .run();
 }
