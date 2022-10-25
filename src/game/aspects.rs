@@ -60,6 +60,7 @@ pub struct Movement {
     pub level: u32,
 }
 
+// TODO is this really needed? Maybe you should just make a bundle for it instead of having the overhead of a whole ass new system. unless this is specifically for magic stuff?...
 // this also adds the ability to interact with creatures etc
 pub fn appearance_added(
     mut commands: Commands,
@@ -68,7 +69,6 @@ pub fn appearance_added(
     mut q_appearance: Query<(Entity, &mut Appearance, &Transform), Added<Appearance>>,
 ) {
     for (entity, mut appearance, transform) in q_appearance.iter_mut() {
-        // let handle = assets.load::<Texture, _>(appearance.filename.as_str());
         let sprite_bundle = SpriteBundle {
             texture: asset_server.load(appearance.filename.as_str()),
             transform: *transform,
@@ -82,28 +82,36 @@ pub fn appearance_added(
     }
 }
 
+// TODO move this to the interaction module
 pub fn appearance_interact_system(
-    mut order: ResMut<InteractableOrder>,
+    order: ResMut<InteractableOrder>,
     mouse: Res<MouseState>,
+    images: Res<Assets<Image>>,
     mut er_cursor: EventReader<CursorMoved>,
-    mut q_appearance: Query<(Entity, &Sprite, &Transform, &mut ObjectInteraction), With<Appearance>>,
+    mut q_appearance: Query<(Entity, &Handle<Image>, &Transform, &mut ObjectInteraction), With<Appearance>>,
 ) {
-    // TODO UPDATE
-    // use ObjectInteraction::*;
-    // for e in er_cursor.iter() {
-    //     for (entity, sprite, transform, mut interaction) in q_appearance.iter_mut() {
-    //         let pos = Vec2::new(transform.translation.x, transform.translation.y);
-    //         let diff = pos - mouse.world_pos;
-    //         if order.ui_blocking.is_none()
-    //             && f32::abs(diff.x) <= sprite.size.x * 0.5
-    //             && f32::abs(diff.y) <= sprite.size.y * 0.5
-    //         {
-    //             *interaction = Inside;
-    //         } else {
-    //             *interaction = Outside;
-    //         }
-    //     }
-    // }
+    use ObjectInteraction::*;
+    for e in er_cursor.iter() {
+        for (entity, handle, transform, mut interaction) in q_appearance.iter_mut() {
+            let pos = Vec2::new(transform.translation.x, transform.translation.y);
+            let diff = pos - mouse.world_pos;
+            let image = images.get(handle);
+            let is_inside = || -> Option<()> {
+                let inside = order.ui_blocking.is_none()
+                    && f32::abs(diff.x) <= (image?.texture_descriptor.size.width as f32) * 0.5
+                    && f32::abs(diff.y) <= (image?.texture_descriptor.size.height as f32) * 0.5;
+                if !inside {
+                    return None;
+                }
+                Some(())
+            };
+            if is_inside().is_some() {
+                *interaction = Inside;
+            } else {
+                *interaction = Outside;
+            }
+        }
+    }
 }
 
 // pub fn appearance_changed(

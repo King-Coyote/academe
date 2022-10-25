@@ -57,6 +57,7 @@ pub fn spawn_standard_boi(
         .insert(Movement{level: 1})
         .insert(NavAgent::with_strategy(NavAgentStrategy::FreeRoam))
         .insert(Transform::from_translation(pos.extend(100.0)))
+        .insert(ObjectInteraction::default())
         .insert(ClickHandlers {
             right: context_menu_handler!(cmds, mouse, {
                 label: "Annihilate",

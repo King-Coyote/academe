@@ -58,8 +58,7 @@ fn right_click_nothing(
                 action: {
                     spawn_standard_boi(mouse.world_pos, mouse, text_style.clone(), commands, false);
                 }
-            }))
-            ;
+            }));
     }
 }
 

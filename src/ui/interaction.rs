@@ -135,7 +135,6 @@ pub fn object_interaction_handling(
     mouse: Res<MouseState>,
     order: Res<InteractableOrder>,
     mouse_button: Res<Input<MouseButton>>,
-    // mut er_mouseinput: EventReader<MouseButtonInput>,
     q_interact: Query<(&ObjectInteraction, &ClickHandlers)>,
 ) {
     if order.current.is_none() {
@@ -145,7 +144,6 @@ pub fn object_interaction_handling(
         .current
         .as_ref()
         .and_then(|current| q_interact.get(current.0).ok());
-    // this interactable doesn't have any click handlers for some reason
     if let Some((interactable, handlers)) = maybe_query {
         if mouse_button.just_released(MouseButton::Left) {
             if let Some(handler) = handlers.left.as_ref() {
