@@ -1,6 +1,6 @@
 #![allow(
     clippy::type_complexity,
-    clippy::clippy::too_many_arguments,
+    clippy::too_many_arguments,
     unused_variables,
     dead_code
 )]
@@ -8,7 +8,7 @@
 
 use bevy::{
     asset::AssetServerSettings,
-    prelude::*, ecs::entity
+    prelude::*, 
 };
 use game::*;
 use input::*;
@@ -17,7 +17,6 @@ use ui::*;
 use nav::*;
 use debug::*;
 use ai::*;
-use bevy_htn::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 
 #[macro_use]

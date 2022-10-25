@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::*;
+// use bevy_prototype_lyon::prelude::*;
 
 // for debug displays of things, like shapes, polygons, navmeshes, etc
 
@@ -19,7 +19,7 @@ pub struct DebugLineSpawn {
 }
 
 pub fn spawn_debug_ui(
-    mut commands: Commands,
+    // mut commands: Commands,
     materials: ResMut<Assets<ColorMaterial>>,
     q_lines: Query<(Entity, &DebugLineSpawn), Added<DebugLineSpawn>>,
     q_circle: Query<(Entity, &DebugCircleSpawn), Added<DebugCircleSpawn>>,

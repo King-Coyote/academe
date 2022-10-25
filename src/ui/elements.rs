@@ -127,7 +127,6 @@ pub fn button(
 
 pub fn context_menu_spawn(
     mut commands: Commands,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     style: Res<MainStyle>,
     mut q_cmspawn: Query<(Entity, &mut ContextMenuSpawn), Added<ContextMenuSpawn>>,
 ) {
