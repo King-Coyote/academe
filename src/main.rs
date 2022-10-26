@@ -1,11 +1,12 @@
 #![allow(
     clippy::type_complexity,
-    clippy::clippy::too_many_arguments,
+    clippy::too_many_arguments,
     unused_variables,
     dead_code
 )]
 #![feature(exact_size_is_empty)]
 
+use std::collections::HashMap;
 use bevy::{
     asset::AssetServerSettings,
     prelude::*, ecs::entity
@@ -31,6 +32,11 @@ mod nav;
 mod debug;
 mod ai;
 
+#[derive(Default)]
+pub struct RoomsRegistry {
+    pub map: HashMap<String, Entity>,
+}
+
 fn click_debug(
     mouse: Res<MouseState>,
     mouse_button: Res<Input<MouseButton>>,
@@ -42,13 +48,15 @@ fn click_debug(
 
 fn create_hardcoded_rooms(
     mut commands: Commands,
+    mut rooms_reg: ResMut<RoomsRegistry>,
 ) {
     let rooms = vec![
         ("Dorms", Vec2::new(-100.0, 0.0)),
         ("Dorms", Vec2::new(100.0, 200.0)),
     ];
     for room in rooms.iter() {
-        spawn_room(&mut commands, room.0, room.1);
+        let entity = spawn_room(&mut commands, room.0, room.1);
+        rooms_reg.map.insert(room.0.to_string(), entity);
     }
 }
 
@@ -140,6 +148,7 @@ fn main() {
             ..default()
         })
         // .add_startup_system(area_texture_test)
+        .init_resource::<RoomsRegistry>()
         .add_plugins(DefaultPlugins)
         .add_plugin(InputPlugin)
         .add_plugin(SpacePlugin)
