@@ -54,6 +54,8 @@ fn create_hardcoded_rooms(
     let rooms = vec![
         ("Dorms", Vec2::new(-100.0, 0.0)),
         ("Refactory", Vec2::new(100.0, 200.0)),
+        ("Arboretum", Vec2::new(0.0, -400.0)),
+        ("Study halls", Vec2::new(300.0, 0.0)),
     ];
     for room in rooms.iter() {
         let entity = spawn_room(&mut commands, room.0, room.1, &style.text);
