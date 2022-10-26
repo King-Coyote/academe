@@ -49,13 +49,14 @@ fn click_debug(
 fn create_hardcoded_rooms(
     mut commands: Commands,
     mut rooms_reg: ResMut<RoomsRegistry>,
+    style: Res<MainStyle>
 ) {
     let rooms = vec![
         ("Dorms", Vec2::new(-100.0, 0.0)),
-        ("Dorms", Vec2::new(100.0, 200.0)),
+        ("Refactory", Vec2::new(100.0, 200.0)),
     ];
     for room in rooms.iter() {
-        let entity = spawn_room(&mut commands, room.0, room.1);
+        let entity = spawn_room(&mut commands, room.0, room.1, &style.text);
         rooms_reg.map.insert(room.0.to_string(), entity);
     }
 }
@@ -78,12 +79,6 @@ fn right_click_nothing(
                     label: "Spawn student",
                     action: {
                         spawn_standard_boi(mouse.world_pos, mouse, text_style.clone(), commands, false);
-                    }
-                },
-                {
-                    label: "Spawn room",
-                    action: {
-                        let room_entity = spawn_room(commands, "Test room", mouse.world_pos);
                     }
                 }
             ));

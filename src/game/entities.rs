@@ -87,10 +87,12 @@ pub fn spawn_room(
     commands: &mut Commands,
     name: &str,
     pos: Vec2,
+    text_style: &TextStyle,
 ) -> Entity {
+    let room_size = Vec2::new(100.0, 100.0);
     let shape = GeometryBuilder::build_as(
         &shapes::Rectangle {
-            extents: Vec2::new(100.0, 100.0),
+            extents: room_size,
             origin: RectangleOrigin::Center,
         },
         DrawMode::Outlined {
@@ -104,6 +106,17 @@ pub fn spawn_room(
     let entity = builder.id();
     builder
         .insert(Room)
-        .insert_bundle(shape);
+        .insert_bundle(shape)
+        .with_children(|parent| {
+            parent.spawn_bundle(Text2dBundle {
+                text: Text::from_section(
+                    name.to_string(),
+                    text_style.clone()
+                ),
+                text_2d_size: Text2dSize{size: Vec2::new(room_size.x, 20.0)},
+                transform: Transform::from_xyz(-room_size.x / 2.0 + 3.0, room_size.y / 2.0 - 3.0, 10.0),
+                ..default()
+            });
+        });
     entity
 }
