@@ -1,5 +1,5 @@
 use bevy::{
-    ecs::query::{WorldQuery},
+    ecs::query::{ReadFetch, WorldQuery},
     prelude::*,
 };
 

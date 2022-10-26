@@ -1,5 +1,5 @@
 use crate::ui::*;
-use bevy::{reflect::TypeRegistryArc};
+use bevy::{prelude::*, reflect::TypeRegistryArc};
 use std::{
     fs::File,
     io::prelude::*,

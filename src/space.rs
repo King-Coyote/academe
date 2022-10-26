@@ -1,12 +1,20 @@
+use crate::{
+    game::*,
+    input::*,
+    ui::*,
+    utils::geometry::*,
+    nav::*,
+};
 use bevy::prelude::*;
-// use bevy_prototype_lyon::{
-//     prelude::*,
-// };
+use bevy_prototype_lyon::{
+    prelude::*,
+    entity::ShapeBundle,
+};
 
 // curently for rendering spaces and allowing them to be interacted with.
 pub struct SpacePlugin;
 
-// fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
+fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
     // TODO UPDATE
     //outdoors
     // let points = vec![
@@ -106,12 +114,12 @@ pub struct SpacePlugin;
     //         ..Default::default()
     //     })
     //     ;
-// }
+}
 
 impl Plugin for SpacePlugin {
     fn build(&self, app: &mut App) {
-        // app.add_plugin(ShapePlugin)
-        //     .add_startup_system(setup)
-        //     ;
+        app.add_plugin(ShapePlugin)
+            .add_startup_system(setup)
+            ;
     }
 }

@@ -1,5 +1,6 @@
 use crate::{
     game::*,
+    input::MouseState,
 };
 use bevy::{
     prelude::*,
@@ -16,10 +17,7 @@ pub use debug::*;
 
 pub struct UiPlugin;
 
-fn setup(
-    // mut commands: Commands, 
-    materials: ResMut<Assets<ColorMaterial>>
-) {
+fn setup(mut commands: Commands, materials: ResMut<Assets<ColorMaterial>>) {
     // TODO UPDATE probably just delete this fam
     // commands.spawn_bundle(UiCameraBundle::default());
 }
