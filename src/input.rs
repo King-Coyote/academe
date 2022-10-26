@@ -49,13 +49,13 @@ fn mouse_state(
     windows: Res<Windows>,
     mut mouse_state: ResMut<MouseState>,
     // query to get camera transform
-    q_camera: Query<&Transform, With<MainCamera>>,
+    q_camera: Query<(&Transform, &Camera), With<MainCamera>>,
 ) {
-    let camera_transform = q_camera.iter().next().unwrap();
+    let (camera_transform, camera) = q_camera.single();
     for e in evr_cursor.iter() {
         // apply the camera transform
         let window = windows.get_primary().unwrap();
-        let world_pos = get_world_pos(&e.position, camera_transform, window);
+        let world_pos = get_world_pos(&e.position, camera_transform, camera, window);
         mouse_state.screen_pos = e.position;
         mouse_state.ui_pos = Vec2::new(e.position.x, window.height() as f32 - e.position.y);
         mouse_state.world_pos = Vec2::new(world_pos.x, world_pos.y);
@@ -106,10 +106,16 @@ impl Plugin for InputPlugin {
 
 // UTILITY FNS
 
-fn get_world_pos(screen_pos: &Vec2, cam_transform: &Transform, window: &Window) -> Vec4 {
+fn get_world_pos(screen_pos: &Vec2, cam_transform: &Transform, camera: &Camera, window: &Window) -> Vec2 {
     let size = Vec2::new(window.width() as f32, window.height() as f32);
     // the default orthographic projection is in pixels from the center;
     // just undo the translation
-    let p = *screen_pos - size / 2.0;
-    cam_transform.compute_matrix() * p.extend(0.0).extend(1.0)
+    // convert screen position [0..resolution] to ndc [-1..1] (gpu coordinates)
+    let ndc = (*screen_pos / size) * 2.0 - Vec2::ONE;
+    // matrix for undoing the projection and camera transform
+    let ndc_to_world = cam_transform.compute_matrix() * camera.projection_matrix().inverse();
+    // use it to convert ndc to world-space coordinates
+    let world_pos = ndc_to_world.project_point3(ndc.extend(-1.0));
+    // reduce it to a 2D value
+    world_pos.truncate()
 }
