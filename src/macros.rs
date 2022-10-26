@@ -48,7 +48,7 @@ macro_rules! context_menu {
                     }),
                 },)*
             ]
-        }
+        };
     }
 }
 

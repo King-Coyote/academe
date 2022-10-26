@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use crate::nav::*;
-// use bevy_prototype_lyon::prelude::*;
-// use bevy_prototype_lyon::entity::ShapeBundle;
+use bevy_prototype_lyon::prelude::*;
+use bevy_prototype_lyon::entity::ShapeBundle;
 
 // for displaying things, etc
 
@@ -15,7 +15,7 @@ impl Plugin for DebugPlugin {
 }
 
 pub fn display_navmesh_system(
-    // mut commands: Commands,
+    mut commands: Commands,
     q_navmesh: Query<(Entity, &NavMesh), Added<NavMesh>>,
 ) {
     // TODO UPDATE

@@ -173,7 +173,7 @@ impl NavMesh {
                     false => self.points_have_los(&a, path.last().unwrap())
                 };
                 let successor = path.get(path.len() - 2).unwrap();
-                succ_had_los = self.points_have_los(&a, successor);
+                succ_had_los = self.points_have_los(&a, &successor);
                 if succ_had_los && this_has_los {
                     path.pop();
                 } else {
@@ -242,7 +242,7 @@ impl<'a> Iterator for TrianglesIterator<'a> {
             let vertices = handle.as_triangle();
             let centroid = get_centroid(&vertices);
             if !point_inside_polygon(&centroid, self.boundary) 
-            || self.holes.iter().any(|hole| point_inside_polygon(&centroid, hole))
+            || self.holes.iter().any(|hole| point_inside_polygon(&centroid, &hole))
             {
                 continue;
             }
@@ -309,8 +309,8 @@ fn build_medial_graph(triangulation: &Triangulation, boundary: &[Vec2], holes: &
                 )
             })
             .filter(|p| {
-                point_inside_polygon(p, boundary)
-                && holes.iter().all(|hole| !point_inside_polygon(p, hole))
+                point_inside_polygon(&p, boundary)
+                && holes.iter().all(|hole| !point_inside_polygon(&p, hole))
             })
             .map(|p| {
                 let encoded = data_struct::decode_vec2(&p);

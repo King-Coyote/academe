@@ -1,6 +1,9 @@
 use bevy::{
     prelude::*,
 };
+use crate::{
+    nav::*,
+};
 
 #[derive(Component)]
 pub struct Area;

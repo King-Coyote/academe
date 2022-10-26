@@ -22,6 +22,7 @@ pub enum CameraMovement {
     PanDown,
     PanLeft,
     PanRight,
+    Zoom,
 }
 
 fn setup(mut commands: Commands) {
@@ -34,6 +35,7 @@ fn setup(mut commands: Commands) {
                 .insert(KeyCode::S, CameraMovement::PanDown)
                 .insert(KeyCode::A, CameraMovement::PanLeft)
                 .insert(KeyCode::D, CameraMovement::PanRight)
+                .insert(SingleAxis::mouse_wheel_y(), CameraMovement::Zoom)
                 .build(),
             action_state: ActionState::default(),
         })
@@ -61,25 +63,30 @@ fn mouse_state(
     }
 }
 
+const CAMERA_ZOOM_RATE: f32 = 0.05;
+const CAMERA_SPEED: f32 = 7.0;
+
 fn camera_control_system(
-    mut query: Query<(&mut Transform, &ActionState<CameraMovement>), With<Camera2d>>,
+    mut query: Query<(&mut Transform, &ActionState<CameraMovement>, &mut OrthographicProjection), With<Camera2d>>,
 ) {
-    let (mut cam_transform, action_state) = query.single_mut();
+    let (mut cam_transform, action_state, mut projection) = query.single_mut();
     let pan_speed = 7.0;
+    let zoom_delta = action_state.value(CameraMovement::Zoom);
 
     let mut movement = Vec2::ZERO;
     if action_state.pressed(CameraMovement::PanUp) {
-        movement.y += pan_speed;
+        movement.y += CAMERA_SPEED;
     }
     if action_state.pressed(CameraMovement::PanLeft) {
-        movement.x -= pan_speed;
+        movement.x -= CAMERA_SPEED;
     }
     if action_state.pressed(CameraMovement::PanDown) {
-        movement.y -= pan_speed;
+        movement.y -= CAMERA_SPEED;
     }
     if action_state.pressed(CameraMovement::PanRight) {
-        movement.x += pan_speed;
+        movement.x += CAMERA_SPEED;
     }
+    projection.scale *= 1. - zoom_delta * CAMERA_ZOOM_RATE * -1.0;
 
     cam_transform.translation += movement.extend(0.0);
 }

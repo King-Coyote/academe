@@ -1,5 +1,6 @@
 use bevy::{
     ecs::{component::Component,},
+    render::render_resource::Texture,
     prelude::*,
 };
 use std::marker::PhantomData;
