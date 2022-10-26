@@ -94,16 +94,11 @@ pub fn spawn_room(
             origin: RectangleOrigin::Center,
         },
         DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::CYAN),
-            outline_mode: StrokeMode::new(Color::BLUE, 2.0),
+            fill_mode: FillMode::color(Color::GRAY),
+            outline_mode: StrokeMode::new(Color::BISQUE, 2.0),
         },
         Transform::from_xyz(pos.x, pos.y, 0.0),
     );
-    // let shape = shapes::RegularPolygon {
-    //     sides: 6,
-    //     feature: shapes::RegularPolygonFeature::Radius(200.0),
-    //     ..shapes::RegularPolygon::default()
-    // };
     info!("spawning room at {:?}", pos);
     let mut builder = commands.spawn();
     let entity = builder.id();

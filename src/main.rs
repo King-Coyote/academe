@@ -40,6 +40,18 @@ fn click_debug(
     }
 }
 
+fn create_hardcoded_rooms(
+    mut commands: Commands,
+) {
+    let rooms = vec![
+        ("Dorms", Vec2::new(-100.0, 0.0)),
+        ("Dorms", Vec2::new(100.0, 200.0)),
+    ];
+    for room in rooms.iter() {
+        spawn_room(&mut commands, room.0, room.1);
+    }
+}
+
 fn right_click_nothing(
     mut commands: Commands,
     mouse: Res<MouseState>,
@@ -137,7 +149,8 @@ fn main() {
         .add_plugin(DebugPlugin)
         .add_plugin(AiPlugin)
         // .add_system(click_debug)
-        .add_startup_system(spawn_test_rhombus)
+        // .add_startup_system(spawn_test_rhombus)
+        .add_startup_system(create_hardcoded_rooms)
         .add_system(right_click_nothing)
         .run();
 }
