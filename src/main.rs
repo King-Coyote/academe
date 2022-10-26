@@ -53,12 +53,20 @@ fn right_click_nothing(
     if right_clicked_on_nothing {
         let text_style = style.text.clone();
         commands.spawn()
-            .insert(context_menu!(commands, mouse, {
-                label: "Spawn student",
-                action: {
-                    spawn_standard_boi(mouse.world_pos, mouse, text_style.clone(), commands, false);
+            .insert(context_menu!(commands, mouse, 
+                {
+                    label: "Spawn student",
+                    action: {
+                        spawn_standard_boi(mouse.world_pos, mouse, text_style.clone(), commands, false);
+                    }
+                },
+                {
+                    label: "Spawn room",
+                    action: {
+                        let room_entity = spawn_room(commands, "Test room", mouse.world_pos);
+                    }
                 }
-            }));
+            ));
     }
 }
 
@@ -129,7 +137,7 @@ fn main() {
         .add_plugin(DebugPlugin)
         .add_plugin(AiPlugin)
         // .add_system(click_debug)
-        // .add_startup_system(spawn_test_rhombus)
+        .add_startup_system(spawn_test_rhombus)
         .add_system(right_click_nothing)
         .run();
 }
